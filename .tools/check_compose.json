@@ -1,0 +1,12 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='compose']" },
+  { "wait": 4000 },
+  { "eval": "JSON.stringify({ gpBar: !!document.querySelector('#cmp-gen-params .gp-bar'), presetInput: !!document.querySelector('#cmp-gen-params #gp-preset-host input'), renderBtn: !!document.getElementById('cmp-render'), status: !!document.getElementById('cmp-status'), oldWH: !document.getElementById('cmp-w'), panels: document.querySelectorAll('.cmp-panel').length })" },
+  { "eval": "var i=document.querySelector('#cmp-gen-params #gp-preset-host input'); i.focus(); 'focus'" },
+  { "wait": 900 },
+  { "eval": "JSON.stringify({ items: document.querySelectorAll('.cb-pop .cb-item').length, cnt: (document.querySelector('.cb-pop .cnt')||{}).textContent })" },
+  { "eval": "document.body.click(); 'close-pop'" },
+  { "shot": "compose-top.png" }
+]

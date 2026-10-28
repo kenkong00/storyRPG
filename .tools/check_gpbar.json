@@ -1,0 +1,6 @@
+[
+  { "wait": 2500 },
+  { "eval": "Admin.navigate('compose'); 'ok'" },
+  { "wait": 4000 },
+  { "eval": "(()=>{const bar=document.querySelector('.gp-bar');const host=document.getElementById('cmp-gen-params');const act=document.querySelector('.gp-actions');const btn=[...document.querySelectorAll('.gp-actions button')].pop();const r=b=>b?{l:Math.round(b.getBoundingClientRect().left),r:Math.round(b.getBoundingClientRect().right),w:Math.round(b.getBoundingClientRect().width)}:null;return JSON.stringify({bar:r(bar),barScroll:bar?bar.scrollWidth:0,barClient:bar?bar.clientWidth:0,host:r(host),act:r(act),lastBtn:r(btn),btnText:btn?btn.textContent:''});})()" }
+]

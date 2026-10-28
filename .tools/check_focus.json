@@ -1,0 +1,10 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.querySelector('.cmp-el[data-ei=\"0\"] .cmp-el-h').click(); 'select-scene'" },
+  { "wait": 300 },
+  { "eval": "(() => { const h=[...document.querySelectorAll('.cmp-bb-box')].map(b=>[...b.querySelectorAll('.cmp-bb-rs')].map(r=>r.dataset.corner).join(',')); return JSON.stringify({handleCorners: h.slice(0,3), allFour: h.every(s=>s==='tl,tr,bl,br')}); })()" },
+  { "eval": "(() => { const inp=document.querySelector('.cmp-el.t-character input[data-ef=\"note\"]'); if(!inp) return 'NO-inp'; inp.__mark=777; inp.focus(); inp.click(); const live=document.querySelector('.cmp-el.t-character input[data-ef=\"note\"]'); return JSON.stringify({sameNode: live===inp, connected: inp.isConnected, activeIsInput: document.activeElement===inp, mark: inp.__mark}); })()" },
+  { "wait": 400 },
+  { "eval": "(() => { const inp=document.querySelector('.cmp-el.t-character input[data-ef=\"note\"]'); return JSON.stringify({stillFocused: document.activeElement===inp}); })()" }
+]

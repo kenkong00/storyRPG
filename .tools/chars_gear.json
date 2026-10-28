@@ -1,0 +1,16 @@
+[
+  { "eval": "document.title" },
+  { "wait": 3000 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 2500 },
+  { "eval": "(function(){const btns=[...document.querySelectorAll('.btn-edit')].filter(b=>b.textContent.trim()==='编辑'); if(!btns.length) return 'no-edit-btn'; btns[0].click(); return 'opened-edit:'+btns.length;})()" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ tabs: [...document.querySelectorAll('.char-tab-btn')].map(b=>b.dataset.tab) })" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'gear\\']'); if(t){t.click(); return 'gear-clicked';} return 'no-gear-tab';})()" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ hasRoot: !!document.querySelector('.ag-root'), text: (document.querySelector('.ag-root')?.innerText||document.body.innerText).replace(/\\s+/g,' ').slice(0,900) })" },
+  { "shot": "chars-gear.png" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'backpack\\']'); if(t){t.click(); return 'bp';} const t2=document.querySelector('.char-tab-btn[data-tab=\\'gear\\']'); return 'stay';})()" },
+  { "wait": 1500 },
+  { "eval": "JSON.stringify({ bodyText: document.body.innerText.replace(/\\s+/g,' ').slice(0,300) })" }
+]

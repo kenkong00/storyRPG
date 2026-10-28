@@ -1,0 +1,10 @@
+[
+  { "eval": "document.title" },
+  { "wait": 3000 },
+  { "click": ".nav-item[data-page='players']" },
+  { "wait": 3000 },
+  { "eval": "(function(){const s=document.getElementById('uc-select'); if(!s) return 'no-select'; const opt=[...s.options].find(o=>o.value&&o.value!==''); if(!opt) return 'no-options'; s.value=opt.value; s.dispatchEvent(new Event('change')); return 'picked:'+opt.value+' '+opt.textContent;})()" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ bookBtn: !!document.querySelector('.btn-add-book'), bookText: ([...document.querySelectorAll('#player-equip-slots > div')].map(d=>d.innerText).find(t=>t.includes('技能书'))||'').replace(/\\s+/g,' ').slice(0,300) })" },
+  { "shot": "players-books.png" }
+]

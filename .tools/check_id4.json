@@ -1,0 +1,26 @@
+[
+ {
+  "eval": "location.href='http://127.0.0.1:8000/admin/index.html'; 'go'"
+ },
+ {
+  "wait": 4000
+ },
+ {
+  "eval": "document.getElementById('image-hub').click(); 'open'"
+ },
+ {
+  "wait": 3500
+ },
+ {
+  "eval": "var c=document.querySelector('.id-card'); JSON.stringify({before:Math.round(c.getBoundingClientRect().height), rows:getComputedStyle(document.querySelector('.id-list')).gridTemplateRows.split(' ').slice(0,3), contain:getComputedStyle(c).contain, cv:getComputedStyle(c).contentVisibility, cis:getComputedStyle(c).containIntrinsicSize})"
+ },
+ {
+  "eval": "var l=document.querySelector('.id-list'); l.style.gridAutoRows='max-content'; var c=document.querySelector('.id-card'); JSON.stringify({afterAutoRows:Math.round(c.getBoundingClientRect().height), scrollH:l.scrollHeight, clientH:l.clientHeight})"
+ },
+ {
+  "eval": "var l=document.querySelector('.id-list'); l.style.gridAutoRows=''; var c=document.querySelector('.id-card'); c.style.display='flex'; c.style.flexDirection='column'; JSON.stringify({afterFlex:Math.round(c.getBoundingClientRect().height)})"
+ },
+ {
+  "eval": "var c=document.querySelector('.id-card'); c.style.display=''; c.style.flexDirection=''; var im=c.querySelector('img'); im.style.aspectRatio=''; im.style.height='210px'; JSON.stringify({afterFixedImgH:Math.round(c.getBoundingClientRect().height)})"
+ }
+]

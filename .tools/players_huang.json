@@ -1,0 +1,10 @@
+[
+  { "eval": "document.title" },
+  { "wait": 3500 },
+  { "click": ".nav-item[data-page='players']" },
+  { "wait": 3000 },
+  { "eval": "(function(){const s=document.getElementById('uc-select'); if(!s) return 'no-select'; const opt=[...s.options].find(o=>o.textContent.includes('huang')); if(!opt) return 'no-huang'; s.value=opt.value; s.dispatchEvent(new Event('change')); return 'selected uc='+opt.value;})()" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({equipHead: (document.getElementById('player-equip-slots')?.innerText||'').slice(0,300), backHead: (document.getElementById('player-backpack')?.innerText||'').slice(0,200)})" },
+  { "shot": "players-huang.png" }
+]

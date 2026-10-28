@@ -1,0 +1,13 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='scenes']" },
+  { "wait": 3000 },
+  { "click": ".sc-tab[data-tab='assembly']" },
+  { "wait": 4000 },
+  { "eval": "JSON.stringify({ opts: Array.from(document.getElementById('sc-scene').options).map(o=>o.value+':'+o.text).slice(0,6), cards: document.querySelectorAll('.sc-lib-card').length })" },
+  { "eval": "var s=document.getElementById('sc-scene'); if(s.options.length>1){s.value=s.options[1].value; s.dispatchEvent(new Event('change')); 'set '+s.value} else 'no-scene'" },
+  { "wait": 4000 },
+  { "eval": "JSON.stringify({ appCards: Array.from(document.querySelectorAll('.sc-app-card')).map(x=>x.innerText.replace(/\\s+/g,' ').trim()), dimRows: document.querySelectorAll('.sc-row').length, hint: (document.getElementById('sc-hint')||{}).innerText })" },
+  { "shot": "sc-appcards.png" }
+]

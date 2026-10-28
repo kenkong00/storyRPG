@@ -1,0 +1,23 @@
+[
+ {
+  "eval": "location.href='http://127.0.0.1:8000/admin/index.html'; 'go'"
+ },
+ {
+  "wait": 4000
+ },
+ {
+  "eval": "document.getElementById('image-hub').click(); 'open'"
+ },
+ {
+  "wait": 3500
+ },
+ {
+  "eval": "var l=document.querySelector('.id-list'); var c=document.querySelector('.id-card'); l.style.alignContent='stretch'; JSON.stringify({stretch:Math.round(c.getBoundingClientRect().height), rows:getComputedStyle(l).gridTemplateRows.split(' ').length})"
+ },
+ {
+  "eval": "var l=document.querySelector('.id-list'); var c=document.querySelector('.id-card'); l.style.alignContent=''; l.style.height='auto'; JSON.stringify({autoH:Math.round(c.getBoundingClientRect().height), lh:Math.round(l.getBoundingClientRect().height)})"
+ },
+ {
+  "eval": "var l=document.querySelector('.id-list'); l.style.height=''; var im=document.querySelector('.id-card img'); JSON.stringify({imgLoaded:im.complete, natural:im.naturalWidth+'x'+im.naturalHeight, attrs:im.getAttribute('width')+'|'+im.getAttribute('height')})"
+ }
+]

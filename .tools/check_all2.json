@@ -1,0 +1,22 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 3000 },
+  { "click": ".ch-card-img" },
+  { "wait": 3500 },
+  { "eval": "window.__r=null; Admin.confirm('这是一次弹窗共存测试').then(v=>{window.__r=v}); 'confirm-open'" },
+  { "wait": 900 },
+  { "eval": "JSON.stringify({ dlg: !!document.querySelector('#dialog-container #confirm-overlay'), title: (document.querySelector('#dialog-container .modal-header h3')||{}).textContent, ico: (document.querySelector('#dialog-container .dlg-ico')||{}).textContent, editTabs: document.querySelectorAll('#modal-container .char-tab-btn').length })" },
+  { "shot": "dlg-confirm2.png" },
+  { "eval": "document.querySelector('#dialog-container [data-a=\"yes\"]').click(); 'yes'" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({ result: window.__r, dlgGone: !document.querySelector('#dialog-container #confirm-overlay'), editTabs: document.querySelectorAll('#modal-container .char-tab-btn').length, stillEditing: (document.querySelector('#modal-container input[name=\"name\"]')||{}).value })" },
+  { "click": ".char-tab-btn[data-tab='pose']" },
+  { "wait": 4000 },
+  { "eval": "JSON.stringify({ gpBar: !!document.querySelector('#cpp-gen-params .gp-bar'), poseRows: document.querySelectorAll('.cpp-pose').length })" },
+  { "eval": "var i=document.querySelector('#gp-preset-host input'); i.focus(); i.dispatchEvent(new Event('focus')); 'focus'" },
+  { "wait": 900 },
+  { "eval": "JSON.stringify({ popItems: document.querySelectorAll('.cb-pop .cb-item').length, popCount: (document.querySelector('.cb-pop .cnt')||{}).textContent, names: Array.from(document.querySelectorAll('.cb-pop .cb-item')).map(x=>x.textContent).slice(0,10) })" },
+  { "shot": "preset-dropdown.png" }
+]

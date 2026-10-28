@@ -1,0 +1,14 @@
+[
+  { "wait": 2500 },
+  { "eval": "Admin.navigate('scenes').then(()=>'ok').catch(e=>'ERR '+e.message)" },
+  { "wait": 3000 },
+  { "click": ".sc-tab[data-tab=\"assembly\"]" },
+  { "wait": 3500 },
+  { "eval": "(()=>{const ta=document.querySelector('#sc-prompt');if(!ta)return 'NO box';const r=ta.getBoundingClientRect();return JSON.stringify({tag:ta.tagName,visible:r.height>40,h:Math.round(r.height),w:Math.round(r.width),len:(ta.value||'').length,first:(ta.value||'').split('\\n')[0]});})()" },
+  { "eval": "(()=>{const ta=document.querySelector('#sc-prompt');ta.value='手改的场景提示词';ta.dispatchEvent(new Event('input',{bubbles:true}));return 'edited';})()" },
+  { "wait": 400 },
+  { "eval": "(()=>{const free=document.querySelector('#sc-free');free.value='加一句话触发参数变化';free.dispatchEvent(new Event('input',{bubbles:true}));return 'param changed';})()" },
+  { "wait": 2000 },
+  { "eval": "(()=>{const ta=document.querySelector('#sc-prompt');return JSON.stringify({after:ta.value.slice(0,50),overwritten:(ta.value!=='手改的场景提示词')});})()" },
+  { "shot": "sc-prompt-live.png" }
+]

@@ -1,0 +1,15 @@
+[
+  { "eval": "'ready:' + (typeof Admin)" },
+  { "wait": 2500 },
+  { "eval": "Admin.navigate('compose'); 'nav-ok'" },
+  { "wait": 4500 },
+  { "eval": "JSON.stringify({cfgCount: document.querySelectorAll('.cmp-cfg').length, hasList: !!document.getElementById('cmp-cfg-list'), hasEditor: !!document.getElementById('cmp-edit-body'), editRows: document.querySelectorAll('.cmp-char-row').length, renderBtnDisabled: document.getElementById('cmp-render')?.disabled, prompt: (document.getElementById('cmp-prompt')?.textContent||'').slice(0,60), cols: !!document.querySelector('.cmp-cols'), overflowX: document.documentElement.scrollWidth - window.innerWidth})" },
+  { "shot": "compose-page.png", "full": true },
+  { "click": "#cmp-new" },
+  { "wait": 1200 },
+  { "eval": "JSON.stringify({title: document.getElementById('cmp-edit-title')?.textContent.trim(), rows: document.querySelectorAll('.cmp-char-row').length, sceneSel: document.querySelector('[data-f=scene_id]')?.value, nameInp: document.querySelector('[data-f=name]')?.value})" },
+  { "click": "[data-act=add-char]" },
+  { "wait": 1500 },
+  { "eval": "JSON.stringify({rowsAfterAdd: document.querySelectorAll('.cmp-char-row').length, framingRO: [...document.querySelectorAll('.cmp-char-row .cmp-ro')].map(x=>x.textContent), prompt: (document.getElementById('cmp-prompt')?.textContent||'').slice(0,80)})" },
+  { "shot": "compose-new.png", "full": true }
+]

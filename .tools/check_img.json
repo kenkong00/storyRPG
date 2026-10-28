@@ -1,0 +1,21 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "eval": "document.getElementById('image-hub').click(); 'open-image-hub'" },
+  { "wait": 3000 },
+  { "eval": "JSON.stringify({ drawer: !!document.querySelector('#image-drawer.on'), cards: document.querySelectorAll('.id-card').length, stat: (document.querySelector('#id-stat')||{}).textContent })" },
+  { "shot": "image-drawer.png" },
+  { "eval": "document.querySelector('.id-card').click(); 'open-preview'" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ overlay: !!document.querySelector('.ip-overlay'), canvas: !!document.querySelector('.ip-canvas.layered'), barBtns: Array.from(document.querySelectorAll('.ip-bar button')).map(b=>b.dataset.a), title: (document.querySelector('.ip-title')||{}).textContent, size: (document.querySelector('.ip-size')||{}).innerText, count: (document.querySelector('.ip-count')||{}).textContent })" },
+  { "shot": "preview-canvas.png" },
+  { "eval": "document.querySelector('.ip-bar [data-a=\"info\"]').click(); 'toggle-info'" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({ noinfo: document.querySelector('.ip-overlay').classList.contains('noinfo') })" },
+  { "eval": "document.querySelector('.ip-bar [data-a=\"info\"]').click(); 'toggle-back'" },
+  { "wait": 500 },
+  { "eval": "document.querySelector('.ip-bar [data-a=\"next\"]').click(); 'next'" },
+  { "wait": 1500 },
+  { "eval": "JSON.stringify({ title: (document.querySelector('.ip-title')||{}).textContent, count: (document.querySelector('.ip-count')||{}).textContent, size: (document.querySelector('.ip-size')||{}).innerText, kv: (document.querySelector('.ip-kv')||{}).innerText.replace(/\\s+/g,' ').slice(0,160) })" },
+  { "shot": "preview-next.png" }
+]

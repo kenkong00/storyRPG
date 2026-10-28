@@ -1,0 +1,7 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.querySelectorAll('.cmp-cfg-card')[0].click(); 'cfg1'" },
+  { "wait": 3000 },
+  { "eval": "(() => { const cards=[...document.querySelectorAll('.cmp-el')]; return JSON.stringify({n:cards.length, info:cards.map(c=>({cls:c.className, hasBig:!!c.querySelector('.cmp-scene-big'), hasPick:!!c.querySelector('[data-bact=\"pick-scene\"]'), title:(c.querySelector('.cmp-el-title')||{}).textContent}))}); })()" }
+]

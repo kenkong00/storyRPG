@@ -1,0 +1,15 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 's'" },
+  { "wait": 2800 },
+  { "eval": "document.getElementById('cmp-add-char').click(); 'c'" },
+  { "wait": 2600 },
+  { "eval": "(() => { const b=document.querySelector('.cmp-bb-box.t-character'); b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:50,clientY:50,pointerId:9})); b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:9})); return 'char-selected'; })()" },
+  { "wait": 300 },
+  { "eval": "(() => { const b=document.querySelector('.cmp-bb-box.t-scene'); b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:20,clientY:20,pointerId:10})); b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:10})); const sel=document.querySelector('.cmp-bb-box.sel'); return JSON.stringify({lockBlocksSelect: !!sel && !sel.classList.contains('t-scene'), lockedClassOnBox: document.querySelector('.cmp-bb-box.t-scene').classList.contains('locked')}); })()" },
+  { "click": ".cmp-el.t-scene [data-bact=\"lock\"]" },
+  { "wait": 400 },
+  { "eval": "(() => { const b=document.querySelector('.cmp-bb-box.t-scene'); b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:20,clientY:20,pointerId:11})); b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:11})); const sel=document.querySelector('.cmp-bb-box.sel'); return JSON.stringify({unlockedSelectable: !!sel && sel.classList.contains('t-scene')}); })()" },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-character'); el.querySelector('.cmp-el-h').dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); const c1=!!document.querySelector('.cmp-el.t-character.collapsed'); document.querySelector('.cmp-el.t-character .cmp-el-h').dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); const c2=!!document.querySelector('.cmp-el.t-character.collapsed'); return JSON.stringify({charCollapseByDbl:c1, charReExpandByDbl:!c2}); })()" }
+]

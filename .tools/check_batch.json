@@ -1,0 +1,11 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "eval": "JSON.stringify({ title: document.title, taskHub: !!document.getElementById('task-hub'), imageHub: !!document.getElementById('image-hub'), sidebarJobs: !!document.getElementById('job-monitor'), overlay: getComputedStyle(document.querySelector('#dialog-container')||document.body).zIndex })" },
+  { "click": ".nav-item[data-page='scenes']" },
+  { "wait": 2500 },
+  { "click": ".sc-tab[data-tab='assembly']" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ groups: Array.from(document.querySelectorAll('.sc-group-h')).map(x=>x.innerText.replace(/\\s+/g,' ').trim()), genBar: !!document.querySelector('#sc-gen-params .gp-bar'), presetBtn: !!document.querySelector('#sc-gen-params #gp-preset-host input'), appCards: document.querySelectorAll('.sc-app-card').length, renderBtn: !!document.getElementById('sc-render') })" },
+  { "shot": "sc-assembly.png" }
+]

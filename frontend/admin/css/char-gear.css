@@ -1,0 +1,225 @@
+/* ============================================================
+   人物管理 · 背包与装备统一面板（ag = admin gear）
+   布局刻意与前台人物面板（cp2-root）保持一致：
+   左=属性 / 中=立绘+装备槽+技能书槽 / 右=统一背包
+   区别：这里是编辑态，每个格子都能增删改。
+   ============================================================ */
+
+.ag-tip {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.ag-tip b { color: var(--gold); }
+
+.ag-root {
+  display: grid;
+  grid-template-columns: 210px minmax(320px, 1fr) minmax(300px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 1280px) {
+  .ag-root { grid-template-columns: 190px 1fr; }
+  .ag-right { grid-column: 1 / -1; }
+}
+
+.ag-col {
+  background: var(--bg-panel, var(--bg-input));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.ag-h {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  margin: 2px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---------- 左：属性 ---------- */
+.ag-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 6px; }
+.ag-stat {
+  display: flex; align-items: baseline; gap: 4px;
+  font-size: 12px; color: var(--text-secondary);
+  background: var(--bg-input); border-radius: 3px; padding: 3px 6px;
+}
+.ag-stat b { color: var(--text-primary); font-size: 13px; }
+.ag-stat i { font-style: normal; font-size: 10px; color: var(--green); }
+
+.ag-book-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.ag-book-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 11px; background: var(--bg-input);
+  border-radius: 3px; padding: 4px 6px;
+}
+.ag-book-idx {
+  width: 16px; height: 16px; line-height: 16px; text-align: center;
+  border-radius: 50%; background: var(--gold); color: #111;
+  font-size: 10px; font-weight: 700; flex: none;
+}
+.ag-book-name { color: var(--text-primary); font-weight: 600; }
+.ag-ult { font-style: normal; font-size: 10px; color: #ff8a3d; border: 1px solid #ff8a3d; border-radius: 3px; padding: 0 3px; }
+.ag-book-meta { color: var(--text-muted); font-size: 10px; }
+
+/* ---------- 中：立绘 + 槽位 ---------- */
+.ag-char-name {
+  font-size: 14px; font-weight: 600; color: var(--text-primary);
+  display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px;
+}
+.ag-lv { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+.ag-stage {
+  display: grid;
+  grid-template-columns: 88px minmax(120px, 1fr) 88px;
+  grid-auto-rows: 72px;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ag-portrait {
+  grid-column: 2; grid-row: 1 / span 4;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; color: var(--text-muted); font-size: 28px; font-weight: 700;
+}
+.ag-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.ag-slot-wrap { display: flex; }
+
+.ag-sub {
+  font-size: 12px; font-weight: 600; color: var(--gold);
+  margin: 8px 0 6px;
+}
+.ag-sub small { color: var(--text-muted); font-weight: 400; font-size: 10px; }
+.ag-multi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+
+.ag-slot {
+  position: relative;
+  width: 100%; height: 72px;
+  background: var(--bg-input);
+  border: 1px dashed var(--border);
+  border-radius: 5px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ag-slot:hover { border-color: var(--gold); }
+.ag-slot.filled { border-style: solid; }
+.ag-slot.is-ult { border-color: #ff8a3d; box-shadow: 0 0 0 1px rgba(255,138,61,.35) inset; }
+.ag-slot-img {
+  width: 34px; height: 34px; border-radius: 4px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.25); color: var(--gold); font-size: 15px; font-weight: 700;
+}
+.ag-slot-img img { width: 100%; height: 100%; object-fit: cover; }
+.ag-slot-name {
+  font-size: 10px; color: var(--text-secondary); margin-top: 3px;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 3px;
+}
+.ag-slot-label {
+  position: absolute; bottom: 1px; left: 0; right: 0;
+  text-align: center; font-size: 9px; color: var(--text-muted);
+}
+.ag-slot-add { font-size: 20px; color: var(--text-muted); line-height: 1; }
+.ag-slot:hover .ag-slot-add { color: var(--gold); }
+.ag-slot-x {
+  position: absolute; top: 1px; right: 1px;
+  width: 16px; height: 16px; line-height: 14px; text-align: center;
+  border: none; border-radius: 50%; cursor: pointer;
+  background: rgba(0,0,0,.55); color: #fff; font-size: 12px; padding: 0;
+}
+.ag-slot-x:hover { background: var(--red); }
+
+/* 品质描边 */
+.ag-slot.r-common { border-color: #6b7280; }
+.ag-slot.r-uncommon { border-color: #22c55e; }
+.ag-slot.r-rare { border-color: #3b82f6; }
+.ag-slot.r-epic { border-color: #a855f7; }
+.ag-slot.r-legendary { border-color: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,.35); }
+
+/* ---------- 右：统一背包 ---------- */
+.ag-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ag-filters { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.ag-filter {
+  font-size: 11px; padding: 3px 10px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: transparent; color: var(--text-secondary);
+}
+.ag-filter.active { background: var(--gold); color: #111; border-color: var(--gold); font-weight: 600; }
+.ag-search {
+  flex: 1; min-width: 90px; font-size: 11px; padding: 3px 8px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text-primary);
+}
+
+.ag-inv { display: flex; flex-direction: column; gap: 5px; max-height: 420px; overflow-y: auto; }
+.ag-inv-cell {
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 6px; align-items: center;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 4px; padding: 5px 6px;
+}
+.ag-inv-cell.r-legendary { border-color: #f59e0b; }
+.ag-inv-cell.r-epic { border-color: #a855f7; }
+.ag-inv-cell.r-rare { border-color: #3b82f6; }
+.ag-inv-icon {
+  width: 36px; height: 36px; border-radius: 4px; overflow: hidden;
+  background: rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center;
+  color: var(--gold); font-weight: 700; font-size: 13px;
+}
+.ag-inv-icon img { width: 100%; height: 100%; object-fit: cover; }
+.ag-inv-name { font-size: 12px; color: var(--text-primary); }
+.ag-inv-meta { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.ag-tag {
+  font-size: 9px; padding: 0 4px; border-radius: 2px;
+  border: 1px solid var(--border); color: var(--text-muted);
+}
+.ag-tag.eq { color: var(--gold); border-color: var(--gold); }
+.ag-tag.it { color: var(--accent); border-color: var(--accent); }
+.ag-inv-stat { font-size: 9px; color: var(--green); }
+.ag-inv-ops { display: flex; align-items: center; gap: 3px; }
+.ag-op {
+  font-size: 11px; padding: 1px 6px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 3px;
+  background: transparent; color: var(--text-secondary);
+}
+.ag-op:hover { border-color: var(--gold); color: var(--gold); }
+.ag-op.danger:hover { border-color: var(--red); color: var(--red); }
+.ag-qty { font-size: 11px; color: var(--text-primary); min-width: 14px; text-align: center; }
+
+.ag-empty { font-size: 11px; color: var(--text-muted); padding: 12px 4px; text-align: center; }
+
+/* ===== 背包与装备：人物整体形象放大（2026-10-27） ===== */
+body[data-page="characters"] .ag-root {
+  grid-template-columns: 236px minmax(380px, 1fr) minmax(320px, 1fr);
+  gap: 14px;
+}
+body[data-page="characters"] .ag-stage {
+  grid-template-columns: 92px minmax(240px, 300px) 92px;
+  grid-auto-rows: 92px;
+  gap: 7px;
+  justify-content: center;
+}
+body[data-page="characters"] .ag-portrait {
+  grid-column: 2; grid-row: 1 / span 4;
+  background:
+    radial-gradient(ellipse at 50% 85%, rgba(201,168,76,.10), transparent 65%),
+    repeating-conic-gradient(#20222c 0% 25%, #181a21 0% 50%) 50%/20px 20px;
+  border: 1px solid rgba(201,168,76,.32);
+  box-shadow: inset 0 0 40px rgba(0,0,0,.55);
+}
+body[data-page="characters"] .ag-portrait img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+body[data-page="characters"] .ag-char-name { font-size: 17px; }
+body[data-page="characters"] .ag-lv { font-size: 13px; }
+body[data-page="characters"] .ag-slot { height: 92px; }

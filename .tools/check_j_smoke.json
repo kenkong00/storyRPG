@@ -1,0 +1,13 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "click": "#cmp-add-scene" },
+  { "wait": 2600 },
+  { "eval": "(() => { document.querySelector('.cmp-el.t-scene [data-bact=\"pick-scene\"]').click(); const pop = document.getElementById('cmp-scene-pop'); const cells = [...pop.querySelectorAll('.cmp-scene-cell')]; const cur = pop.querySelector('.cmp-scene-cell.on'); const t = cells.find(c => !cur || c.dataset.sid !== cur.dataset.sid) || cells[0]; t.click(); return 'picked'; })()" },
+  { "wait": 3200 },
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-scene'); const cap = el.querySelector('.cap-x').textContent; const ta = document.getElementById('cmp-prompt').value; let json = null; try { json = JSON.parse(ta); } catch(e) {} return JSON.stringify({title: el.querySelector('.cmp-el-title').textContent.trim(), capLen: cap.length, promptIsJson: !!json, firstLabel: json && json.items && json.items[0] && json.items[0].label, hasBbox: json && json.items && json.items.every(i => Array.isArray(i.bbox) && i.bbox.length === 4)}); })()" },
+  { "eval": "(() => { const n = document.querySelectorAll('.cmp-el').length; const b = document.querySelector('.cmp-bb-box.t-character'); if (!b) return 'NO_CHAR'; return JSON.stringify({n}); })()" },
+  { "click": "#cmp-add-char" },
+  { "wait": 2400 },
+  { "eval": "(() => { const cards = [...document.querySelectorAll('.cmp-el')]; return JSON.stringify({order: cards.map(c => c.className.replace('cmp-el ','')), bodies: document.querySelectorAll('.cmp-el-body').length}); })()" }
+]

@@ -1,0 +1,5 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { const bar = document.querySelector('.gp-bar'); const w = document.querySelector('[data-k=\"width\"]').getBoundingClientRect(); const s = document.querySelector('[data-act=\"swap\"]').getBoundingClientRect(); const h = document.querySelector('[data-k=\"height\"]').getBoundingClientRect(); const steps = document.querySelector('[data-k=\"steps\"]').getBoundingClientRect(); return JSON.stringify({ordered: w.right <= s.left + 1 && s.right <= h.left + 1, barH: Math.round(bar.getBoundingClientRect().height), overflowX: bar.scrollWidth > bar.clientWidth + 1, rows: new Set([Math.round(w.top), Math.round(steps.top)]).size}); })()" }
+]

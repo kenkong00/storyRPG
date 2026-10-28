@@ -1,0 +1,228 @@
+    const bodyHtml = `
+      <div style="display:flex;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+        <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="basic" style="border:none;border-bottom:2px solid var(--accent);border-radius:0;color:var(--accent);background:transparent">基础属性</button>
+        <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="level" style="border:none;border-radius:0;background:transparent">等级</button>
+        <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="pose" style="border:none;border-radius:0;background:transparent">动作表情</button>
+        <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="gear" style="border:none;border-radius:0;background:transparent">背包与装备</button>
+        <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="voice" style="border:none;border-radius:0;background:transparent">语音</button>
+      </div>
+
+      <!-- ===================== 基础属性 = 外观拼装 ===================== -->
+      <div id="char-tab-basic">
+      <div class="form-row">
+        <div class="form-group">
+          <label>名称 *</label>
+          <input name="name" value="${data?.name || ''}" required>
+        </div>
+        <div class="form-group">
+          <label>类型</label>
+          <select name="character_type">
+            <option value="player" ${data?.character_type === 'player' ? 'selected' : ''}>玩家</option>
+            <option value="npc" ${data?.character_type === 'npc' ? 'selected' : ''}>NPC</option>
+            <option value="enemy" ${data?.character_type === 'enemy' ? 'selected' : ''}>敌人</option>
+            <option value="ally" ${data?.character_type === 'ally' ? 'selected' : ''}>盟友</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>称号</label>
+          <input name="title" value="${data?.title || ''}">
+        </div>
+        <div class="form-group">
+          <label>自定义分类</label>
+          <select name="category_path" id="char-category-select">
+            <option value="">-- 未分类 --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row form-row-3">
+        <div class="form-group">
+          <label>是否存活</label>
+          <select name="is_alive">
+            <option value="1" ${data?.is_alive !== 0 ? 'selected' : ''}>是</option>
+            <option value="0" ${data?.is_alive === 0 ? 'selected' : ''}>否</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>是否在队伍</label>
+          <select name="is_party_member">
+            <option value="0" ${!data?.is_party_member ? 'selected' : ''}>否</option>
+            <option value="1" ${data?.is_party_member ? 'selected' : ''}>是</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>性格（逗号分隔）</label>
+          <input name="personality" value="${data?.personality || ''}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>背景故事</label>
+        <textarea name="background_story">${data?.background_story || ''}</textarea>
+      </div>
+      <div id="image-upload-area"></div>
+      <div class="form-group">
+        <label>立绘图片路径</label>
+        <input name="portrait_image" id="portrait_image_input" value="${data?.portrait_image || ''}" placeholder="如: /images/xxx.png">
+      </div>
+
+      <div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--gold);font-weight:600">外观拼装 · 基础属性</span>
+          <span style="font-size:10px;color:var(--text-muted)">整体随机 / 按题材随机 / 单项 🎲 / 手动改，改完点底部「保存」</span>
+        </div>
+        <div id="char-appearance-host" style="min-height:120px">
+          <div style="font-size:12px;color:var(--text-muted);padding:10px">加载外观维度…</div>
+        </div>
+      </div>
+      </div><!-- /char-tab-basic -->
+
+      <!-- ===================== 等级 ===================== -->
+      <div id="char-tab-level" style="display:none">
+        <div class="form-group">
+          <label>境界等级（选择后自动填入标准属性）</label>
+          <select name="realm_level" id="char-realm-select">
+            <option value="1" ${(!data || data.realm_level === 1) ? 'selected' : ''}>练气期初期（默认）</option>
+          </select>
+          <span id="realm-desc" style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px"></span>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label>人物等级</label>
+            <input name="level" type="number" value="${data?.level || 1}">
+          </div>
+          <div class="form-group">
+            <label>经验值</label>
+            <input name="exp" type="number" value="${data?.exp || 0}">
+          </div>
+          <div class="form-group">
+            <label>幸运</label>
+            <input name="luck" type="number" value="${data?.luck || 5}" id="char-luck">
+          </div>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label>最大HP</label>
+            <input name="max_hp" type="number" value="${data?.max_hp || 100}" id="char-max-hp">
+          </div>
+          <div class="form-group">
+            <label>当前HP</label>
+            <input name="hp" type="number" value="${data?.hp || data?.max_hp || 100}" id="char-hp">
+          </div>
+          <div class="form-group">
+            <label>最大MP</label>
+            <input name="max_mp" type="number" value="${data?.max_mp || 50}" id="char-max-mp">
+          </div>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label>当前MP</label>
+            <input name="mp" type="number" value="${data?.mp || data?.max_mp || 50}" id="char-mp">
+          </div>
+          <div class="form-group">
+            <label>攻击力</label>
+            <input name="attack" type="number" value="${data?.attack || 10}" id="char-attack">
+          </div>
+          <div class="form-group">
+            <label>防御力</label>
+            <input name="defense" type="number" value="${data?.defense || 5}" id="char-defense">
+          </div>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label>速度</label>
+            <input name="speed" type="number" value="${data?.speed || 5}" id="char-speed">
+          </div>
+          <div class="form-group">
+            <label>恢复 (REC)</label>
+            <input name="recovery" type="number" value="${data?.recovery ?? 60}">
+          </div>
+          <div class="form-group">
+            <label>精神 (SPR)</label>
+            <input name="spirit" type="number" value="${data?.spirit ?? 50}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>暴击率 (%)</label>
+            <input name="crit_rate" type="number" value="${data?.crit_rate ?? 8}">
+          </div>
+        </div>
+        <div class="ag-tip">
+          等级与战斗属性从基础属性里独立出来放在这一页。选境界会把该境界的标准数值一键填入，
+          填完仍可手动微调覆盖。
+        </div>
+      </div>
+
+      <!-- ===================== 动作表情 ===================== -->
+      <div id="char-tab-pose" style="display:none">
+        ${isEdit
+          ? '<div id="char-pose-host" style="min-height:200px"><div style="font-size:12px;color:var(--text-muted);padding:10px">加载动作表情…</div></div>'
+          : '<div class="table-empty">请先保存人物，再管理动作表情</div>'}
+      </div>
+
+      <!-- 背包与装备（统一面板，布局与前台人物面板一致；这里是编辑态，可增删改） -->
+      <div id="char-tab-gear" style="display:none">
+        ${isEdit ? `
+          <div class="ag-tip">
+            这里的配置 = 玩家「新建人物 / 扮演该角色」时的<b>初始装备与背包</b>；
+            武器、装备、技能书在这里添加，前台人物面板显示的就是这些数据。
+          </div>
+          <div id="ag-root" class="ag-root">加载中...</div>
+        ` : '<div class="table-empty">请先保存人物后再管理背包与装备</div>'}
+      </div>
+
+      <!-- 语音选项卡：给这个角色挑一个说话的声音 -->
+      <div id="char-tab-voice" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label>性别</label>
+            <select name="gender" id="char-gender">
+              <option value="unknown">未指定</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+            <small style="color:var(--text-muted);font-size:11px">决定下拉里优先推荐哪一批音色</small>
+          </div>
+          <div class="form-group">
+            <label>语音引擎</label>
+            <select name="tts_engine" id="char-tts-engine">
+              <option value="edge">Edge TTS（在线 · 推荐）</option>
+              <option value="onecore">本机 Windows 语音（离线）</option>
+            </select>
+            <small style="color:var(--text-muted);font-size:11px">断网时会自动退到本机语音</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>语音主播（音色）</label>
+          <select name="tts_voice" id="char-tts-voice">
+            <option value="">加载中…</option>
+          </select>
+          <div id="char-tts-voice-hint" style="margin-top:6px;font-size:11px;color:var(--text-muted)"></div>
+          <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px">
+            下拉分四组：普通话通用 / 方言乡音 / 地区口音 / <b>角色声线（派生）</b>。
+            官方音色里没有老人，想配长者、稚童、帝王、说书人这类声线，请到「角色声线」组里选——
+            它们是用语速和音调在基础音色上派生出来的，不额外增加合成耗时。
+          </small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>语速 <span id="char-rate-val">0</span>%</label>
+            <input type="range" name="tts_rate" id="char-tts-rate" min="-50" max="50" value="0">
+          </div>
+          <div class="form-group">
+            <label>音调 <span id="char-pitch-val">0</span>%</label>
+            <input type="range" name="tts_pitch" id="char-tts-pitch" min="-30" max="30" value="0">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+          <input id="char-tts-preview-text" value="前方似有埋伏，公子小心。"
+                 style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-input);color:var(--text-primary)">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-tts-preview">试听</button>
+        </div>
+        <small style="color:var(--text-muted);font-size:11px">试试上面的句子，听感满意再保存。</small>
+      </div>
+    `;

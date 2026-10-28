@@ -1,0 +1,8 @@
+[
+  { "wait": 2000 },
+  { "eval": "(async()=>{const r=await fetch('/api/characters/').then(x=>x.json());const c=(Array.isArray(r)?r:r.items||[]).find(x=>x.portrait_image);window.__u=c?c.portrait_image:'';return 'url='+(window.__u||'none');})()" },
+  { "eval": "ImagePreview.open([{url:window.__u||'/static/img/logo.png',title:'测试图片预览',prompt:'【人物1·黄蓉】全身入镜，从头到脚完整显示，位于画面左侧三分之一处\\n【外貌】黄蓉，女性，28 岁，东方面孔，黑发杏眼，肤质细腻，剑客，冷峻寡言的气质\\n【题材】华夏古风，交领右衽，衣缘织锦，含蓄端庄的东方古典美\\n【风格】服装流派：汉服\\n【体型】中等身高，健美结实，宽肩，长腿比例，浅麦色肌肤，姿态挺拔\\n【穿着】齐胸系带的薄纱襦裙，披帛垂落，主色调粉色，盘龙纹样，喇叭袖\\n【合成构图】七分身构图，膝盖以上，画面中恰好2个人，位置关系明确、互不重叠',width:832,height:1216,meta:{'人物':'黄蓉、丽莎','场景':'飘渺森林','时间':'2026-10-28 09:20'}}],0); 'opened'" },
+  { "wait": 1500 },
+  { "eval": "(()=>{const side=document.querySelector('.ip-side');const pre=document.querySelector('.ip-pre');const cs=getComputedStyle(pre);return JSON.stringify({sideW:Math.round(side.getBoundingClientRect().width),preFont:cs.fontSize,preLine:cs.lineHeight,preH:pre.clientHeight,preScroll:pre.scrollHeight,barBtnFont:getComputedStyle(document.querySelector('.ip-bar button')).fontSize,secFont:getComputedStyle(document.querySelector('.ip-sec')).fontSize,urlFont:getComputedStyle(document.querySelector('.ip-url')).fontSize});})()" },
+  { "shot": "ip-panel.png" }
+]

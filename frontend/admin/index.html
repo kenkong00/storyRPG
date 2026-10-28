@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>暗影纪元 - 后台管理系统</title>
+<link rel="stylesheet" href="css/admin.css?v=20261028c4">
+<link rel="stylesheet" href="css/char-gear.css?v=20260930a">
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>暗影纪元</h1>
+    <span>后台管理系统 v0.3</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">总览</div>
+    <div class="nav-item active" data-page="dashboard">
+      <span class="icon">&#9681;</span> 仪表盘
+    </div>
+    <div class="nav-section">数据管理</div>
+    <div class="nav-item" data-page="games">
+      <span class="icon">&#127918;</span> 游戏设置
+    </div>
+    <div class="nav-item" data-page="characters">
+      <span class="icon">&#9787;</span> 人物管理
+    </div>
+    <div class="nav-item" data-page="character_appearance">
+      <span class="icon">&#127912;</span> 人物外观拼装
+    </div>
+    <div class="nav-item" data-page="players">
+      <span class="icon">&#127918;</span> 玩家角色
+    </div>
+    <div class="nav-item" data-page="character_states">
+      <span class="icon">&#127916;</span> 人物状态管理
+    </div>
+    <div class="nav-item" data-page="realms">
+      <span class="icon">&#9881;</span> 境界等级
+    </div>
+    <div class="nav-item" data-page="items">
+      <span class="icon">&#9762;</span> 物品管理
+    </div>
+    <div class="nav-item" data-page="equipments">
+      <span class="icon">&#9874;</span> 装备管理
+    </div>
+    <div class="nav-item" data-page="affixes">
+      <span class="icon">&#10070;</span> 装备词条
+    </div>
+    <div class="nav-item" data-page="scenes">
+      <span class="icon">&#9872;</span> 场景管理
+    </div>
+    <div class="nav-item" data-page="compose">
+      <span class="icon">&#127748;</span> 人物场景合成
+    </div>
+    <div class="nav-item" data-page="skills">
+      <span class="icon">&#128214;</span> 技能书
+    </div>
+    <div class="nav-item" data-page="story">
+      <span class="icon">&#9776;</span> 剧情管理
+    </div>
+    <div class="nav-item" data-page="animations">
+      <span class="icon">&#9889;</span> 动效展示
+    </div>
+    <div class="nav-item" data-page="sounds">
+      <span class="icon">&#9835;</span> 声音管理
+    </div>
+    <div class="nav-section">用户</div>
+    <div class="nav-item" data-page="users">
+      <span class="icon">&#128100;</span> 用户管理
+    </div>
+    <div class="nav-section">工具</div>
+    <div class="nav-item" data-page="images">
+      <span class="icon">&#128247;</span> 图片管理
+    </div>
+    <div class="nav-item" data-page="tags">
+      <span class="icon">&#127991;</span> 标签管理
+    </div>
+    <div class="nav-item" data-page="settings">
+      <span class="icon">&#9881;</span> 设置
+    </div>
+  </nav>
+</aside>
+
+<!-- 主区域 -->
+<main class="main-area">
+  <header class="topbar">
+    <h2 id="page-title">仪表盘</h2>
+    <a href="/" class="btn btn-outline btn-sm" target="_blank">&#8599; 打开游戏</a>
+  </header>
+  <div class="content" id="content-area"></div>
+</main>
+
+<!-- 模态框容器 -->
+<div id="modal-container"></div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/modules/cropper.js?v=20261028c4"></script>
+<script src="js/admin.js?v=20261028c4"></script>
+<!-- 通用组件：可搜索下拉 / 全局出图参数 / 图片预览 / 任务监视 -->
+<script src="js/modules/combo.js?v=20261028c4"></script>
+<script src="js/modules/gen_params.js?v=20261028c4"></script>
+<script src="js/modules/image_preview.js?v=20261028c4"></script>
+<script src="js/modules/job_monitor.js?v=20261028c4"></script>
+<script src="js/modules/job_hub.js?v=20261028c4"></script>
+<script src="js/modules/asset_picker.js?v=20261028c4"></script>
+<script src="js/modules/category-bar.js?v=20261027u"></script>
+<script src="js/modules/pickers.js?v=20261028c4"></script>
+<script src="js/modules/games.js?v=20261028c4"></script>
+<script src="js/modules/appearance_editor.js?v=20261028c4"></script>
+<script src="js/modules/character_pose_panel.js?v=20261028c4"></script>
+<script src="js/modules/characters.js?v=20261028c4"></script>
+<script src="js/modules/character_appearance.js?v=20261028c4"></script>
+<script src="js/modules/players.js?v=20261028c4"></script>
+<script src="js/modules/character_states.js?v=20261028c4"></script>
+<script src="js/modules/realms.js?v=20261028c4"></script>
+<script src="js/modules/items.js?v=20261028c4"></script>
+<script src="js/modules/equipments.js?v=20261028c4"></script>
+<script src="js/modules/affixes.js?v=20261028c4"></script>
+<script src="js/modules/scenes.js?v=20261028c4"></script>
+<script src="js/modules/scene_compose.js?v=20261028c4"></script>
+<script src="js/modules/skills.js?v=20261028c4"></script>
+<script src="js/modules/story.js?v=20261028c4"></script>
+<script src="js/modules/animations.js?v=20261028c4"></script>
+<script src="js/modules/sounds.js?v=20261028c4"></script>
+<script src="js/modules/asset_library.js?v=20261028c4"></script>
+<script src="js/modules/generated_library.js?v=20261028c4"></script>
+<script src="js/modules/images.js?v=20261028c4"></script>
+<script src="js/modules/tags.js?v=20261028c4"></script>
+<script src="js/modules/comfyui_settings.js?v=20261028c4"></script>
+<script src="js/modules/users.js?v=20261028c4"></script>
+<script src="js/modules/dashboard.js?v=20261028c4"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => Admin.init());
+</script>
+</body>
+</html>

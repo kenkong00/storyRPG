@@ -1,0 +1,11 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { const c=document.querySelector('.cmp-cfg-card'); if(!c) return 'no-card'; c.click(); return 'card-clicked'; })()" },
+  { "wait": 3000 },
+  { "eval": "(() => { const c=document.getElementById('cmp-bb-canvas'); const b=document.querySelector('.cmp-bb-box.t-scene'); if(!b) return JSON.stringify({noSceneBox:true, boxes: document.querySelectorAll('.cmp-bb-box').length}); const cr=c.getBoundingClientRect(), br=b.getBoundingClientRect(); return JSON.stringify({style:{l:b.style.left,t:b.style.top,w:b.style.width,h:b.style.height}, offset:{l:Math.round(br.left-cr.left),t:Math.round(br.top-cr.top)}, size:{w:Math.round(br.width),h:Math.round(br.height)}, canvas:{w:Math.round(cr.width),h:Math.round(cr.height)}, fillsCanvas: Math.abs(br.left-cr.left)<2 && Math.abs(br.top-cr.top)<2 && Math.abs(br.width-cr.width)<3}); })()" },
+  { "eval": "(() => ({ boxes: [...document.querySelectorAll('.cmp-bb-box')].map(b=>({t:b.className.replace('cmp-bb-box ','').replace(' locked',''), l:b.style.left, tp:b.style.top, w:b.style.width, h:b.style.height, overflow: (parseFloat(b.style.left)+parseFloat(b.style.width))>101 || (parseFloat(b.style.top)+parseFloat(b.style.height))>101 })) }))()" },
+  { "eval": "(() => { const cards=[...document.querySelectorAll('.cmp-cfg-card')]; if(cards[1]) cards[1].click(); return 'second'; })()" },
+  { "wait": 2500 },
+  { "eval": "(() => { const b=document.querySelector('.cmp-bb-box.t-scene'); const c=document.getElementById('cmp-bb-canvas'); if(!b) return 'no-scene'; const cr=c.getBoundingClientRect(), br=b.getBoundingClientRect(); return JSON.stringify({afterSwitchCfg:{l:b.style.left,t:b.style.top,w:b.style.width,h:b.style.height}, offset:{l:Math.round(br.left-cr.left),t:Math.round(br.top-cr.top)}}); })()" }
+]

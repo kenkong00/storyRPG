@@ -1,0 +1,12 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+sqlalchemy==2.0.35
+pydantic==2.9.2
+aiofiles==24.1.0
+python-multipart==0.0.32
+
+# ===== 语音合成（TTS） =====
+# edge-tts：默认主引擎，提供 8 个中文音色（4 男 4 女），联网
+edge-tts>=7.2.0
+# requests：为「语音大模型 API / 本机 TTS 服务」等外部 HTTP 引擎预留
+requests>=2.31.0

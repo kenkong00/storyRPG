@@ -1,0 +1,17 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 'add-scene'" },
+  { "wait": 3000 },
+  { "eval": "(() => { const b=document.querySelector('.cmp-el.t-scene .cmp-scene-big'); const img=b?b.querySelector('img'):null; const lk=document.querySelector('.cmp-el.t-scene [data-bact=\"lock\"]'); const r=b.getBoundingClientRect(); const lr=lk.getBoundingClientRect(); return JSON.stringify({bigThumb:{w:Math.round(r.width),h:Math.round(r.height)}, imgOk: !!(img&&img.naturalWidth>0), lock:{w:Math.round(lr.width),h:Math.round(lr.height)}, lockOn: lk.classList.contains('on'), name: (b.querySelector('.nm')||{}).textContent}); })()" },
+  { "eval": "document.querySelector('.cmp-el.t-scene .cmp-scene-big').click(); 'open-picker'" },
+  { "wait": 800 },
+  { "eval": "(() => { const p=document.getElementById('cmp-scene-pop'); if(!p) return JSON.stringify({pop:false}); const cells=[...p.querySelectorAll('.cmp-scene-cell')]; const r=p.getBoundingClientRect(); return JSON.stringify({pop:true, cells:cells.length, w:Math.round(r.width), h:Math.round(r.height), inViewport: r.top>=0 && r.bottom<=innerHeight && r.left>=0 && r.right<=innerWidth, cur: (p.querySelector('.cmp-scene-cell.on')||{dataset:{}}).dataset.sid}); })()" },
+  { "eval": "(() => { const p=document.getElementById('cmp-scene-pop'); const cells=[...p.querySelectorAll('.cmp-scene-cell')]; const cur=p.querySelector('.cmp-scene-cell.on'); const t=cells.find(c=>!cur||c.dataset.sid!==cur.dataset.sid); if(!t) return 'only-one'; window.__prevTitle=document.querySelector('.cmp-el.t-scene .cmp-el-title').textContent.trim(); window.__prevCap=document.querySelector('.cmp-el.t-scene .cap-x').textContent.trim(); t.click(); return 'picked:'+t.dataset.sid; })()" },
+  { "wait": 3200 },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-scene'); return JSON.stringify({newTitle: el.querySelector('.cmp-el-title').textContent.trim(), titleChanged: el.querySelector('.cmp-el-title').textContent.trim() !== window.__prevTitle, capChanged: el.querySelector('.cap-x').textContent.trim() !== window.__prevCap, capLen: el.querySelector('.cap-x').textContent.trim().length, bigImgStillOk: (()=>{const i=el.querySelector('.cmp-scene-big img'); return !!(i&&i.naturalWidth>0);})()}); })()" },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-scene'); const body=el.querySelector('.cmp-el-body'); body.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); const stillBody = !!document.querySelector('.cmp-el.t-scene .cmp-el-body'); return JSON.stringify({collapsed: document.querySelector('.cmp-el.t-scene').classList.contains('collapsed'), bodyGone: !stillBody}); })()" },
+  { "wait": 400 },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-scene'); el.querySelector('.cmp-el-h').dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); return JSON.stringify({expanded: !document.querySelector('.cmp-el.t-scene').classList.contains('collapsed'), bodyBack: !!document.querySelector('.cmp-el.t-scene .cmp-el-body')}); })()" },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-scene'); const inp=el.querySelector('input[data-ef=\"scene_prompt\"]'); inp.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); return JSON.stringify({inputDblDoesNotCollapse: !document.querySelector('.cmp-el.t-scene').classList.contains('collapsed')}); })()" }
+]

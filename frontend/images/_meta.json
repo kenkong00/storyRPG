@@ -1,0 +1,564 @@
+{
+  "3fe8786c332f434aa87f472bdae9747c.webp": {
+    "original_name": "00001-2634637444.webp",
+    "category": "characters/action",
+    "relative_path": "characters/action/3fe8786c332f434aa87f472bdae9747c.webp",
+    "size": 43422,
+    "uploaded_at": "2026-06-21T23:52:48.449114"
+  },
+  "33ee6cf3baa24a4aba462227d82a9d2a.jpg": {
+    "original_name": "33ee6cf3baa24a4aba462227d82a9d2a.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/33ee6cf3baa24a4aba462227d82a9d2a.jpg",
+    "size": 216506,
+    "uploaded_at": "2026-06-22T00:12:41.015543"
+  },
+  "968c2e2de73242c39d1dd2a9d962d293.jpg": {
+    "original_name": "968c2e2de73242c39d1dd2a9d962d293.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/968c2e2de73242c39d1dd2a9d962d293.jpg",
+    "size": 175693,
+    "uploaded_at": "2026-06-22T00:12:41.036628"
+  },
+  "b19ad8e596ba4e04b70cb09327bfc421.jpg": {
+    "original_name": "b19ad8e596ba4e04b70cb09327bfc421.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/b19ad8e596ba4e04b70cb09327bfc421.jpg",
+    "size": 123151,
+    "uploaded_at": "2026-06-22T00:12:41.050795",
+    "is_deleted": 0
+  },
+  "cc3efefc74fc459c8adf9380418d5bcb.jpg": {
+    "original_name": "cc3efefc74fc459c8adf9380418d5bcb.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+    "size": 185987,
+    "uploaded_at": "2026-06-22T00:12:41.077027"
+  },
+  "fc6127ce33dc47429659cb2e3fe1c6e9.jpeg": {
+    "original_name": "014A148AF100E91DA292EBA6BFE8374D536309FDB0899185657E4CE69058C1E0.jpeg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+    "size": 41009,
+    "uploaded_at": "2026-06-22T00:16:02.447035"
+  },
+  "81ad54d37e9f44f68d7a1a7d9b914b88.png": {
+    "original_name": "cropped.png",
+    "category": "items",
+    "relative_path": "items/81ad54d37e9f44f68d7a1a7d9b914b88.png",
+    "size": 566575,
+    "uploaded_at": "2026-06-22T13:56:32.606728",
+    "is_deleted": 0
+  },
+  "c0efc324d4d0455da2d73b1736048bef.jpg": {
+    "original_name": "ComfyUI_03578_.jpg",
+    "category": "",
+    "relative_path": "c0efc324d4d0455da2d73b1736048bef.jpg",
+    "size": 186011,
+    "uploaded_at": "2026-06-22T13:58:17.471256",
+    "is_deleted": 0
+  },
+  "c41c51f6ed4b498fa4d4e63ab5526c94.jpg": {
+    "original_name": "ComfyUI_04845_.jpg",
+    "category": "scenes/cutscene",
+    "relative_path": "scenes/cutscene/c41c51f6ed4b498fa4d4e63ab5526c94.jpg",
+    "size": 167981,
+    "uploaded_at": "2026-06-22T18:35:38.908851"
+  },
+  "a3cc29da2e974a3782cacac7b6917099.jpg": {
+    "original_name": "ComfyUI_00824_.jpg",
+    "category": "",
+    "relative_path": "a3cc29da2e974a3782cacac7b6917099.jpg",
+    "size": 173140,
+    "uploaded_at": "2026-06-22T22:09:44.545670",
+    "is_deleted": 0
+  },
+  "ba02114d6d524afabc4daef0ef76b840.png": {
+    "original_name": "cropped.png",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/ba02114d6d524afabc4daef0ef76b840.png",
+    "size": 629438,
+    "uploaded_at": "2026-06-22T22:14:22.376642"
+  },
+  "39830ac13b2648be81f7ec9009360858.png": {
+    "original_name": "cropped.png",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/39830ac13b2648be81f7ec9009360858.png",
+    "size": 1115026,
+    "uploaded_at": "2026-06-22T22:15:01.855162"
+  },
+  "9f915dc2d3a449a8979c5c915cec1ce2.png": {
+    "original_name": "cropped.png",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+    "size": 703607,
+    "uploaded_at": "2026-06-22T22:17:01.547566"
+  },
+  "c7291653429b491a9c03b99a3591a5b8.png": {
+    "original_name": "cropped.png",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/c7291653429b491a9c03b99a3591a5b8.png",
+    "size": 775254,
+    "uploaded_at": "2026-06-22T22:21:16.681171"
+  },
+  "db4fc6cf5af641bdaf6a5b8951941301.jpg": {
+    "original_name": "ComfyUI_00769_.jpg",
+    "category": "scenes/cutscene",
+    "relative_path": "scenes/cutscene/db4fc6cf5af641bdaf6a5b8951941301.jpg",
+    "size": 206836,
+    "uploaded_at": "2026-06-22T22:23:12.024809"
+  },
+  "dffb33a89bca412cb3bf6ba533e35fd8.png": {
+    "original_name": "cropped.png",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/dffb33a89bca412cb3bf6ba533e35fd8.png",
+    "size": 988851,
+    "uploaded_at": "2026-06-22T22:26:22.446322"
+  },
+  "8a2c7868999e4187b86c8148c2e9a38a.jpg": {
+    "original_name": "ComfyUI_00752_.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/8a2c7868999e4187b86c8148c2e9a38a.jpg",
+    "size": 211658,
+    "uploaded_at": "2026-06-22T22:27:27.948249"
+  },
+  "65f18ae47d7f46b6a62fc741df65b356.png": {
+    "original_name": "cropped.png",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/65f18ae47d7f46b6a62fc741df65b356.png",
+    "size": 1666355,
+    "uploaded_at": "2026-06-22T22:39:49.435781"
+  },
+  "247665ee326e4e5ea736cdddd1691880.png": {
+    "original_name": "cropped.png",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/247665ee326e4e5ea736cdddd1691880.png",
+    "size": 1399793,
+    "uploaded_at": "2026-06-22T22:42:42.432353"
+  },
+  "21f97ec832684420b0b86508297479b4.jpg": {
+    "original_name": "ComfyUI_00315_.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+    "size": 164702,
+    "uploaded_at": "2026-06-22T22:43:14.052859"
+  },
+  "fcca5fea811c4fec9ed10d27ed5132b5.png": {
+    "original_name": "cropped.png",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/fcca5fea811c4fec9ed10d27ed5132b5.png",
+    "size": 1420740,
+    "uploaded_at": "2026-06-22T22:48:34.923604"
+  },
+  "681a31ca6edb4d689036997dd4bd5fb6.jpg": {
+    "original_name": "ComfyUI_00290_.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/681a31ca6edb4d689036997dd4bd5fb6.jpg",
+    "size": 171909,
+    "uploaded_at": "2026-06-22T22:58:32.200871"
+  },
+  "ab5607f8879d4435bf93a9236fe660b1.jpg": {
+    "original_name": "ComfyUI_00278_.jpg",
+    "category": "characters/portrait",
+    "relative_path": "characters/portrait/ab5607f8879d4435bf93a9236fe660b1.jpg",
+    "size": 184874,
+    "uploaded_at": "2026-06-22T22:59:19.359190"
+  },
+  "9b006987dbfe4bd69ec02a79c886281f.png": {
+    "original_name": "cropped.png",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/9b006987dbfe4bd69ec02a79c886281f.png",
+    "size": 831804,
+    "uploaded_at": "2026-06-22T23:08:22.420833"
+  },
+  "abf1a9c59d6146abbef347eace84e2f3.jpg": {
+    "original_name": "ComfyUI_03063_.jpg",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/abf1a9c59d6146abbef347eace84e2f3.jpg",
+    "size": 202759,
+    "uploaded_at": "2026-06-22T23:24:06.669624"
+  },
+  "928c2eedc4d34873b5dc41bd5165637b.jpg": {
+    "original_name": "ComfyUI_03065_.jpg",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg",
+    "size": 136047,
+    "uploaded_at": "2026-06-22T23:24:06.711131"
+  },
+  "2813ac2aa12b49efa43166837f90f647.jpg": {
+    "original_name": "ComfyUI_03066_.jpg",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/2813ac2aa12b49efa43166837f90f647.jpg",
+    "size": 139997,
+    "uploaded_at": "2026-06-22T23:24:07.918248"
+  },
+  "ecea669c77394652bb3aa9a2e36ca757.jpg": {
+    "original_name": "ComfyUI_03068_.jpg",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg",
+    "size": 150823,
+    "uploaded_at": "2026-06-22T23:24:07.956883"
+  },
+  "a8f6fed6ef894fa48edb06e6ae9f302a.jpg": {
+    "original_name": "ComfyUI_03076_.jpg",
+    "category": "characters/expression",
+    "relative_path": "characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+    "size": 117384,
+    "uploaded_at": "2026-06-22T23:24:07.989490"
+  },
+  "202a2efdbb1f4516986ec6aec59f3983.jpg": {
+    "original_name": "ComfyUI_00864_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/202a2efdbb1f4516986ec6aec59f3983.jpg",
+    "size": 164400,
+    "uploaded_at": "2026-06-23T23:58:36.257756"
+  },
+  "140c63059a1541e09dfacc83d7e0f01c.jpg": {
+    "original_name": "ComfyUI_00866_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/140c63059a1541e09dfacc83d7e0f01c.jpg",
+    "size": 148609,
+    "uploaded_at": "2026-06-23T23:58:36.278844"
+  },
+  "88bbf4776b0a49db81a4cdd2f4b7d2ae.jpg": {
+    "original_name": "ComfyUI_00867_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/88bbf4776b0a49db81a4cdd2f4b7d2ae.jpg",
+    "size": 209074,
+    "uploaded_at": "2026-06-23T23:58:36.315995"
+  },
+  "38925befc83e49aa8b8c5446f21e605f.jpg": {
+    "original_name": "ComfyUI_00798_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/38925befc83e49aa8b8c5446f21e605f.jpg",
+    "size": 163290,
+    "uploaded_at": "2026-06-23T23:58:36.337153"
+  },
+  "6e229f174201434095acaf82f0dfebe2.jpg": {
+    "original_name": "ComfyUI_00799_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/6e229f174201434095acaf82f0dfebe2.jpg",
+    "size": 161171,
+    "uploaded_at": "2026-06-23T23:58:36.354333"
+  },
+  "fc421bc7b80c49f2a6fda9b1388fd554.jpg": {
+    "original_name": "ComfyUI_00801_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/fc421bc7b80c49f2a6fda9b1388fd554.jpg",
+    "size": 137880,
+    "uploaded_at": "2026-06-23T23:58:36.369656"
+  },
+  "0af0530b65f043fbaf3e910ec4b1942d.jpg": {
+    "original_name": "ComfyUI_00802_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/0af0530b65f043fbaf3e910ec4b1942d.jpg",
+    "size": 169963,
+    "uploaded_at": "2026-06-23T23:58:36.385878"
+  },
+  "e31665570e1b4474bfe3a8736a64b344.jpg": {
+    "original_name": "ComfyUI_00804_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/e31665570e1b4474bfe3a8736a64b344.jpg",
+    "size": 169176,
+    "uploaded_at": "2026-06-23T23:58:36.400904"
+  },
+  "6dca9450c01a4611a02ab08650eeaccb.jpg": {
+    "original_name": "ComfyUI_00805_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/6dca9450c01a4611a02ab08650eeaccb.jpg",
+    "size": 165299,
+    "uploaded_at": "2026-06-23T23:58:36.418138"
+  },
+  "b81351b944bf4a63a01c59062630b997.jpg": {
+    "original_name": "ComfyUI_00807_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/b81351b944bf4a63a01c59062630b997.jpg",
+    "size": 163854,
+    "uploaded_at": "2026-06-23T23:58:36.435939"
+  },
+  "70ce5ce99c6d4e86833187f20fad3ca8.jpg": {
+    "original_name": "ComfyUI_00808_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/70ce5ce99c6d4e86833187f20fad3ca8.jpg",
+    "size": 144274,
+    "uploaded_at": "2026-06-23T23:58:36.461129"
+  },
+  "94b22bfb99254829bcf06f773f94819d.jpg": {
+    "original_name": "ComfyUI_00809_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/94b22bfb99254829bcf06f773f94819d.jpg",
+    "size": 174535,
+    "uploaded_at": "2026-06-23T23:58:36.482306"
+  },
+  "b2caeb5128be4e298ce20b92a2e6018d.jpg": {
+    "original_name": "ComfyUI_00810_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/b2caeb5128be4e298ce20b92a2e6018d.jpg",
+    "size": 164400,
+    "uploaded_at": "2026-06-23T23:58:36.502271"
+  },
+  "5d6ba4a9323b4aa8a6efba16d76bbc5d.jpg": {
+    "original_name": "ComfyUI_00811_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/5d6ba4a9323b4aa8a6efba16d76bbc5d.jpg",
+    "size": 160147,
+    "uploaded_at": "2026-06-23T23:58:36.514412"
+  },
+  "9dc3e64961ff4de8a412c2dab34f0dc2.jpg": {
+    "original_name": "ComfyUI_00812_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/9dc3e64961ff4de8a412c2dab34f0dc2.jpg",
+    "size": 165939,
+    "uploaded_at": "2026-06-23T23:58:36.529990"
+  },
+  "2ad0f9515dfc411fb25ac74dfed3bb77.jpg": {
+    "original_name": "ComfyUI_00813_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/2ad0f9515dfc411fb25ac74dfed3bb77.jpg",
+    "size": 143012,
+    "uploaded_at": "2026-06-23T23:58:36.548112"
+  },
+  "f29234468c704fb3985cb189fdf6a804.jpg": {
+    "original_name": "ComfyUI_00814_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/f29234468c704fb3985cb189fdf6a804.jpg",
+    "size": 159349,
+    "uploaded_at": "2026-06-23T23:58:36.565489"
+  },
+  "8fea08dca0f74862ae47331eacfd0e04.jpg": {
+    "original_name": "ComfyUI_00815_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/8fea08dca0f74862ae47331eacfd0e04.jpg",
+    "size": 160411,
+    "uploaded_at": "2026-06-23T23:58:36.585765"
+  },
+  "3f7c0236578b45ffaab7fc1160e3a033.jpg": {
+    "original_name": "ComfyUI_00817_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/3f7c0236578b45ffaab7fc1160e3a033.jpg",
+    "size": 160066,
+    "uploaded_at": "2026-06-23T23:58:36.604561"
+  },
+  "9ddd6e851c3842af979c8a44e27edd03.jpg": {
+    "original_name": "ComfyUI_00818_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/9ddd6e851c3842af979c8a44e27edd03.jpg",
+    "size": 148908,
+    "uploaded_at": "2026-06-23T23:58:36.627354"
+  },
+  "e2ea3d37156a4c6db306c5c3c935a3eb.jpg": {
+    "original_name": "ComfyUI_00819_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/e2ea3d37156a4c6db306c5c3c935a3eb.jpg",
+    "size": 162590,
+    "uploaded_at": "2026-06-23T23:58:36.657392"
+  },
+  "7663bf6fdbfa4ccfb9966430aea3e424.jpg": {
+    "original_name": "ComfyUI_00820_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/7663bf6fdbfa4ccfb9966430aea3e424.jpg",
+    "size": 152756,
+    "uploaded_at": "2026-06-23T23:58:36.683554"
+  },
+  "530289d07a1940ee87ef8408d9660e05.jpg": {
+    "original_name": "ComfyUI_00822_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/530289d07a1940ee87ef8408d9660e05.jpg",
+    "size": 193190,
+    "uploaded_at": "2026-06-23T23:58:36.702272"
+  },
+  "d220709036164722b0d4f205bf409ef6.jpg": {
+    "original_name": "ComfyUI_00823_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/d220709036164722b0d4f205bf409ef6.jpg",
+    "size": 139376,
+    "uploaded_at": "2026-06-23T23:58:36.718747"
+  },
+  "29713f558a7a4ab788ec78b5d0be1a5f.jpg": {
+    "original_name": "ComfyUI_00837_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/29713f558a7a4ab788ec78b5d0be1a5f.jpg",
+    "size": 153725,
+    "uploaded_at": "2026-06-23T23:58:36.733763"
+  },
+  "48b8e12e5d3b48f4a90efa5c4c3148cb.jpg": {
+    "original_name": "ComfyUI_00838_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/48b8e12e5d3b48f4a90efa5c4c3148cb.jpg",
+    "size": 146715,
+    "uploaded_at": "2026-06-23T23:58:36.747154"
+  },
+  "b5f9aa86853f4ba9a56ef04a6926d963.jpg": {
+    "original_name": "ComfyUI_00840_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/b5f9aa86853f4ba9a56ef04a6926d963.jpg",
+    "size": 164738,
+    "uploaded_at": "2026-06-23T23:58:36.765770"
+  },
+  "cd4b77aed4084d99aef6176eac38e5b9.jpg": {
+    "original_name": "ComfyUI_00841_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/cd4b77aed4084d99aef6176eac38e5b9.jpg",
+    "size": 136858,
+    "uploaded_at": "2026-06-23T23:58:36.788368"
+  },
+  "d28a2e58274040a6b2c491f3b36fdbfc.jpg": {
+    "original_name": "ComfyUI_00842_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/d28a2e58274040a6b2c491f3b36fdbfc.jpg",
+    "size": 146928,
+    "uploaded_at": "2026-06-23T23:58:36.804401"
+  },
+  "0667201208b04fddab66861109b13ce6.jpg": {
+    "original_name": "ComfyUI_00844_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/0667201208b04fddab66861109b13ce6.jpg",
+    "size": 188968,
+    "uploaded_at": "2026-06-23T23:58:36.824045"
+  },
+  "36fd7ece2d2f41fe9dcf769fc820d3b7.jpg": {
+    "original_name": "ComfyUI_00845_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/36fd7ece2d2f41fe9dcf769fc820d3b7.jpg",
+    "size": 172085,
+    "uploaded_at": "2026-06-23T23:58:36.845639"
+  },
+  "65ae012053a34275a12008f921b03cbb.jpg": {
+    "original_name": "ComfyUI_00846_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/65ae012053a34275a12008f921b03cbb.jpg",
+    "size": 178113,
+    "uploaded_at": "2026-06-23T23:58:36.870716"
+  },
+  "880cfcf5bb6c409fa7f34b6d7255f833.jpg": {
+    "original_name": "ComfyUI_00848_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/880cfcf5bb6c409fa7f34b6d7255f833.jpg",
+    "size": 150571,
+    "uploaded_at": "2026-06-23T23:58:36.884665"
+  },
+  "9ff974c39cef4723b2079627b15a3843.jpg": {
+    "original_name": "ComfyUI_00850_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/9ff974c39cef4723b2079627b15a3843.jpg",
+    "size": 128512,
+    "uploaded_at": "2026-06-23T23:58:36.902264"
+  },
+  "683d5be12c0f4c048fd02dc29a6a778e.jpg": {
+    "original_name": "ComfyUI_00851_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/683d5be12c0f4c048fd02dc29a6a778e.jpg",
+    "size": 125321,
+    "uploaded_at": "2026-06-23T23:58:36.918481"
+  },
+  "e839a6b2781b4ecaba143f132737d126.jpg": {
+    "original_name": "ComfyUI_00852_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/e839a6b2781b4ecaba143f132737d126.jpg",
+    "size": 140442,
+    "uploaded_at": "2026-06-23T23:58:36.932899"
+  },
+  "80eed03d91f54e29a03ad21024c1d1cb.jpg": {
+    "original_name": "ComfyUI_00853_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/80eed03d91f54e29a03ad21024c1d1cb.jpg",
+    "size": 156393,
+    "uploaded_at": "2026-06-23T23:58:36.947037"
+  },
+  "fd3f99b01c4c48a980e4ed49e502e7a1.jpg": {
+    "original_name": "ComfyUI_00854_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/fd3f99b01c4c48a980e4ed49e502e7a1.jpg",
+    "size": 153266,
+    "uploaded_at": "2026-06-23T23:58:36.960722"
+  },
+  "4e7b2a8a346b43bcb002d1b2e813010c.jpg": {
+    "original_name": "ComfyUI_00856_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/4e7b2a8a346b43bcb002d1b2e813010c.jpg",
+    "size": 180464,
+    "uploaded_at": "2026-06-23T23:58:36.975448"
+  },
+  "a1dc757a30034ef988d9a662f84a6e1a.jpg": {
+    "original_name": "ComfyUI_00857_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/a1dc757a30034ef988d9a662f84a6e1a.jpg",
+    "size": 173591,
+    "uploaded_at": "2026-06-23T23:58:36.993964"
+  },
+  "37a7dd4da22f4721a1eca899c12e0eda.jpg": {
+    "original_name": "ComfyUI_00860_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/37a7dd4da22f4721a1eca899c12e0eda.jpg",
+    "size": 158460,
+    "uploaded_at": "2026-06-23T23:58:37.013259"
+  },
+  "4cb31fa696fd4994ad2cee4f9337edb5.jpg": {
+    "original_name": "ComfyUI_00861_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/4cb31fa696fd4994ad2cee4f9337edb5.jpg",
+    "size": 178981,
+    "uploaded_at": "2026-06-23T23:58:37.031663"
+  },
+  "d52ad05aa9d54c9b86913f38c3610c67.jpg": {
+    "original_name": "ComfyUI_00863_.jpg",
+    "category": "scenes/cutscene/高圆圆卖内衣",
+    "relative_path": "scenes/cutscene/高圆圆卖内衣/d52ad05aa9d54c9b86913f38c3610c67.jpg",
+    "size": 143598,
+    "uploaded_at": "2026-06-23T23:58:37.051565"
+  },
+  "ee022eb137384bc49a2eb4e1d6ca92de.jpg": {
+    "original_name": "Gemini_Generated_Image_4mihuc4mihuc4mih.jpg",
+    "category": "test3",
+    "relative_path": "test3/ee022eb137384bc49a2eb4e1d6ca92de.jpg",
+    "size": 391916,
+    "uploaded_at": "2026-07-30T03:41:58.928671",
+    "is_deleted": 1,
+    "deleted_at": "2026-07-30T11:26:33.066801"
+  },
+  "fbfdb081b11444c1b234e7e3e5007c44.jpg": {
+    "original_name": "Gemini_Generated_Image_5ubjzj5ubjzj5ubj.jpg",
+    "category": "test3",
+    "relative_path": "test3/fbfdb081b11444c1b234e7e3e5007c44.jpg",
+    "size": 465394,
+    "uploaded_at": "2026-07-30T03:41:58.952364",
+    "is_deleted": 1,
+    "deleted_at": "2026-07-30T11:26:33.066801"
+  },
+  "9f58b7bc79df44228a3385f88bef5b74.jpg": {
+    "original_name": "Gemini_Generated_Image_6cl8e86cl8e86cl8.jpg",
+    "category": "test3",
+    "relative_path": "test3/9f58b7bc79df44228a3385f88bef5b74.jpg",
+    "size": 453581,
+    "uploaded_at": "2026-07-30T03:41:58.974245",
+    "is_deleted": 1,
+    "deleted_at": "2026-07-30T11:26:33.066801"
+  },
+  "b21d16e9824f44b9b050bdedce91023f.jpg": {
+    "original_name": "Gemini_Generated_Image_7j9wzs7j9wzs7j9w.jpg",
+    "category": "test3",
+    "relative_path": "test3/b21d16e9824f44b9b050bdedce91023f.jpg",
+    "size": 438728,
+    "uploaded_at": "2026-07-30T03:41:58.996487",
+    "is_deleted": 1,
+    "deleted_at": "2026-07-30T11:26:33.066801"
+  },
+  "663f5390936d44a7b2d2cd4154011481.jpg": {
+    "original_name": "Gemini_Generated_Image_1vh31h1vh31h1vh3.jpg",
+    "category": "test3",
+    "relative_path": "test3/663f5390936d44a7b2d2cd4154011481.jpg",
+    "size": 584955,
+    "uploaded_at": "2026-07-30T03:41:59.028655",
+    "is_deleted": 1,
+    "deleted_at": "2026-07-30T11:26:33.066801"
+  },
+  "6484bc005e2f454dbfb712dd450368ef.jpg": {
+    "original_name": "Gemini_Generated_Image_2fip4j2fip4j2fip.jpg",
+    "category": "test3",
+    "relative_path": "test3/6484bc005e2f454dbfb712dd450368ef.jpg",
+    "size": 539502,
+    "uploaded_at": "2026-07-30T03:41:59.172174",
+    "is_deleted": 1,
+    "deleted_at": "2026-07-30T11:26:33.066801"
+  }
+}

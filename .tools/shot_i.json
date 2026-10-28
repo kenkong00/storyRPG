@@ -1,0 +1,11 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 'scene'" },
+  { "wait": 1600 },
+  { "eval": "document.getElementById('cmp-add-char').click(); 'char'" },
+  { "wait": 2400 },
+  { "eval": "document.querySelector('.cmp-puzzle').scrollIntoView(); 'scroll'" },
+  { "wait": 500 },
+  { "shot": "compose-i-view.png" }
+]

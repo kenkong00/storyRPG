@@ -1,0 +1,18 @@
+[
+  { "eval": "document.title" },
+  { "wait": 3000 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ runtimeButtons: document.querySelectorAll('.btn-open-runtime').length, charEdits: document.querySelectorAll('.btn-edit').length })" },
+  { "wait": 500 },
+  { "eval": "(function(){const b=document.querySelector('.btn-edit'); if(!b) return 'no-edit'; b.click(); return 'opened';})()" },
+  { "wait": 2500 },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'equip\\']'); if(t){t.click(); return 'equip-tab-clicked';} return 'no-equip-tab';})()" },
+  { "wait": 3000 },
+  { "eval": "JSON.stringify({ createEquipBtn: !!document.getElementById('btn-create-equip'), slotsText: (document.getElementById('equip-slots-area')?.innerText||'').replace(/\\s+/g,' ').slice(0,600) })" },
+  { "shot": "chars-equip.png" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'backpack\\']'); if(t){t.click(); return 'backpack-tab';} return 'no';})()" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ addItemBtn: !!document.getElementById('btn-add-backpack'), createItemBtn: !!document.getElementById('btn-create-item') })" },
+  { "shot": "chars-backpack.png" }
+]

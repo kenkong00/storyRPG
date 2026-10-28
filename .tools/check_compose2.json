@@ -1,0 +1,11 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='compose']" },
+  { "wait": 4500 },
+  { "eval": "JSON.stringify({ presets: (window.GenParams? GenParams.presetNames().length : -1), val: (window.GenParams? GenParams.get().model_preset : '') })" },
+  { "eval": "var i=document.querySelector('#cmp-gen-params #gp-preset-host input'); i.click(); i.focus(); 'clicked'" },
+  { "wait": 1200 },
+  { "eval": "JSON.stringify({ popDisplay: (document.querySelector('.cb-pop')||{}).style ? document.querySelector('.cb-pop').style.display : 'none', items: document.querySelectorAll('.cb-pop .cb-item').length, cnt: (document.querySelector('.cb-pop .cnt')||{}).textContent })" },
+  { "shot": "compose-preset.png" }
+]

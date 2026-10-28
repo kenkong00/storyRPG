@@ -1,0 +1,7 @@
+[
+  { "eval": "'ready:' + (typeof Admin) + ' pages:' + (Admin && typeof Admin.pages) + ' hasCompose:' + (Admin && typeof Admin.pages.compose)" },
+  { "wait": 1500 },
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 5000 },
+  { "eval": "(() => { const ca = document.getElementById('content-area'); return JSON.stringify({ hasCompose: typeof (Admin && Admin.pages && Admin.pages.compose), innerLen: ca ? ca.innerText.length : -1, inner: ca ? ca.innerText.slice(0,400) : 'NO-CONTENT-AREA' }); })()" }
+]

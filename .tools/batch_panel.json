@@ -1,0 +1,11 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "click": ".nav-item[data-page='character_appearance']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ batchBtn: !!document.getElementById('ap-batch-toggle'), batchPanel: !!document.getElementById('ap-batch-box'), editorTheme: !!document.getElementById('ae-theme'), dice: document.querySelectorAll('.ae-dice').length })" },
+  { "eval": "(function(){const b=document.getElementById('ap-batch-toggle'); if(b){b.click(); return 'clicked';} return 'none';})()" },
+  { "wait": 700 },
+  { "shot": "ap-batch-box.png" },
+  { "eval": "JSON.stringify({ inputs: [...document.querySelectorAll('#ap-batch-box input, #ap-batch-box select')].map(e=>e.id||e.name).slice(0,10), text: (document.getElementById('ap-batch-box')?.innerText||'').replace(/\\s+/g,' ').slice(0,160) })" }
+]

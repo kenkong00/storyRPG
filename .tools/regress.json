@@ -1,0 +1,21 @@
+[
+  { "eval": "window.__errs=[]; window.addEventListener('error', e=>window.__errs.push(String(e.message))); window.addEventListener('unhandledrejection', e=>window.__errs.push('promise:'+String(e.reason))); 'hooked'" },
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "eval": "window.__errs=[]; window.addEventListener('error', e=>window.__errs.push(String(e.message))); 'rehooked'" },
+  { "click": ".nav-item[data-page='dashboard']" },
+  { "wait": 2000 },
+  { "eval": "JSON.stringify({page:'dashboard', errs: window.__errs.slice(0,3)})" },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({page:'characters', rows: document.querySelectorAll('tbody tr').length, errs: window.__errs.slice(0,3)})" },
+  { "click": ".nav-item[data-page='character_appearance']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({page:'appearance', tabs: [...document.querySelectorAll('.ap-tab')].map(b=>b.textContent.trim()), errs: window.__errs.slice(0,3)})" },
+  { "click": ".nav-item[data-page='images']" },
+  { "wait": 2000 },
+  { "eval": "JSON.stringify({page:'images', ok: !!document.querySelector('.page-header, h1, h2'), errs: window.__errs.slice(0,3)})" },
+  { "click": ".nav-item[data-page='settings']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({page:'settings', errs: window.__errs.slice(0,3)})" }
+]

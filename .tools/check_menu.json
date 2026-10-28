@@ -1,0 +1,12 @@
+[
+  { "eval": "window.__err=null; window.addEventListener('error',e=>window.__err=e.message); 'armed'" },
+  { "wait": 800 },
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 7000 },
+  { "eval": "JSON.stringify({gallery: document.querySelectorAll('.cmp-shot').length})" },
+  { "eval": "const g=document.querySelector('.cmp-shot'); if(!g){'no-gallery';} else { const r=g.getBoundingClientRect(); g.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:r.left+10,clientY:r.top+10})); 'dispatched'; }" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({menu: !!document.querySelector('.cmp-gmenu'), items: [...document.querySelectorAll('.cmp-gmenu button')].map(b=>b.textContent.trim()), err: window.__err})" },
+  { "shot": "compose-menu.png" },
+  { "eval": "const m=document.querySelector('.cmp-gmenu'); if(m) m.remove(); 'cleaned'" }
+]

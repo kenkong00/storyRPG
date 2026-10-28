@@ -1,0 +1,8178 @@
+{
+ "start": {
+  "battle_id": 1,
+  "state": {
+   "v": 2,
+   "status": "active",
+   "round": 1,
+   "turn_no": 1,
+   "turn_uid": "p1",
+   "units": [
+    {
+     "uid": "p1",
+     "side": "player",
+     "name": "测试侠",
+     "character_id": 1,
+     "user_character_id": 1,
+     "level": 10,
+     "realm_name": "筑基三重",
+     "element": "fire",
+     "portrait": "",
+     "states": {},
+     "art": {
+      "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+      "faces": {
+       "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+       "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+      },
+      "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+      "attack": "",
+      "cast": "",
+      "defend": "",
+      "ultimate": "",
+      "down": "",
+      "hurt": [
+       {
+        "min": 60,
+        "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+       },
+       {
+        "min": 30,
+        "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       }
+      ]
+     },
+     "is_boss": false,
+     "is_ally": false,
+     "base": {
+      "max_hp": 1600.0,
+      "max_mp": 300.0,
+      "attack": 110.0,
+      "defense": 60.0,
+      "speed": 28.0,
+      "luck": 12.0
+     },
+     "hp": 1567.8138464478761,
+     "mp": 300.0,
+     "rage": 8,
+     "shield": 0,
+     "statuses": [
+      {
+       "key": "poison",
+       "name": "中毒",
+       "kind": "dot",
+       "stat": null,
+       "value": 16.0,
+       "turns": 0,
+       "stacks": 4,
+       "source_uid": "e2",
+       "icon": "☠",
+       "color": "#8ef58e",
+       "note": ""
+      }
+     ],
+     "defending": false,
+     "alive": true,
+     "av": 357.14285714285717,
+     "actions": 0,
+     "skills": [
+      {
+       "id": 101,
+       "name": "烈火掌",
+       "mp_cost": 8,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "fire",
+       "target_type": "single_enemy",
+       "power": 160.0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "造成火属性伤害",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "damage"
+       ],
+       "usable": true,
+       "reason": ""
+      },
+      {
+       "id": 102,
+       "name": "破甲击",
+       "mp_cost": 10,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "none",
+       "target_type": "single_enemy",
+       "power": 110.0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "降低目标防御",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "damage",
+        "debuff"
+       ],
+       "usable": true,
+       "reason": ""
+      },
+      {
+       "id": 104,
+       "name": "护体真气",
+       "mp_cost": 12,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "none",
+       "target_type": "self",
+       "power": 0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "获得护盾与防御提升",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "buff",
+        "shield"
+       ],
+       "usable": true,
+       "reason": ""
+      },
+      {
+       "id": 105,
+       "name": "定身咒",
+       "mp_cost": 14,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "none",
+       "target_type": "single_enemy",
+       "power": 0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "定住目标一回合",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "control"
+       ],
+       "usable": true,
+       "reason": ""
+      },
+      {
+       "id": 103,
+       "name": "万剑归宗",
+       "mp_cost": 0,
+       "hp_cost": 0,
+       "rage_cost": 100,
+       "element": "none",
+       "target_type": "all_enemies",
+       "power": 320.0,
+       "heal": 0,
+       "is_ultimate": 1,
+       "cooldown": 0,
+       "description": "对全体敌人造成大量伤害",
+       "image": "",
+       "visual_effect": "burst",
+       "kinds": [
+        "damage"
+       ],
+       "usable": false,
+       "reason": "怒气不足（需要 100）"
+      }
+     ],
+     "items": [
+      {
+       "id": 1,
+       "name": "回春丹",
+       "image": "",
+       "quantity": 5,
+       "rarity": 2,
+       "description": "恢复生命",
+       "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+      }
+     ],
+     "cooldowns": {},
+     "ai": {
+      "type": "player",
+      "skill_chance": 0.9
+     },
+     "drops": [],
+     "exp_reward": null,
+     "phases": [],
+     "phase": 0,
+     "phase_name": "",
+     "exp": 180,
+     "start_hp": 1600.0,
+     "start_mp": 300.0,
+     "start_rage": 0,
+     "eff": {
+      "max_hp": 1600,
+      "max_mp": 300,
+      "attack": 110,
+      "defense": 60,
+      "speed": 28
+     }
+    },
+    {
+     "uid": "e1",
+     "side": "enemy",
+     "name": "暗影狼王",
+     "character_id": 2,
+     "user_character_id": null,
+     "level": 11,
+     "realm_name": "",
+     "element": "dark",
+     "portrait": "",
+     "states": {},
+     "art": {
+      "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+      "faces": {
+       "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+      },
+      "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+      "attack": "",
+      "cast": "",
+      "defend": "",
+      "ultimate": "",
+      "down": "",
+      "hurt": [
+       {
+        "min": 60,
+        "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+       }
+      ]
+     },
+     "is_boss": true,
+     "is_ally": false,
+     "base": {
+      "max_hp": 620.0,
+      "max_mp": 90.0,
+      "attack": 60.0,
+      "defense": 30.0,
+      "speed": 24.0,
+      "luck": 8.0
+     },
+     "hp": 620.0,
+     "mp": 90.0,
+     "rage": 0,
+     "shield": 0,
+     "statuses": [],
+     "defending": false,
+     "alive": true,
+     "av": 59.52380952380952,
+     "actions": 0,
+     "skills": [
+      {
+       "id": 201,
+       "name": "撕咬",
+       "mp_cost": 0,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "dark",
+       "target_type": "single_enemy",
+       "power": 130.0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "damage"
+       ],
+       "usable": true,
+       "reason": ""
+      },
+      {
+       "id": 202,
+       "name": "腐蚀吐息",
+       "mp_cost": 6,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "dark",
+       "target_type": "single_enemy",
+       "power": 100.0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "damage",
+        "dot"
+       ],
+       "usable": true,
+       "reason": ""
+      }
+     ],
+     "items": [],
+     "cooldowns": {},
+     "ai": {
+      "type": "aggressive",
+      "skill_chance": 0.7
+     },
+     "drops": [
+      {
+       "item_id": 1,
+       "name": "回春丹",
+       "quantity": 1,
+       "chance": 100
+      },
+      {
+       "item_id": 2,
+       "name": "暗影结晶",
+       "quantity": 1,
+       "chance": 60
+      }
+     ],
+     "exp_reward": 420.0,
+     "phases": [
+      {
+       "hp_below": 60,
+       "name": "狂暴",
+       "line": "狼王发出低沉的咆哮！",
+       "buff": {
+        "key": "atk_up",
+        "name": "狂暴",
+        "stat": "attack",
+        "value": 40,
+        "turns": 99
+       }
+      }
+     ],
+     "phase": 0,
+     "phase_name": "",
+     "start_hp": 620.0,
+     "start_mp": 90.0,
+     "start_rage": 0,
+     "eff": {
+      "max_hp": 620,
+      "max_mp": 90,
+      "attack": 60,
+      "defense": 30,
+      "speed": 24
+     }
+    },
+    {
+     "uid": "e2",
+     "side": "enemy",
+     "name": "腐尸术士",
+     "character_id": 3,
+     "user_character_id": null,
+     "level": 10,
+     "realm_name": "",
+     "element": "dark",
+     "portrait": "",
+     "states": {},
+     "art": {
+      "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+      "faces": {},
+      "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+      "attack": "",
+      "cast": "",
+      "defend": "",
+      "ultimate": "",
+      "down": "",
+      "hurt": [
+       {
+        "min": 60,
+        "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+       }
+      ]
+     },
+     "is_boss": false,
+     "is_ally": false,
+     "base": {
+      "max_hp": 300.0,
+      "max_mp": 140.0,
+      "attack": 48.0,
+      "defense": 22.0,
+      "speed": 31.0,
+      "luck": 10.0
+     },
+     "hp": 300.0,
+     "mp": 134.0,
+     "rage": 18,
+     "shield": 0,
+     "statuses": [],
+     "defending": false,
+     "alive": true,
+     "av": 288.01843317972344,
+     "actions": 1,
+     "skills": [
+      {
+       "id": 202,
+       "name": "腐蚀吐息",
+       "mp_cost": 6,
+       "hp_cost": 0,
+       "rage_cost": 0,
+       "element": "dark",
+       "target_type": "single_enemy",
+       "power": 100.0,
+       "heal": 0,
+       "is_ultimate": 0,
+       "cooldown": 0,
+       "description": "",
+       "image": "",
+       "visual_effect": "",
+       "kinds": [
+        "damage",
+        "dot"
+       ],
+       "usable": true,
+       "reason": ""
+      }
+     ],
+     "items": [],
+     "cooldowns": {},
+     "ai": {
+      "type": "aggressive",
+      "skill_chance": 0.8
+     },
+     "drops": [
+      {
+       "item_id": 2,
+       "name": "暗影结晶",
+       "quantity": 2,
+       "chance": 100
+      }
+     ],
+     "exp_reward": 300.0,
+     "phases": [],
+     "phase": 0,
+     "phase_name": "",
+     "start_hp": 300.0,
+     "start_mp": 140.0,
+     "start_rage": 0,
+     "eff": {
+      "max_hp": 300,
+      "max_mp": 140,
+      "attack": 48,
+      "defense": 22,
+      "speed": 31
+     }
+    }
+   ],
+   "log": [
+    {
+     "kind": "banter",
+     "text": "暗影狼王：「又来了一个送死的。」"
+    },
+    {
+     "kind": "damage",
+     "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+    },
+    {
+     "kind": "status",
+     "text": "测试侠 陷入【中毒】"
+    },
+    {
+     "kind": "dot",
+     "text": "测试侠 受到【中毒】8 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+    },
+    {
+     "kind": "status",
+     "text": "测试侠 陷入【中毒】"
+    },
+    {
+     "kind": "dot",
+     "text": "测试侠 受到【中毒】15 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+    },
+    {
+     "kind": "status",
+     "text": "腐尸术士 获得状态【破甲】（3 回合）"
+    },
+    {
+     "kind": "damage",
+     "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+    },
+    {
+     "kind": "status",
+     "text": "测试侠 陷入【中毒】"
+    },
+    {
+     "kind": "dot",
+     "text": "测试侠 受到【中毒】23 点伤害"
+    },
+    {
+     "kind": "status",
+     "text": "测试侠 获得 288 点护盾"
+    },
+    {
+     "kind": "status",
+     "text": "测试侠 获得状态【铁壁】（3 回合）"
+    },
+    {
+     "kind": "damage",
+     "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+    },
+    {
+     "kind": "status",
+     "text": "测试侠 陷入【中毒】"
+    },
+    {
+     "kind": "damage",
+     "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+    },
+    {
+     "kind": "dot",
+     "text": "测试侠 受到【中毒】31 点伤害"
+    },
+    {
+     "kind": "status",
+     "text": "腐尸术士 被【眩晕】"
+    },
+    {
+     "kind": "status",
+     "text": "腐尸术士 因【眩晕】无法行动"
+    },
+    {
+     "kind": "damage",
+     "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+    },
+    {
+     "kind": "dot",
+     "text": "测试侠 受到【中毒】31 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+    },
+    {
+     "kind": "phase",
+     "text": "暗影狼王 进入【狂暴】！"
+    },
+    {
+     "kind": "banter",
+     "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+    },
+    {
+     "kind": "banter",
+     "text": "暗影狼王：「你……居然能伤到我？」"
+    },
+    {
+     "kind": "down",
+     "text": "腐尸术士 倒下了！"
+    },
+    {
+     "kind": "damage",
+     "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+    },
+    {
+     "kind": "dot",
+     "text": "测试侠 受到【中毒】31 点伤害"
+    },
+    {
+     "kind": "action",
+     "text": "测试侠 摆出防御姿态"
+    },
+    {
+     "kind": "damage",
+     "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+    },
+    {
+     "kind": "damage",
+     "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+    },
+    {
+     "kind": "damage",
+     "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+    },
+    {
+     "kind": "down",
+     "text": "暗影狼王 倒下了！"
+    },
+    {
+     "kind": "system",
+     "text": "战斗胜利！"
+    },
+    {
+     "kind": "banter",
+     "text": "测试侠：「结束了。」"
+    }
+   ],
+   "banter": [],
+   "rewards": null,
+   "order": [
+    {
+     "uid": "e1",
+     "name": "暗影狼王",
+     "side": "enemy"
+    },
+    {
+     "uid": "e2",
+     "name": "腐尸术士",
+     "side": "enemy"
+    },
+    {
+     "uid": "p1",
+     "name": "测试侠",
+     "side": "player"
+    },
+    {
+     "uid": "e1",
+     "name": "暗影狼王",
+     "side": "enemy"
+    },
+    {
+     "uid": "e2",
+     "name": "腐尸术士",
+     "side": "enemy"
+    },
+    {
+     "uid": "p1",
+     "name": "测试侠",
+     "side": "player"
+    },
+    {
+     "uid": "e1",
+     "name": "暗影狼王",
+     "side": "enemy"
+    },
+    {
+     "uid": "e2",
+     "name": "腐尸术士",
+     "side": "enemy"
+    }
+   ],
+   "config": {
+    "difficulty": 1.0,
+    "allow_flee": true,
+    "auto_banter": true,
+    "exp_multiplier": 1.0,
+    "background": "",
+    "bgm": "",
+    "victory_node_id": null,
+    "defeat_node_id": null,
+    "flee_node_id": null,
+    "defeat_penalty": "half_hp",
+    "banter": [
+     {
+      "trigger": "battle_start",
+      "speaker": "暗影狼王",
+      "line": "又来了一个送死的。"
+     },
+     {
+      "trigger": "hp_below",
+      "uid": "e1",
+      "value": 45,
+      "speaker": "暗影狼王",
+      "line": "你……居然能伤到我？"
+     },
+     {
+      "trigger": "victory",
+      "speaker": "测试侠",
+      "line": "结束了。"
+     }
+    ]
+   },
+   "meta": {
+    "story_node_id": 8,
+    "user_character_id": 1,
+    "player_name": "测试侠"
+   },
+   "finished": false
+  },
+  "events": [
+   {
+    "t": "banter",
+    "speaker": "暗影狼王",
+    "speaker_id": null,
+    "line": "又来了一个送死的。",
+    "expression": ""
+   },
+   {
+    "t": "turn_start",
+    "uid": "e2",
+    "round": 1,
+    "no": 1
+   },
+   {
+    "t": "mp",
+    "uid": "e2",
+    "delta": -6,
+    "mp": 134
+   },
+   {
+    "t": "cast",
+    "uid": "e2",
+    "skill_id": 202,
+    "skill": "腐蚀吐息",
+    "visual": "",
+    "element": "dark",
+    "targets": [
+     "p1"
+    ],
+    "ultimate": false
+   },
+   {
+    "t": "damage",
+    "uid": "p1",
+    "value": 32,
+    "crit": false,
+    "weak": false,
+    "resist": false,
+    "element": "dark",
+    "hp": 1568,
+    "shield_absorbed": 0
+   },
+   {
+    "t": "status_add",
+    "uid": "p1",
+    "status": {
+     "key": "poison",
+     "name": "中毒",
+     "kind": "dot",
+     "stat": null,
+     "value": 16.0,
+     "turns": 0,
+     "stacks": 4,
+     "source_uid": "e2",
+     "icon": "☠",
+     "color": "#8ef58e",
+     "note": ""
+    }
+   },
+   {
+    "t": "await_input",
+    "uid": "p1"
+   }
+  ]
+ },
+ "steps": [
+  {
+   "action": {
+    "type": "attack",
+    "target_uid": "e2",
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 1,
+    "turn_no": 1,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1567.8138464478761,
+      "mp": 300.0,
+      "rage": 8,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "poison",
+        "name": "中毒",
+        "kind": "dot",
+        "stat": null,
+        "value": 16.0,
+        "turns": 0,
+        "stacks": 4,
+        "source_uid": "e2",
+        "icon": "☠",
+        "color": "#8ef58e",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 0,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 60,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 620.0,
+      "mp": 90.0,
+      "rage": 0,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 59.52380952380952,
+      "actions": 0,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 60,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 300.0,
+      "mp": 134.0,
+      "rage": 18,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 288.01843317972344,
+      "actions": 1,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 22,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 1,
+     "no": 2
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 8,
+     "dot": true,
+     "status": "poison",
+     "hp": 1560
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill": "普通攻击",
+     "skill_id": null,
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "e2"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "e2",
+     "value": 103,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 197,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "turn_start",
+     "uid": "e1",
+     "round": 2,
+     "no": 3
+    },
+    {
+     "t": "cast",
+     "uid": "e1",
+     "skill": "普通攻击",
+     "skill_id": null,
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 42,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 1518,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "turn_start",
+     "uid": "e2",
+     "round": 2,
+     "no": 4
+    },
+    {
+     "t": "mp",
+     "uid": "e2",
+     "delta": -6,
+     "mp": 128
+    },
+    {
+     "t": "cast",
+     "uid": "e2",
+     "skill_id": 202,
+     "skill": "腐蚀吐息",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 33,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1485,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "status_add",
+     "uid": "p1",
+     "status": {
+      "key": "poison",
+      "name": "中毒",
+      "kind": "dot",
+      "stat": null,
+      "value": 16.0,
+      "turns": 0,
+      "stacks": 4,
+      "source_uid": "e2",
+      "icon": "☠",
+      "color": "#8ef58e",
+      "note": ""
+     }
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "skill",
+    "skill_id": 102,
+    "target_uid": "e2",
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 2,
+    "turn_no": 4,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1485.3552158105852,
+      "mp": 300.0,
+      "rage": 42,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "poison",
+        "name": "中毒",
+        "kind": "dot",
+        "stat": null,
+        "value": 16.0,
+        "turns": 0,
+        "stacks": 4,
+        "source_uid": "e2",
+        "icon": "☠",
+        "color": "#8ef58e",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 1,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 60,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 620.0,
+      "mp": 90.0,
+      "rage": 18,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 119.04761904761904,
+      "actions": 1,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 60,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 197.21820890399005,
+      "mp": 128.0,
+      "rage": 44,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "defense_down",
+        "name": "破甲",
+        "kind": "debuff",
+        "stat": "defense",
+        "value": -25.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "◆",
+        "color": "#dddddd",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 253.45622119815658,
+      "actions": 2,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 22,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 2,
+     "no": 5
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 15,
+     "dot": true,
+     "status": "poison",
+     "hp": 1470
+    },
+    {
+     "t": "mp",
+     "uid": "p1",
+     "delta": -10,
+     "mp": 290
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill_id": 102,
+     "skill": "破甲击",
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "e2"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "e2",
+     "value": 163,
+     "crit": true,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 34,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "status_add",
+     "uid": "e2",
+     "status": {
+      "key": "defense_down",
+      "name": "破甲",
+      "kind": "debuff",
+      "stat": "defense",
+      "value": -25.0,
+      "turns": 0,
+      "stacks": 1,
+      "source_uid": "p1",
+      "icon": "◆",
+      "color": "#dddddd",
+      "note": ""
+     }
+    },
+    {
+     "t": "turn_start",
+     "uid": "e1",
+     "round": 3,
+     "no": 6
+    },
+    {
+     "t": "cast",
+     "uid": "e1",
+     "skill_id": 201,
+     "skill": "撕咬",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 58,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1412,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "turn_start",
+     "uid": "e2",
+     "round": 3,
+     "no": 7
+    },
+    {
+     "t": "mp",
+     "uid": "e2",
+     "delta": -6,
+     "mp": 122
+    },
+    {
+     "t": "cast",
+     "uid": "e2",
+     "skill_id": 202,
+     "skill": "腐蚀吐息",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 58,
+     "crit": true,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1354,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "status_add",
+     "uid": "p1",
+     "status": {
+      "key": "poison",
+      "name": "中毒",
+      "kind": "dot",
+      "stat": null,
+      "value": 16.0,
+      "turns": 0,
+      "stacks": 4,
+      "source_uid": "e2",
+      "icon": "☠",
+      "color": "#8ef58e",
+      "note": ""
+     }
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "skill",
+    "skill_id": 104,
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 3,
+    "turn_no": 7,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1353.5367107828704,
+      "mp": 290.0,
+      "rage": 76,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "poison",
+        "name": "中毒",
+        "kind": "dot",
+        "stat": null,
+        "value": 16.0,
+        "turns": 0,
+        "stacks": 4,
+        "source_uid": "e2",
+        "icon": "☠",
+        "color": "#8ef58e",
+        "note": ""
+       },
+       {
+        "key": "shield",
+        "name": "护盾",
+        "kind": "shield",
+        "stat": null,
+        "value": 0.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "🛡",
+        "color": "#6cc8ff",
+        "note": ""
+       },
+       {
+        "key": "defense_up",
+        "name": "铁壁",
+        "kind": "buff",
+        "stat": "defense",
+        "value": 30.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "◆",
+        "color": "#dddddd",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 2,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 60,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 620.0,
+      "mp": 90.0,
+      "rage": 36,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 178.57142857142856,
+      "actions": 2,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 60,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 33.91608715913259,
+      "mp": 122.0,
+      "rage": 70,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "defense_down",
+        "name": "破甲",
+        "kind": "debuff",
+        "stat": "defense",
+        "value": -25.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "◆",
+        "color": "#dddddd",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 218.89400921658972,
+      "actions": 3,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 16,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 3,
+     "no": 8
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 23,
+     "dot": true,
+     "status": "poison",
+     "hp": 1330
+    },
+    {
+     "t": "mp",
+     "uid": "p1",
+     "delta": -12,
+     "mp": 278
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill_id": 104,
+     "skill": "护体真气",
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "shield_add",
+     "uid": "p1",
+     "shield": 288
+    },
+    {
+     "t": "status_add",
+     "uid": "p1",
+     "status": {
+      "key": "defense_up",
+      "name": "铁壁",
+      "kind": "buff",
+      "stat": "defense",
+      "value": 30.0,
+      "turns": 0,
+      "stacks": 1,
+      "source_uid": "p1",
+      "icon": "◆",
+      "color": "#dddddd",
+      "note": ""
+     }
+    },
+    {
+     "t": "turn_start",
+     "uid": "e1",
+     "round": 4,
+     "no": 9
+    },
+    {
+     "t": "mp",
+     "uid": "e1",
+     "delta": -6,
+     "mp": 84
+    },
+    {
+     "t": "cast",
+     "uid": "e1",
+     "skill_id": 202,
+     "skill": "腐蚀吐息",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "shield",
+     "uid": "p1",
+     "absorbed": 39,
+     "shield": 249
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 0,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1330,
+     "shield_absorbed": 39
+    },
+    {
+     "t": "status_add",
+     "uid": "p1",
+     "status": {
+      "key": "poison",
+      "name": "中毒",
+      "kind": "dot",
+      "stat": null,
+      "value": 16.0,
+      "turns": 0,
+      "stacks": 4,
+      "source_uid": "e2",
+      "icon": "☠",
+      "color": "#8ef58e",
+      "note": ""
+     }
+    },
+    {
+     "t": "turn_start",
+     "uid": "e2",
+     "round": 4,
+     "no": 10
+    },
+    {
+     "t": "cast",
+     "uid": "e2",
+     "skill": "普通攻击",
+     "skill_id": null,
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "shield",
+     "uid": "p1",
+     "absorbed": 33,
+     "shield": 216
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 0,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 1330,
+     "shield_absorbed": 33
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "skill",
+    "skill_id": 105,
+    "target_uid": "e2",
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 4,
+    "turn_no": 10,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1330.4967107828704,
+      "mp": 278.0,
+      "rage": 98,
+      "shield": 216.25008517778647,
+      "statuses": [
+       {
+        "key": "poison",
+        "name": "中毒",
+        "kind": "dot",
+        "stat": null,
+        "value": 16.0,
+        "turns": 0,
+        "stacks": 4,
+        "source_uid": "e2",
+        "icon": "☠",
+        "color": "#8ef58e",
+        "note": ""
+       },
+       {
+        "key": "shield",
+        "name": "护盾",
+        "kind": "shield",
+        "stat": null,
+        "value": 0.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "🛡",
+        "color": "#6cc8ff",
+        "note": ""
+       },
+       {
+        "key": "defense_up",
+        "name": "铁壁",
+        "kind": "buff",
+        "stat": "defense",
+        "value": 30.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "◆",
+        "color": "#dddddd",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 3,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 78,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 620.0,
+      "mp": 84.0,
+      "rage": 54,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 238.09523809523807,
+      "actions": 3,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 60,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 33.91608715913259,
+      "mp": 122.0,
+      "rage": 88,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "defense_down",
+        "name": "破甲",
+        "kind": "debuff",
+        "stat": "defense",
+        "value": -25.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "◆",
+        "color": "#dddddd",
+        "note": ""
+       },
+       {
+        "key": "stun",
+        "name": "眩晕",
+        "kind": "control",
+        "stat": null,
+        "value": 0.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "💫",
+        "color": "#ffd76b",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 184.33179723502286,
+      "actions": 4,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 16,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 4,
+     "no": 11
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 31,
+     "dot": true,
+     "status": "poison",
+     "hp": 1300
+    },
+    {
+     "t": "mp",
+     "uid": "p1",
+     "delta": -14,
+     "mp": 264
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill_id": 105,
+     "skill": "定身咒",
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "e2"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "status_add",
+     "uid": "e2",
+     "status": {
+      "key": "stun",
+      "name": "眩晕",
+      "kind": "control",
+      "stat": null,
+      "value": 0.0,
+      "turns": 0,
+      "stacks": 1,
+      "source_uid": "p1",
+      "icon": "💫",
+      "color": "#ffd76b",
+      "note": ""
+     }
+    },
+    {
+     "t": "turn_start",
+     "uid": "e2",
+     "round": 5,
+     "no": 12
+    },
+    {
+     "t": "skip",
+     "uid": "e2",
+     "reason": "stun"
+    },
+    {
+     "t": "status_remove",
+     "uid": "e2",
+     "key": "defense_down"
+    },
+    {
+     "t": "status_remove",
+     "uid": "e2",
+     "key": "stun"
+    },
+    {
+     "t": "turn_start",
+     "uid": "e1",
+     "round": 5,
+     "no": 13
+    },
+    {
+     "t": "cast",
+     "uid": "e1",
+     "skill_id": 201,
+     "skill": "撕咬",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "shield",
+     "uid": "p1",
+     "absorbed": 88,
+     "shield": 129
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 0,
+     "crit": true,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1300,
+     "shield_absorbed": 88
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "skill",
+    "skill_id": 103,
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 5,
+    "turn_no": 13,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1299.7767107828704,
+      "mp": 264.0,
+      "rage": 100,
+      "shield": 128.52937551533074,
+      "statuses": [
+       {
+        "key": "poison",
+        "name": "中毒",
+        "kind": "dot",
+        "stat": null,
+        "value": 16.0,
+        "turns": 0,
+        "stacks": 4,
+        "source_uid": "e2",
+        "icon": "☠",
+        "color": "#8ef58e",
+        "note": ""
+       },
+       {
+        "key": "shield",
+        "name": "护盾",
+        "kind": "shield",
+        "stat": null,
+        "value": 0.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "🛡",
+        "color": "#6cc8ff",
+        "note": ""
+       },
+       {
+        "key": "defense_up",
+        "name": "铁壁",
+        "kind": "buff",
+        "stat": "defense",
+        "value": 30.0,
+        "turns": 0,
+        "stacks": 1,
+        "source_uid": "p1",
+        "icon": "◆",
+        "color": "#dddddd",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 4,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 78,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 620.0,
+      "mp": 84.0,
+      "rage": 72,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "atk_up",
+        "name": "狂暴",
+        "kind": "buff",
+        "stat": "attack",
+        "value": 40.0,
+        "turns": 97,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "▲",
+        "color": "#ff8f6b",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 297.6190476190476,
+      "actions": 4,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 60,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 33.91608715913259,
+      "mp": 122.0,
+      "rage": 94,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 149.769585253456,
+      "actions": 5,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 22,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e2",
+      "name": "腐尸术士",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 5,
+     "no": 14
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 31,
+     "dot": true,
+     "status": "poison",
+     "hp": 1269
+    },
+    {
+     "t": "rage",
+     "uid": "p1",
+     "value": 0
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill_id": 103,
+     "skill": "万剑归宗",
+     "visual": "burst",
+     "element": "none",
+     "targets": [
+      "e1",
+      "e2"
+     ],
+     "ultimate": true
+    },
+    {
+     "t": "damage",
+     "uid": "e1",
+     "value": 453,
+     "crit": true,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 167,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "damage",
+     "uid": "e2",
+     "value": 331,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 0,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "status_add",
+     "uid": "e1",
+     "status": {
+      "key": "atk_up",
+      "name": "狂暴",
+      "kind": "buff",
+      "stat": "attack",
+      "value": 40.0,
+      "turns": 97,
+      "stacks": 1,
+      "source_uid": null,
+      "icon": "▲",
+      "color": "#ff8f6b",
+      "note": ""
+     }
+    },
+    {
+     "t": "phase",
+     "uid": "e1",
+     "phase": 1,
+     "name": "狂暴"
+    },
+    {
+     "t": "banter",
+     "speaker": "暗影狼王",
+     "speaker_id": 2,
+     "line": "狼王发出低沉的咆哮！",
+     "expression": ""
+    },
+    {
+     "t": "banter",
+     "speaker": "暗影狼王",
+     "speaker_id": null,
+     "line": "你……居然能伤到我？",
+     "expression": ""
+    },
+    {
+     "t": "down",
+     "uid": "e2",
+     "name": "腐尸术士",
+     "side": "enemy"
+    },
+    {
+     "t": "status_remove",
+     "uid": "p1",
+     "key": "shield"
+    },
+    {
+     "t": "status_remove",
+     "uid": "p1",
+     "key": "defense_up"
+    },
+    {
+     "t": "shield_add",
+     "uid": "p1",
+     "shield": 0
+    },
+    {
+     "t": "turn_start",
+     "uid": "e1",
+     "round": 6,
+     "no": 15
+    },
+    {
+     "t": "cast",
+     "uid": "e1",
+     "skill_id": 201,
+     "skill": "撕咬",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 79,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1190,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "defend",
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 6,
+    "turn_no": 15,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1190.476457881471,
+      "mp": 264.0,
+      "rage": 32,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "poison",
+        "name": "中毒",
+        "kind": "dot",
+        "stat": null,
+        "value": 16.0,
+        "turns": 0,
+        "stacks": 4,
+        "source_uid": "e2",
+        "icon": "☠",
+        "color": "#8ef58e",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 5,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 60,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 167.06411503898886,
+      "mp": 84.0,
+      "rage": 98,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "atk_up",
+        "name": "狂暴",
+        "kind": "buff",
+        "stat": "attack",
+        "value": 40.0,
+        "turns": 97,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "▲",
+        "color": "#ff8f6b",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 357.1428571428571,
+      "actions": 5,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 1,
+      "phase_name": "狂暴",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 84,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 0.0,
+      "mp": 122.0,
+      "rage": 100,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": false,
+      "av": 149.769585253456,
+      "actions": 5,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": false,
+        "reason": "生命不足"
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 22,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 6,
+     "no": 16
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 31,
+     "dot": true,
+     "status": "poison",
+     "hp": 1160
+    },
+    {
+     "t": "defend",
+     "uid": "p1",
+     "rage": 63
+    },
+    {
+     "t": "status_remove",
+     "uid": "p1",
+     "key": "poison"
+    },
+    {
+     "t": "turn_start",
+     "uid": "e1",
+     "round": 7,
+     "no": 17
+    },
+    {
+     "t": "cast",
+     "uid": "e1",
+     "skill_id": 201,
+     "skill": "撕咬",
+     "visual": "",
+     "element": "dark",
+     "targets": [
+      "p1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "p1",
+     "value": 46,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "dark",
+     "hp": 1114,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "attack",
+    "target_uid": "e1",
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 7,
+    "turn_no": 17,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1114.1430859732372,
+      "mp": 264.0,
+      "rage": 71,
+      "shield": 0,
+      "statuses": [],
+      "defending": true,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 6,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 60,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 167.06411503898886,
+      "mp": 84.0,
+      "rage": 100,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "atk_up",
+        "name": "狂暴",
+        "kind": "buff",
+        "stat": "attack",
+        "value": 40.0,
+        "turns": 97,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "▲",
+        "color": "#ff8f6b",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 416.66666666666663,
+      "actions": 6,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 1,
+      "phase_name": "狂暴",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 84,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 0.0,
+      "mp": 122.0,
+      "rage": 100,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": false,
+      "av": 149.769585253456,
+      "actions": 5,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": false,
+        "reason": "生命不足"
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 22,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 7,
+     "no": 18
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill": "普通攻击",
+     "skill_id": null,
+     "visual": "",
+     "element": "none",
+     "targets": [
+      "e1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "e1",
+     "value": 154,
+     "crit": true,
+     "weak": false,
+     "resist": false,
+     "element": "none",
+     "hp": 13,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "await_input",
+     "uid": "p1"
+    }
+   ]
+  },
+  {
+   "action": {
+    "type": "skill",
+    "skill_id": 101,
+    "target_uid": "e1",
+    "uid": "p1"
+   },
+   "state": {
+    "v": 2,
+    "status": "active",
+    "round": 8,
+    "turn_no": 18,
+    "turn_uid": "p1",
+    "units": [
+     {
+      "uid": "p1",
+      "side": "player",
+      "name": "测试侠",
+      "character_id": 1,
+      "user_character_id": 1,
+      "level": 10,
+      "realm_name": "筑基三重",
+      "element": "fire",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+       "faces": {
+        "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+        "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+        "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+       },
+       "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+        },
+        {
+         "min": 30,
+         "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 1600.0,
+       "max_mp": 300.0,
+       "attack": 110.0,
+       "defense": 60.0,
+       "speed": 28.0,
+       "luck": 12.0
+      },
+      "hp": 1114.1430859732372,
+      "mp": 264.0,
+      "rage": 89,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": true,
+      "av": 357.14285714285717,
+      "actions": 7,
+      "skills": [
+       {
+        "id": 101,
+        "name": "烈火掌",
+        "mp_cost": 8,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "fire",
+        "target_type": "single_enemy",
+        "power": 160.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "造成火属性伤害",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 102,
+        "name": "破甲击",
+        "mp_cost": 10,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 110.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "降低目标防御",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "debuff"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 104,
+        "name": "护体真气",
+        "mp_cost": 12,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "self",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "获得护盾与防御提升",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "buff",
+         "shield"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 105,
+        "name": "定身咒",
+        "mp_cost": 14,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "none",
+        "target_type": "single_enemy",
+        "power": 0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "定住目标一回合",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "control"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 103,
+        "name": "万剑归宗",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 100,
+        "element": "none",
+        "target_type": "all_enemies",
+        "power": 320.0,
+        "heal": 0,
+        "is_ultimate": 1,
+        "cooldown": 0,
+        "description": "对全体敌人造成大量伤害",
+        "image": "",
+        "visual_effect": "burst",
+        "kinds": [
+         "damage"
+        ],
+        "usable": false,
+        "reason": "怒气不足（需要 100）"
+       }
+      ],
+      "items": [
+       {
+        "id": 1,
+        "name": "回春丹",
+        "image": "",
+        "quantity": 5,
+        "rarity": 2,
+        "description": "恢复生命",
+        "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+       }
+      ],
+      "cooldowns": {},
+      "ai": {
+       "type": "player",
+       "skill_chance": 0.9
+      },
+      "drops": [],
+      "exp_reward": null,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "exp": 180,
+      "start_hp": 1600.0,
+      "start_mp": 300.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 1600,
+       "max_mp": 300,
+       "attack": 110,
+       "defense": 60,
+       "speed": 28
+      }
+     },
+     {
+      "uid": "e1",
+      "side": "enemy",
+      "name": "暗影狼王",
+      "character_id": 2,
+      "user_character_id": null,
+      "level": 11,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+       "faces": {
+        "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+        "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+       },
+       "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+        }
+       ]
+      },
+      "is_boss": true,
+      "is_ally": false,
+      "base": {
+       "max_hp": 620.0,
+       "max_mp": 90.0,
+       "attack": 60.0,
+       "defense": 30.0,
+       "speed": 24.0,
+       "luck": 8.0
+      },
+      "hp": 12.932291047533766,
+      "mp": 84.0,
+      "rage": 100,
+      "shield": 0,
+      "statuses": [
+       {
+        "key": "atk_up",
+        "name": "狂暴",
+        "kind": "buff",
+        "stat": "attack",
+        "value": 40.0,
+        "turns": 97,
+        "stacks": 1,
+        "source_uid": null,
+        "icon": "▲",
+        "color": "#ff8f6b",
+        "note": ""
+       }
+      ],
+      "defending": false,
+      "alive": true,
+      "av": 59.52380952380946,
+      "actions": 6,
+      "skills": [
+       {
+        "id": 201,
+        "name": "撕咬",
+        "mp_cost": 0,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 130.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage"
+        ],
+        "usable": true,
+        "reason": ""
+       },
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": true,
+        "reason": ""
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.7
+      },
+      "drops": [
+       {
+        "item_id": 1,
+        "name": "回春丹",
+        "quantity": 1,
+        "chance": 100
+       },
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 1,
+        "chance": 60
+       }
+      ],
+      "exp_reward": 420.0,
+      "phases": [
+       {
+        "hp_below": 60,
+        "name": "狂暴",
+        "line": "狼王发出低沉的咆哮！",
+        "buff": {
+         "key": "atk_up",
+         "name": "狂暴",
+         "stat": "attack",
+         "value": 40,
+         "turns": 99
+        }
+       }
+      ],
+      "phase": 1,
+      "phase_name": "狂暴",
+      "start_hp": 620.0,
+      "start_mp": 90.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 620,
+       "max_mp": 90,
+       "attack": 84,
+       "defense": 30,
+       "speed": 24
+      }
+     },
+     {
+      "uid": "e2",
+      "side": "enemy",
+      "name": "腐尸术士",
+      "character_id": 3,
+      "user_character_id": null,
+      "level": 10,
+      "realm_name": "",
+      "element": "dark",
+      "portrait": "",
+      "states": {},
+      "art": {
+       "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "faces": {},
+       "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+       "attack": "",
+       "cast": "",
+       "defend": "",
+       "ultimate": "",
+       "down": "",
+       "hurt": [
+        {
+         "min": 60,
+         "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+        }
+       ]
+      },
+      "is_boss": false,
+      "is_ally": false,
+      "base": {
+       "max_hp": 300.0,
+       "max_mp": 140.0,
+       "attack": 48.0,
+       "defense": 22.0,
+       "speed": 31.0,
+       "luck": 10.0
+      },
+      "hp": 0.0,
+      "mp": 122.0,
+      "rage": 100,
+      "shield": 0,
+      "statuses": [],
+      "defending": false,
+      "alive": false,
+      "av": 149.769585253456,
+      "actions": 5,
+      "skills": [
+       {
+        "id": 202,
+        "name": "腐蚀吐息",
+        "mp_cost": 6,
+        "hp_cost": 0,
+        "rage_cost": 0,
+        "element": "dark",
+        "target_type": "single_enemy",
+        "power": 100.0,
+        "heal": 0,
+        "is_ultimate": 0,
+        "cooldown": 0,
+        "description": "",
+        "image": "",
+        "visual_effect": "",
+        "kinds": [
+         "damage",
+         "dot"
+        ],
+        "usable": false,
+        "reason": "生命不足"
+       }
+      ],
+      "items": [],
+      "cooldowns": {},
+      "ai": {
+       "type": "aggressive",
+       "skill_chance": 0.8
+      },
+      "drops": [
+       {
+        "item_id": 2,
+        "name": "暗影结晶",
+        "quantity": 2,
+        "chance": 100
+       }
+      ],
+      "exp_reward": 300.0,
+      "phases": [],
+      "phase": 0,
+      "phase_name": "",
+      "start_hp": 300.0,
+      "start_mp": 140.0,
+      "start_rage": 0,
+      "eff": {
+       "max_hp": 300,
+       "max_mp": 140,
+       "attack": 48,
+       "defense": 22,
+       "speed": 31
+      }
+     }
+    ],
+    "log": [
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「又来了一个送死的。」"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】8 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】15 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 获得状态【破甲】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】23 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得 288 点护盾"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 获得状态【铁壁】（3 回合）"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "测试侠 陷入【中毒】"
+     },
+     {
+      "kind": "damage",
+      "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 被【眩晕】"
+     },
+     {
+      "kind": "status",
+      "text": "腐尸术士 因【眩晕】无法行动"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+     },
+     {
+      "kind": "phase",
+      "text": "暗影狼王 进入【狂暴】！"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+     },
+     {
+      "kind": "banter",
+      "text": "暗影狼王：「你……居然能伤到我？」"
+     },
+     {
+      "kind": "down",
+      "text": "腐尸术士 倒下了！"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+     },
+     {
+      "kind": "dot",
+      "text": "测试侠 受到【中毒】31 点伤害"
+     },
+     {
+      "kind": "action",
+      "text": "测试侠 摆出防御姿态"
+     },
+     {
+      "kind": "damage",
+      "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+     },
+     {
+      "kind": "damage",
+      "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+     },
+     {
+      "kind": "down",
+      "text": "暗影狼王 倒下了！"
+     },
+     {
+      "kind": "system",
+      "text": "战斗胜利！"
+     },
+     {
+      "kind": "banter",
+      "text": "测试侠：「结束了。」"
+     }
+    ],
+    "banter": [],
+    "rewards": null,
+    "order": [
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     },
+     {
+      "uid": "e1",
+      "name": "暗影狼王",
+      "side": "enemy"
+     },
+     {
+      "uid": "p1",
+      "name": "测试侠",
+      "side": "player"
+     }
+    ],
+    "config": {
+     "difficulty": 1.0,
+     "allow_flee": true,
+     "auto_banter": true,
+     "exp_multiplier": 1.0,
+     "background": "",
+     "bgm": "",
+     "victory_node_id": null,
+     "defeat_node_id": null,
+     "flee_node_id": null,
+     "defeat_penalty": "half_hp",
+     "banter": [
+      {
+       "trigger": "battle_start",
+       "speaker": "暗影狼王",
+       "line": "又来了一个送死的。"
+      },
+      {
+       "trigger": "hp_below",
+       "uid": "e1",
+       "value": 45,
+       "speaker": "暗影狼王",
+       "line": "你……居然能伤到我？"
+      },
+      {
+       "trigger": "victory",
+       "speaker": "测试侠",
+       "line": "结束了。"
+      }
+     ]
+    },
+    "meta": {
+     "story_node_id": 8,
+     "user_character_id": 1,
+     "player_name": "测试侠"
+    },
+    "finished": false
+   },
+   "events": [
+    {
+     "t": "turn_start",
+     "uid": "p1",
+     "round": 8,
+     "no": 19
+    },
+    {
+     "t": "mp",
+     "uid": "p1",
+     "delta": -8,
+     "mp": 256
+    },
+    {
+     "t": "cast",
+     "uid": "p1",
+     "skill_id": 101,
+     "skill": "烈火掌",
+     "visual": "",
+     "element": "fire",
+     "targets": [
+      "e1"
+     ],
+     "ultimate": false
+    },
+    {
+     "t": "damage",
+     "uid": "e1",
+     "value": 149,
+     "crit": false,
+     "weak": false,
+     "resist": false,
+     "element": "fire",
+     "hp": 0,
+     "shield_absorbed": 0
+    },
+    {
+     "t": "down",
+     "uid": "e1",
+     "name": "暗影狼王",
+     "side": "enemy"
+    },
+    {
+     "t": "victory"
+    },
+    {
+     "t": "banter",
+     "speaker": "测试侠",
+     "speaker_id": null,
+     "line": "结束了。",
+     "expression": ""
+    }
+   ]
+  }
+ ],
+ "final": {
+  "v": 2,
+  "status": "player_won",
+  "round": 8,
+  "turn_no": 19,
+  "turn_uid": null,
+  "units": [
+   {
+    "uid": "p1",
+    "side": "player",
+    "name": "测试侠",
+    "character_id": 1,
+    "user_character_id": 1,
+    "level": 10,
+    "realm_name": "筑基三重",
+    "element": "fire",
+    "portrait": "",
+    "states": {},
+    "art": {
+     "portrait": "/images/characters/portrait/fc6127ce33dc47429659cb2e3fe1c6e9.jpeg",
+     "faces": {
+      "normal": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+      "happy": "/images/characters/expression/39830ac13b2648be81f7ec9009360858.png",
+      "angry": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+     },
+     "idle": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png",
+     "attack": "",
+     "cast": "",
+     "defend": "",
+     "ultimate": "",
+     "down": "",
+     "hurt": [
+      {
+       "min": 60,
+       "url": "/images/characters/expression/9f915dc2d3a449a8979c5c915cec1ce2.png"
+      },
+      {
+       "min": 30,
+       "url": "/images/characters/expression/928c2eedc4d34873b5dc41bd5165637b.jpg"
+      }
+     ]
+    },
+    "is_boss": false,
+    "is_ally": false,
+    "base": {
+     "max_hp": 1600.0,
+     "max_mp": 300.0,
+     "attack": 110.0,
+     "defense": 60.0,
+     "speed": 28.0,
+     "luck": 12.0
+    },
+    "hp": 1114.1430859732372,
+    "mp": 256.0,
+    "rage": 100,
+    "shield": 0,
+    "statuses": [],
+    "defending": false,
+    "alive": true,
+    "av": 357.14285714285717,
+    "actions": 8,
+    "skills": [
+     {
+      "id": 101,
+      "name": "烈火掌",
+      "mp_cost": 8,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "fire",
+      "target_type": "single_enemy",
+      "power": 160.0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "造成火属性伤害",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "damage"
+      ],
+      "usable": true,
+      "reason": ""
+     },
+     {
+      "id": 102,
+      "name": "破甲击",
+      "mp_cost": 10,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "none",
+      "target_type": "single_enemy",
+      "power": 110.0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "降低目标防御",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "damage",
+       "debuff"
+      ],
+      "usable": true,
+      "reason": ""
+     },
+     {
+      "id": 104,
+      "name": "护体真气",
+      "mp_cost": 12,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "none",
+      "target_type": "self",
+      "power": 0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "获得护盾与防御提升",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "buff",
+       "shield"
+      ],
+      "usable": true,
+      "reason": ""
+     },
+     {
+      "id": 105,
+      "name": "定身咒",
+      "mp_cost": 14,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "none",
+      "target_type": "single_enemy",
+      "power": 0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "定住目标一回合",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "control"
+      ],
+      "usable": true,
+      "reason": ""
+     },
+     {
+      "id": 103,
+      "name": "万剑归宗",
+      "mp_cost": 0,
+      "hp_cost": 0,
+      "rage_cost": 100,
+      "element": "none",
+      "target_type": "all_enemies",
+      "power": 320.0,
+      "heal": 0,
+      "is_ultimate": 1,
+      "cooldown": 0,
+      "description": "对全体敌人造成大量伤害",
+      "image": "",
+      "visual_effect": "burst",
+      "kinds": [
+       "damage"
+      ],
+      "usable": true,
+      "reason": ""
+     }
+    ],
+    "items": [
+     {
+      "id": 1,
+      "name": "回春丹",
+      "image": "",
+      "quantity": 5,
+      "rarity": 2,
+      "description": "恢复生命",
+      "effects": "[{\"kind\": \"heal\", \"value\": 220, \"target\": \"self\"}]"
+     }
+    ],
+    "cooldowns": {},
+    "ai": {
+     "type": "player",
+     "skill_chance": 0.9
+    },
+    "drops": [],
+    "exp_reward": null,
+    "phases": [],
+    "phase": 0,
+    "phase_name": "",
+    "exp": 180,
+    "start_hp": 1600.0,
+    "start_mp": 300.0,
+    "start_rage": 0,
+    "eff": {
+     "max_hp": 1600,
+     "max_mp": 300,
+     "attack": 110,
+     "defense": 60,
+     "speed": 28
+    }
+   },
+   {
+    "uid": "e1",
+    "side": "enemy",
+    "name": "暗影狼王",
+    "character_id": 2,
+    "user_character_id": null,
+    "level": 11,
+    "realm_name": "",
+    "element": "dark",
+    "portrait": "",
+    "states": {},
+    "art": {
+     "portrait": "/images/characters/portrait/cc3efefc74fc459c8adf9380418d5bcb.jpg",
+     "faces": {
+      "normal": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+      "happy": "/images/characters/expression/ecea669c77394652bb3aa9a2e36ca757.jpg"
+     },
+     "idle": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg",
+     "attack": "",
+     "cast": "",
+     "defend": "",
+     "ultimate": "",
+     "down": "",
+     "hurt": [
+      {
+       "min": 60,
+       "url": "/images/characters/expression/a8f6fed6ef894fa48edb06e6ae9f302a.jpg"
+      }
+     ]
+    },
+    "is_boss": true,
+    "is_ally": false,
+    "base": {
+     "max_hp": 620.0,
+     "max_mp": 90.0,
+     "attack": 60.0,
+     "defense": 30.0,
+     "speed": 24.0,
+     "luck": 8.0
+    },
+    "hp": 0.0,
+    "mp": 84.0,
+    "rage": 100,
+    "shield": 0,
+    "statuses": [],
+    "defending": false,
+    "alive": false,
+    "av": 59.52380952380946,
+    "actions": 6,
+    "skills": [
+     {
+      "id": 201,
+      "name": "撕咬",
+      "mp_cost": 0,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "dark",
+      "target_type": "single_enemy",
+      "power": 130.0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "damage"
+      ],
+      "usable": false,
+      "reason": "生命不足"
+     },
+     {
+      "id": 202,
+      "name": "腐蚀吐息",
+      "mp_cost": 6,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "dark",
+      "target_type": "single_enemy",
+      "power": 100.0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "damage",
+       "dot"
+      ],
+      "usable": false,
+      "reason": "生命不足"
+     }
+    ],
+    "items": [],
+    "cooldowns": {},
+    "ai": {
+     "type": "aggressive",
+     "skill_chance": 0.7
+    },
+    "drops": [
+     {
+      "item_id": 1,
+      "name": "回春丹",
+      "quantity": 1,
+      "chance": 100
+     },
+     {
+      "item_id": 2,
+      "name": "暗影结晶",
+      "quantity": 1,
+      "chance": 60
+     }
+    ],
+    "exp_reward": 420.0,
+    "phases": [
+     {
+      "hp_below": 60,
+      "name": "狂暴",
+      "line": "狼王发出低沉的咆哮！",
+      "buff": {
+       "key": "atk_up",
+       "name": "狂暴",
+       "stat": "attack",
+       "value": 40,
+       "turns": 99
+      }
+     }
+    ],
+    "phase": 1,
+    "phase_name": "狂暴",
+    "start_hp": 620.0,
+    "start_mp": 90.0,
+    "start_rage": 0,
+    "eff": {
+     "max_hp": 620,
+     "max_mp": 90,
+     "attack": 60,
+     "defense": 30,
+     "speed": 24
+    }
+   },
+   {
+    "uid": "e2",
+    "side": "enemy",
+    "name": "腐尸术士",
+    "character_id": 3,
+    "user_character_id": null,
+    "level": 10,
+    "realm_name": "",
+    "element": "dark",
+    "portrait": "",
+    "states": {},
+    "art": {
+     "portrait": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+     "faces": {},
+     "idle": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg",
+     "attack": "",
+     "cast": "",
+     "defend": "",
+     "ultimate": "",
+     "down": "",
+     "hurt": [
+      {
+       "min": 60,
+       "url": "/images/characters/portrait/21f97ec832684420b0b86508297479b4.jpg"
+      }
+     ]
+    },
+    "is_boss": false,
+    "is_ally": false,
+    "base": {
+     "max_hp": 300.0,
+     "max_mp": 140.0,
+     "attack": 48.0,
+     "defense": 22.0,
+     "speed": 31.0,
+     "luck": 10.0
+    },
+    "hp": 0.0,
+    "mp": 122.0,
+    "rage": 100,
+    "shield": 0,
+    "statuses": [],
+    "defending": false,
+    "alive": false,
+    "av": 149.769585253456,
+    "actions": 5,
+    "skills": [
+     {
+      "id": 202,
+      "name": "腐蚀吐息",
+      "mp_cost": 6,
+      "hp_cost": 0,
+      "rage_cost": 0,
+      "element": "dark",
+      "target_type": "single_enemy",
+      "power": 100.0,
+      "heal": 0,
+      "is_ultimate": 0,
+      "cooldown": 0,
+      "description": "",
+      "image": "",
+      "visual_effect": "",
+      "kinds": [
+       "damage",
+       "dot"
+      ],
+      "usable": false,
+      "reason": "生命不足"
+     }
+    ],
+    "items": [],
+    "cooldowns": {},
+    "ai": {
+     "type": "aggressive",
+     "skill_chance": 0.8
+    },
+    "drops": [
+     {
+      "item_id": 2,
+      "name": "暗影结晶",
+      "quantity": 2,
+      "chance": 100
+     }
+    ],
+    "exp_reward": 300.0,
+    "phases": [],
+    "phase": 0,
+    "phase_name": "",
+    "start_hp": 300.0,
+    "start_mp": 140.0,
+    "start_rage": 0,
+    "eff": {
+     "max_hp": 300,
+     "max_mp": 140,
+     "attack": 48,
+     "defense": 22,
+     "speed": 31
+    }
+   }
+  ],
+  "log": [
+   {
+    "kind": "banter",
+    "text": "暗影狼王：「又来了一个送死的。」"
+   },
+   {
+    "kind": "damage",
+    "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 32 点伤害"
+   },
+   {
+    "kind": "status",
+    "text": "测试侠 陷入【中毒】"
+   },
+   {
+    "kind": "dot",
+    "text": "测试侠 受到【中毒】8 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "测试侠 攻击 腐尸术士，造成 103 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "暗影狼王 攻击 测试侠，造成 42 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 33 点伤害"
+   },
+   {
+    "kind": "status",
+    "text": "测试侠 陷入【中毒】"
+   },
+   {
+    "kind": "dot",
+    "text": "测试侠 受到【中毒】15 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "测试侠 使用【破甲击】对 腐尸术士 造成 163 点伤害（暴击！）"
+   },
+   {
+    "kind": "status",
+    "text": "腐尸术士 获得状态【破甲】（3 回合）"
+   },
+   {
+    "kind": "damage",
+    "text": "暗影狼王 使用【撕咬】对 测试侠 造成 58 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "腐尸术士 使用【腐蚀吐息】对 测试侠 造成 58 点伤害（暴击！）"
+   },
+   {
+    "kind": "status",
+    "text": "测试侠 陷入【中毒】"
+   },
+   {
+    "kind": "dot",
+    "text": "测试侠 受到【中毒】23 点伤害"
+   },
+   {
+    "kind": "status",
+    "text": "测试侠 获得 288 点护盾"
+   },
+   {
+    "kind": "status",
+    "text": "测试侠 获得状态【铁壁】（3 回合）"
+   },
+   {
+    "kind": "damage",
+    "text": "暗影狼王 使用【腐蚀吐息】对 测试侠 造成 0 点伤害"
+   },
+   {
+    "kind": "status",
+    "text": "测试侠 陷入【中毒】"
+   },
+   {
+    "kind": "damage",
+    "text": "腐尸术士 攻击 测试侠，造成 0 点伤害"
+   },
+   {
+    "kind": "dot",
+    "text": "测试侠 受到【中毒】31 点伤害"
+   },
+   {
+    "kind": "status",
+    "text": "腐尸术士 被【眩晕】"
+   },
+   {
+    "kind": "status",
+    "text": "腐尸术士 因【眩晕】无法行动"
+   },
+   {
+    "kind": "damage",
+    "text": "暗影狼王 使用【撕咬】对 测试侠 造成 0 点伤害（暴击！）"
+   },
+   {
+    "kind": "dot",
+    "text": "测试侠 受到【中毒】31 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "测试侠 使用【万剑归宗】对 暗影狼王、腐尸术士 造成 783 点伤害"
+   },
+   {
+    "kind": "phase",
+    "text": "暗影狼王 进入【狂暴】！"
+   },
+   {
+    "kind": "banter",
+    "text": "暗影狼王：「狼王发出低沉的咆哮！」"
+   },
+   {
+    "kind": "banter",
+    "text": "暗影狼王：「你……居然能伤到我？」"
+   },
+   {
+    "kind": "down",
+    "text": "腐尸术士 倒下了！"
+   },
+   {
+    "kind": "damage",
+    "text": "暗影狼王 使用【撕咬】对 测试侠 造成 79 点伤害"
+   },
+   {
+    "kind": "dot",
+    "text": "测试侠 受到【中毒】31 点伤害"
+   },
+   {
+    "kind": "action",
+    "text": "测试侠 摆出防御姿态"
+   },
+   {
+    "kind": "damage",
+    "text": "暗影狼王 使用【撕咬】对 测试侠 造成 46 点伤害"
+   },
+   {
+    "kind": "damage",
+    "text": "测试侠 攻击 暗影狼王，造成 154 点伤害（暴击！）"
+   },
+   {
+    "kind": "damage",
+    "text": "测试侠 使用【烈火掌】对 暗影狼王 造成 149 点伤害"
+   },
+   {
+    "kind": "down",
+    "text": "暗影狼王 倒下了！"
+   },
+   {
+    "kind": "system",
+    "text": "战斗胜利！"
+   },
+   {
+    "kind": "banter",
+    "text": "测试侠：「结束了。」"
+   }
+  ],
+  "banter": [],
+  "rewards": {
+   "result": "player_won",
+   "exp": 720,
+   "drops": [
+    {
+     "item_id": 1,
+     "name": "回春丹",
+     "image": "",
+     "quantity": 1
+    },
+    {
+     "item_id": 2,
+     "name": "暗影结晶",
+     "image": "",
+     "quantity": 1
+    },
+    {
+     "item_id": 2,
+     "name": "暗影结晶",
+     "image": "",
+     "quantity": 2
+    }
+   ],
+   "level_up": [
+    {
+     "level": 11,
+     "exp_left": 700,
+     "realm_up": false
+    },
+    {
+     "level": 12,
+     "exp_left": 500,
+     "realm_up": false
+    },
+    {
+     "level": 13,
+     "exp_left": 300,
+     "realm_up": false
+    },
+    {
+     "level": 14,
+     "exp_left": 100,
+     "realm_up": false
+    }
+   ],
+   "realm_up": null,
+   "learned_skills": [],
+   "coin": 432,
+   "final_exp": 100,
+   "final_level": 14
+  },
+  "order": [],
+  "config": {
+   "difficulty": 1.0,
+   "allow_flee": true,
+   "auto_banter": true,
+   "exp_multiplier": 1.0,
+   "background": "",
+   "bgm": "",
+   "victory_node_id": null,
+   "defeat_node_id": null,
+   "flee_node_id": null,
+   "defeat_penalty": "half_hp",
+   "banter": [
+    {
+     "trigger": "battle_start",
+     "speaker": "暗影狼王",
+     "line": "又来了一个送死的。"
+    },
+    {
+     "trigger": "hp_below",
+     "uid": "e1",
+     "value": 45,
+     "speaker": "暗影狼王",
+     "line": "你……居然能伤到我？"
+    },
+    {
+     "trigger": "victory",
+     "speaker": "测试侠",
+     "line": "结束了。"
+    }
+   ]
+  },
+  "meta": {
+   "story_node_id": 8,
+   "user_character_id": 1,
+   "player_name": "测试侠"
+  },
+  "finished": true
+ },
+ "rewards": {
+  "result": "player_won",
+  "exp": 720,
+  "drops": [
+   {
+    "item_id": 1,
+    "name": "回春丹",
+    "image": "",
+    "quantity": 1
+   },
+   {
+    "item_id": 2,
+    "name": "暗影结晶",
+    "image": "",
+    "quantity": 1
+   },
+   {
+    "item_id": 2,
+    "name": "暗影结晶",
+    "image": "",
+    "quantity": 2
+   }
+  ],
+  "level_up": [
+   {
+    "level": 11,
+    "exp_left": 700,
+    "realm_up": false
+   },
+   {
+    "level": 12,
+    "exp_left": 500,
+    "realm_up": false
+   },
+   {
+    "level": 13,
+    "exp_left": 300,
+    "realm_up": false
+   },
+   {
+    "level": 14,
+    "exp_left": 100,
+    "realm_up": false
+   }
+  ],
+  "realm_up": null,
+  "learned_skills": [],
+  "coin": 432,
+  "final_exp": 100,
+  "final_level": 14
+ },
+ "meta": {
+  "event_types": [
+   "await_input",
+   "banter",
+   "cast",
+   "damage",
+   "defend",
+   "down",
+   "mp",
+   "phase",
+   "rage",
+   "shield",
+   "shield_add",
+   "skip",
+   "status_add",
+   "status_remove",
+   "turn_start",
+   "victory"
+  ],
+  "total_commands": 8,
+  "result": "player_won"
+ }
+}

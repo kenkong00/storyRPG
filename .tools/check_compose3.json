@@ -1,0 +1,13 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='compose']" },
+  { "wait": 4500 },
+  { "eval": "var i=document.querySelector('#cmp-gen-params #gp-preset-host input'); i.focus(); i.dispatchEvent(new Event('focus')); 'focused'" },
+  { "wait": 1200 },
+  { "eval": "JSON.stringify({ items: document.querySelectorAll('.cb-pop .cb-item').length, cnt: (document.querySelector('.cb-pop .cnt')||{}).textContent, disp: document.querySelector('.cb-pop').style.display })" },
+  { "eval": "var b=document.querySelector('#cmp-gen-params #gp-preset-host .cb-btn'); if(b){b.dispatchEvent(new MouseEvent('mousedown',{bubbles:true})); 'btn'} else 'nobtn'" },
+  { "wait": 900 },
+  { "eval": "JSON.stringify({ items2: document.querySelectorAll('.cb-pop .cb-item').length, disp2: document.querySelector('.cb-pop').style.display })" },
+  { "shot": "compose-preset2.png" }
+]

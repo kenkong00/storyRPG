@@ -1,0 +1,13 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 3000 },
+  { "click": ".ch-card-img" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ tabs: Array.from(document.querySelectorAll('.char-tab-btn')).map(b=>b.textContent.trim()), overlayBg: getComputedStyle(document.querySelector('.modal-overlay')).backgroundColor, topbarZ: getComputedStyle(document.querySelector('.topbar')).zIndex })" },
+  { "click": ".char-tab-btn[data-tab='appear']" },
+  { "wait": 3000 },
+  { "eval": "JSON.stringify({ appearVisible: document.getElementById('char-tab-appear').style.display, basicHidden: document.getElementById('char-tab-basic').style.display, cards: document.querySelectorAll('.cap-card').length, opsVisible: getComputedStyle(document.querySelector('.cap-card-ops')).display, editorRows: document.querySelectorAll('.ae-row').length })" },
+  { "shot": "char-appear.png" }
+]

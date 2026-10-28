@@ -1,0 +1,193 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>暗影纪元</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/platform.css">
+</head>
+<body>
+
+<!-- ===== 游戏平台层（首页：分类+轮播+网格+登录） ===== -->
+<div id="platform-layer">
+  <div id="platform-header">
+    <div class="platform-logo">暗影纪元 · 游戏平台</div>
+    <div id="platform-user-area"></div>
+  </div>
+  <div id="platform-body">
+    <!-- 轮播图 -->
+    <div id="platform-carousel" class="hidden"></div>
+    <!-- 分类筛选 -->
+    <div id="platform-cats"></div>
+    <!-- 游戏网格 -->
+    <div id="platform-grid"></div>
+  </div>
+</div>
+
+<!-- ===== 认证弹窗（登录/注册） ===== -->
+<div id="auth-modal" class="hidden">
+  <div class="auth-box">
+    <button class="auth-close" id="auth-close">×</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-mode="login">登录</button>
+      <button class="auth-tab" data-mode="register">注册</button>
+    </div>
+    <div class="auth-form">
+      <input type="text" id="auth-username" placeholder="用户名（至少3位）" autocomplete="off">
+      <input type="password" id="auth-password" placeholder="密码（至少6位）" autocomplete="off">
+      <input type="text" id="auth-nickname" placeholder="昵称（注册时填写，可留空）" autocomplete="off" style="display:none">
+      <button id="auth-submit">登录</button>
+      <div id="auth-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 游戏开始画面弹窗（按钮配置 + 新建人物/读档） ===== -->
+<div id="game-start-modal" class="hidden">
+  <div id="game-start-stage"></div>
+  <button class="game-start-back" id="game-start-back">← 返回</button>
+</div>
+
+<!-- ===== 通用平台弹窗（新建人物等） ===== -->
+<div id="platform-modal" class="hidden">
+  <div class="platform-modal-box">
+    <button class="platform-modal-close" id="platform-modal-close">×</button>
+    <div id="platform-modal-body"></div>
+  </div>
+</div>
+
+<!-- 主游戏容器（默认隐藏，由 Platform._enterGame 显示） -->
+<div id="game-container" style="display:none">
+
+  <!-- 背景层 -->
+  <div id="background-layer" style="background: rgb(0, 0, 0);">
+    <img id="bg-image" src="" alt="场景背景" style="display: none;">
+    <div id="bg-overlay"></div>
+  </div>
+
+  <!-- ===== 游戏UI层（可整体隐藏） ===== -->
+    <div id="ui-layer">
+
+      <!-- 左上角：人物HUD -->
+      <div id="player-hud">
+        <div id="hud-portrait" title="点击查看人物属性">
+          <img id="hud-avatar" src="" alt="">
+        </div>
+        <div id="hud-info">
+          <div class="hud-row-top">
+            <div id="hud-name">艾尔文</div>
+            <div id="hud-level">Lv.1</div>
+          </div>
+          <div class="hud-bar-row">
+            <div class="hud-bar-track hp-track">
+              <div class="hud-bar-fill hp-fill" id="hud-hp-fill" style="width:100%"></div>
+            </div>
+            <span class="hud-bar-text hp-text" id="hud-hp-text">HP 100/100</span>
+          </div>
+          <div class="hud-bar-row">
+            <div class="hud-bar-track mp-track">
+              <div class="hud-bar-fill mp-fill" id="hud-mp-fill" style="width:100%"></div>
+            </div>
+            <span class="hud-bar-text mp-text" id="hud-mp-text">MP 50/50</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 左侧菜单图标 -->
+      <div id="left-menu">
+        <div class="menu-icon" data-panel="character" title="人物" data-tooltip="人物属性">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
+        </div>
+        <div class="menu-icon" data-panel="inventory" title="背包" data-tooltip="背包 (I)">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M20 7h-4V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-6 0h-4V5h4v2z"></path></svg>
+        </div>
+        <div class="menu-icon" data-panel="map" title="地图" data-tooltip="地图 (M)">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"></path></svg>
+        </div>
+        <div class="menu-icon" data-panel="menu" title="设置" data-tooltip="设置">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
+        </div>
+      </div>
+
+    </div><!-- /ui-layer -->
+
+    <!-- 右上角UI开关（保持在ui-layer外面，隐藏时可见） -->
+    <button id="ui-toggle" title="隐藏/显示界面">•</button>
+
+    <!-- 对话/表情层（可整体隐藏，与ui-layer同步） -->
+    <div id="dialogue-overlay">
+
+      <!-- 表情层（多人表情容器） -->
+      <div id="expression-layer"></div>
+
+      <!-- 对话框（透明，压在表情上方） -->
+      <div id="dialogue-box">
+        <div id="speaker-name"></div>
+        <div id="dialogue-text"></div>
+        <div id="dialogue-indicator">▼</div>
+      </div>
+
+    </div><!-- /dialogue-overlay -->
+
+    <!-- 章节封面层 -->
+    <div id="chapter-cover" class="hidden">
+      <div id="chapter-cover-bg"></div>
+      <div id="chapter-cover-content">
+        <div id="chapter-cover-title"></div>
+        <div id="chapter-cover-subtitle"></div>
+      </div>
+    </div>
+
+    <!-- 选择分支 -->
+    <div id="choices-container" class="hidden">
+      <div id="choices-list"></div>
+    </div>
+
+    <!-- 战斗层 -->
+    <div id="combat-layer" class="hidden">
+      <div id="combat-enemy" class="combat-sprite">
+        <img src="" alt="">
+        <div id="enemy-hp-bar"><div id="enemy-hp-fill"></div></div>
+        <div id="enemy-expression"></div>
+      </div>
+      <div id="combat-effects"></div>
+      <div id="combat-actions">
+        <div id="combat-info"><span id="combat-turn-info">回合 1</span></div>
+        <div id="player-party-status"></div>
+        <div id="action-buttons">
+          <button class="action-btn" data-action="attack">攻击</button>
+          <button class="action-btn" data-action="skill">技能</button>
+          <button class="action-btn" data-action="defend">防御</button>
+          <button class="action-btn" data-action="item">物品</button>
+        </div>
+        <div id="skill-list" class="hidden"></div>
+        <div id="target-list" class="hidden"></div>
+      </div>
+    </div>
+
+  <!-- 面板覆盖层 -->
+  <div id="panel-overlay" class="hidden">
+    <div id="panel-content">
+      <button id="panel-close">✕</button>
+      <div id="panel-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+</div><!-- /game-container -->
+
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/game.js"></script>
+<script src="js/platform.js"></script>
+<script src="js/ui/dialogue.js"></script>
+<script src="js/ui/combat.js"></script>
+<script src="js/ui/character.js"></script>
+<script src="js/ui/map.js"></script>
+<script src="js/ui/menu.js"></script>
+<script src="js/app.js"></script>
+
+</body></html>
+

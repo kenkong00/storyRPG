@@ -1,0 +1,12 @@
+import sqlite3
+conn = sqlite3.connect('data/rpg_game.db')
+cur = conn.cursor()
+cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+print('Tables:', [r[0] for r in cur.fetchall()])
+cur.execute('SELECT COUNT(*) FROM characters')
+print('characters count:', cur.fetchone()[0])
+cur.execute('SELECT id, name, level FROM characters')
+print('characters:', cur.fetchall())
+cur.execute('SELECT COUNT(*) FROM story_choices')
+print('story_choices count:', cur.fetchone()[0])
+conn.close()

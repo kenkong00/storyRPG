@@ -1,0 +1,8 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3000 },
+  { "eval": "document.querySelector('#cmp-add-char').click(); document.querySelector('#cmp-add-obj').click(); document.querySelector('#cmp-add-text').click(); 'added'" },
+  { "wait": 900 },
+  { "eval": "(() => { const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { h: Math.round(b.height), scrollH: e.scrollHeight, overflow: cs.overflowY, of: cs.overflow }; }; return JSON.stringify({ bb: r('.cmp-bb-panel'), el: r('.cmp-elem-panel'), pr: r('.cmp-prompt-panel'), elemList: r('.cmp-elem-list'), prompt: r('#cmp-prompt'), cardImg: (() => { const i = document.querySelector('.cmp-cfg-card img,.cmp-cfg-card .ph32'); const b = i.getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height) }; })() }); })()" },
+  { "eval": "(() => { const box = document.querySelector('.cmp-bb-box'); const cap = box ? box.querySelector('.cmp-bb-cap') : null; if (!box || !cap) return 'no-box'; const bb = box.getBoundingClientRect(); const cb = cap.getBoundingClientRect(); return JSON.stringify({ boxOverflow: getComputedStyle(box).overflow, capTop: Math.round(cb.top - bb.top), capBottom: Math.round(cb.bottom - bb.bottom), capRight: Math.round(cb.right - bb.right) }); })()" }
+]

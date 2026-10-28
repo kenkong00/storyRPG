@@ -1,0 +1,18 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 3000 },
+  { "eval": "(function(){const b=[...document.querySelectorAll('button.btn-edit')].find(x=>!x.classList.contains('btn-activate')&&!x.classList.contains('btn-deactivate')); if(!b) return 'no-edit'; b.click(); return 'opened:'+b.dataset.id;})()" },
+  { "wait": 3000 },
+  { "eval": "JSON.stringify({ tabs: [...document.querySelectorAll('.char-tab-btn')].map(b=>b.dataset.tab), paneBasic: !!document.getElementById('char-tab-basic'), editorHost: !!document.getElementById('char-appearance-host'), editorRows: document.querySelectorAll('#char-appearance-host .ae-row').length, promptBox: !!document.querySelector('#char-appearance-host .ae-prompt') })" },
+  { "shot": "ch-basic2.png" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'level\\']'); t.click(); return 'level';})()" },
+  { "wait": 1200 },
+  { "eval": "JSON.stringify({ paneLevel: getComputedStyle(document.getElementById('char-tab-level')).display, names: [...document.querySelectorAll('#char-tab-level [name]')].map(e=>e.name).slice(0,20), rows: document.querySelectorAll('#char-tab-level .form-row, #char-tab-level .form-group').length })" },
+  { "shot": "ch-level2.png" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'pose\\']'); t.click(); return 'pose';})()" },
+  { "wait": 4000 },
+  { "eval": "JSON.stringify({ toolbar: !!document.querySelector('.cpp-toolbar'), cats: [...document.querySelectorAll('.cpp-cat')].map(c=>c.textContent.trim()).slice(0,12), poses: document.querySelectorAll('.cpp-pose').length, duo: document.querySelectorAll('.cpp-pose .tag').length, gal: document.querySelectorAll('.cpp-card').length, stat: (document.getElementById('cpp-stat')||{}).textContent })" },
+  { "shot": "ch-pose2.png" }
+]

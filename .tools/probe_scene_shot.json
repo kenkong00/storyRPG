@@ -1,0 +1,10 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 'add-scene'" },
+  { "wait": 3000 },
+  { "eval": "(() => { const p=document.querySelector('.cmp-el.t-scene [data-bact=\"pick-scene\"]'); const img=p?p.querySelector('img'):null; const lk=document.querySelector('.cmp-el.t-scene [data-bact=\"lock\"]'); const lr=lk.getBoundingClientRect(); const lcs=getComputedStyle(lk); return JSON.stringify({imgSrc: img?img.getAttribute('src'):null, imgNatural: img?{w:img.naturalWidth,h:img.naturalHeight}:null, imgBroken: img? (img.complete && img.naturalWidth===0):null, lockRect:{w:Math.round(lr.width),h:Math.round(lr.height),top:Math.round(lr.top),left:Math.round(lr.left)}, lockFont: lcs.fontSize, lockColor: lcs.color}); })()" },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-scene'); el.scrollIntoView({block:'center'}); return 'ok'; })()" },
+  { "wait": 400 },
+  { "shot": "scene-card-zoom.png" }
+]

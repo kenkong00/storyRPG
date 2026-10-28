@@ -1,0 +1,8 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { const b = document.getElementById('cmp-add-scene'); return JSON.stringify({hasBtn: !!b, txt: b ? b.textContent.trim() : null}); })()" },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 'add-scene'" },
+  { "wait": 3000 },
+  { "eval": "(() => { const cards=[...document.querySelectorAll('.cmp-el')]; const sc=cards.find(c=>c.classList.contains('t-scene')); if(!sc) return JSON.stringify({noSceneCard:true, classes: cards.map(c=>c.className)}); return JSON.stringify({ html: sc.outerHTML.slice(0,900), hasLock: !!sc.querySelector('[data-bact=\"lock\"]'), hasPick: !!sc.querySelector('[data-bact=\"pick-scene\"]'), pickVisible: (()=>{const p=sc.querySelector('[data-bact=\"pick-scene\"]'); if(!p) return null; const r=p.getBoundingClientRect(); return {w:Math.round(r.width),h:Math.round(r.height),vis:getComputedStyle(p).display};})() }); })()" }
+]

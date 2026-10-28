@@ -1,0 +1,18 @@
+[
+  { "wait": 2500 },
+  { "eval": "Admin.navigate('character_appearance').then(()=>'ok').catch(e=>'ERR '+e.message)" },
+  { "wait": 3500 },
+  { "eval": "(()=>{const ta=document.querySelector('#ae-pos');if(!ta)return 'NO #ae-pos';const cs=getComputedStyle(ta);return JSON.stringify({tag:ta.tagName,readOnly:ta.readOnly,h:Math.round(ta.getBoundingClientRect().height),font:cs.fontSize,valueLen:ta.value.length,hasNation:/中国人|美国人/.test(ta.value),hasTrait:/气质/.test(ta.value),hasStyle:/服装流派/.test(ta.value),first:(ta.value.split('\\n')[0]||'').slice(0,60)});})()" },
+  { "eval": "(()=>{const ta=document.querySelector('#ae-pos');ta.value='我手动改过的提示词';ta.dispatchEvent(new Event('input',{bubbles:true}));const box=document.querySelector('#ae-prompt-box');const btn=document.querySelector('#ae-save');const sel=document.querySelector('#ae-g-gender');const before=ta.value;sel.value=sel.value==='female'?'male':'female';sel.dispatchEvent(new Event('change',{bubbles:true}));return JSON.stringify({editedFlag:box.classList.contains('edited'),beforeLen:before.length});})()" },
+  { "wait": 1800 },
+  { "eval": "(()=>{const ta=document.querySelector('#ae-pos');const box=document.querySelector('#ae-prompt-box');return JSON.stringify({afterParamChange:ta.value.slice(0,40),len:ta.value.length,editedFlagNow:box.classList.contains('edited'),live:(document.querySelector('#ae-live')||{}).textContent||''});})()" },
+  { "shot": "ae-prompt-edit.png" },
+  { "eval": "Admin.navigate('scenes').then(()=>'ok').catch(e=>'ERR '+e.message)" },
+  { "wait": 3500 },
+  { "eval": "(()=>{const ta=document.querySelector('#sc-prompt');if(!ta)return 'NO #sc-prompt';return JSON.stringify({tag:ta.tagName,h:Math.round(ta.getBoundingClientRect().height),valueLen:(ta.value||'').length});})()" },
+  { "shot": "sc-prompt-edit.png" },
+  { "eval": "Admin.navigate('compose').then(()=>'ok').catch(e=>'ERR '+e.message)" },
+  { "wait": 3500 },
+  { "eval": "(()=>{const ta=document.querySelector('#cmp-prompt');if(!ta)return 'NO #cmp-prompt';return JSON.stringify({tag:ta.tagName,h:Math.round(ta.getBoundingClientRect().height),placeholder:ta.placeholder});})()" },
+  { "shot": "cmp-prompt-edit.png" }
+]

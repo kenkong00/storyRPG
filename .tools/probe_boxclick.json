@@ -1,0 +1,14 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3000 },
+  { "eval": "document.querySelector('#cmp-add-char').click(); 'add-char'" },
+  { "wait": 1500 },
+  { "eval": "document.querySelector('#cmp-add-obj').click(); 'add-obj'" },
+  { "wait": 800 },
+  { "eval": "(() => { const b = document.querySelector('.cmp-bb-box[data-bi=\"0\"]'); if (!b) return 'no-box0'; b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 })); b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 })); return 'box0-pointer'; })()" },
+  { "wait": 600 },
+  { "eval": "JSON.stringify({ box0Sel: document.querySelector('.cmp-bb-box[data-bi=\"0\"]').classList.contains('sel'), el0Sel: (document.querySelector('.cmp-el[data-ei=\"0\"]')||{classList:{contains:()=>false}}).classList.contains('sel') })" },
+  { "eval": "(() => { const b = document.querySelector('.cmp-bb-box[data-bi=\"1\"]'); if (!b) return 'no-box1'; b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 2 })); b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2 })); return 'box1-pointer'; })()" },
+  { "wait": 600 },
+  { "eval": "JSON.stringify({ box1Sel: document.querySelector('.cmp-bb-box[data-bi=\"1\"]').classList.contains('sel'), el1Sel: (document.querySelector('.cmp-el[data-ei=\"1\"]')||{classList:{contains:()=>false}}).classList.contains('sel') })" }
+]

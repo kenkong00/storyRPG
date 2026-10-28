@@ -1,0 +1,8 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 'scene'" },
+  { "wait": 1800 },
+  { "eval": "(() => { const first=document.querySelector('.cmp-el'); const ta=document.getElementById('cmp-prompt'); let p=null; try{p=JSON.parse(ta.value);}catch(e){} return JSON.stringify({firstIsScene: !!(first&&first.classList.contains('t-scene')), labels: p?p.items.map(x=>x.label):null, sceneVisible: (()=>{const h=document.getElementById('cmp-elem-list');const c=h.querySelector('.cmp-el[data-ei=\"0\"]');if(!c)return false;const hr=h.getBoundingClientRect(),cr=c.getBoundingClientRect();return cr.top>=hr.top-2 && cr.bottom<=hr.bottom+2;})()}); })()" },
+  { "shot": "compose-i-scene.png" }
+]

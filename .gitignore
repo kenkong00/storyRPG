@@ -1,0 +1,52 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== Node / frontend build =====
+node_modules/
+dist/
+build/
+
+# ===== 虚拟/测试环境 =====
+backend/.venv_test/
+
+# ===== 运行时数据（DB / 生成物 / 缓存，由代码在首次运行时重建）=====
+.shots/
+.shots
+.temp/
+backend/data/
+backend/rpg_onecore_*/
+.trae/
+
+# ===== 备份（代码历史即可回退，不需入库）=====
+.backup_before_ui_overhaul/
+
+# ===== 编辑器 / Agent 本地数据 =====
+.workbuddy/
+
+# ===== 日志 =====
+*.log
+
+# ===== 图片（用户要求：不上传图片）=====
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tiff
+*.tif
+*.ico
+*.svg
+*.heic
+
+# ===== 系统 / 杂项 =====
+.DS_Store
+Thumbs.db

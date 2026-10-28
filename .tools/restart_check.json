@@ -1,0 +1,10 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "eval": "document.title" },
+  { "eval": "JSON.stringify({ hasCombo: !!window.Combo, hasAssetPicker: !!window.AssetPicker, hasGenParams: !!window.GenParams, hasJobHub: !!window.JobHub, navs: document.querySelectorAll('.nav-item').length })" },
+  { "eval": "fetch('/api/scene-gen/defs').then(r=>r.status)" },
+  { "wait": 1200 },
+  { "eval": "JSON.stringify({ scenes: document.querySelectorAll('.nav-item').length, err: window.__lastErr || null })" },
+  { "shot": "restart-check.png" }
+]

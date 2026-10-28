@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ca335e76",
+    "name": "test3",
+    "path": "test3",
+    "parent_path": "",
+    "group": "自定义",
+    "is_system": false,
+    "created_at": "2026-07-30T03:37:04.970542"
+  },
+  {
+    "id": "d84e87ad",
+    "name": "test2",
+    "path": "test2",
+    "parent_path": "",
+    "group": "自定义",
+    "is_system": false,
+    "created_at": "2026-07-30T03:39:53.153942"
+  },
+  {
+    "id": "c7054fcf",
+    "name": "高圆圆卖内衣",
+    "path": "scenes/cutscene/高圆圆卖内衣",
+    "parent_path": "scenes/cutscene",
+    "group": "自定义",
+    "is_system": false,
+    "created_at": "2026-07-30T04:49:11.851793"
+  },
+  {
+    "id": "710291d4",
+    "name": "1111",
+    "path": "test3/1111",
+    "parent_path": "test3",
+    "group": "自定义",
+    "is_system": false,
+    "created_at": "2026-07-30T07:34:34.607900"
+  }
+]

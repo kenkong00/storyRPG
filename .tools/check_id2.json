@@ -1,0 +1,11 @@
+[
+ {
+  "eval": "var c=document.querySelector('.id-card'); var s=getComputedStyle(c); var im=c.querySelector('img'); var is=getComputedStyle(im); JSON.stringify({card:{display:s.display,height:s.height,minHeight:s.minHeight,overflow:s.overflow,position:s.position,alignSelf:s.alignSelf}, img:{display:is.display,position:is.position,height:is.height,width:is.width,aspectRatio:is.aspectRatio}, metaH:Math.round(c.querySelector('.id-meta').getBoundingClientRect().height), subH:Math.round(c.querySelector('.id-sub').getBoundingClientRect().height)})"
+ },
+ {
+  "eval": "var g=getComputedStyle(document.querySelector('.id-list')); JSON.stringify({rowGap:g.rowGap, autoRows:g.gridAutoRows, alignItems:g.alignItems, alignContent:g.alignContent})"
+ },
+ {
+  "eval": "var out=[]; try{ for(var i=0;i<document.styleSheets.length;i++){ var rs=document.styleSheets[i].cssRules; for(var j=0;j<rs.length;j++){ var t=rs[j].selectorText||''; if(t.indexOf('id-card')>=0||t.indexOf('id-list')>=0) out.push(t+' {'+rs[j].style.cssText.slice(0,150)+'}'); } } }catch(e){out.push('ERR '+e.message)} out.join(' ||| ')"
+ }
+]

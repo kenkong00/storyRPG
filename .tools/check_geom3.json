@@ -1,0 +1,12 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.querySelectorAll('.cmp-cfg-card')[0].click(); 'cfg1'" },
+  { "wait": 3200 },
+  { "eval": "(() => { const sc=document.querySelector('.cmp-el.t-scene'); const b=document.querySelector('.cmp-bb-box.t-scene'); const c=document.getElementById('cmp-bb-canvas'); if(!sc||!b) return JSON.stringify({sc:!!sc, box:!!b}); const cr=c.getBoundingClientRect(), br=b.getBoundingClientRect(); return JSON.stringify({expanded: !sc.classList.contains('collapsed'), hasBig: !!sc.querySelector('.cmp-scene-big'), box:{l:b.style.left,t:b.style.top,w:b.style.width,h:b.style.height}, fills: Math.abs(br.left-cr.left)<2 && Math.abs(br.top-cr.top)<2 && Math.abs(br.width-cr.width)<3}); })()" },
+  { "eval": "document.querySelector('.cmp-el.t-scene .cmp-scene-big').click(); 'pop'" },
+  { "wait": 700 },
+  { "eval": "(() => { const p=document.getElementById('cmp-scene-pop'); if(!p) return 'no-pop'; const cells=[...p.querySelectorAll('.cmp-scene-cell')]; const cur=p.querySelector('.cmp-scene-cell.on'); const t=cells.find(c=>!cur||c.dataset.sid!==cur.dataset.sid); if(!t) return 'only-one'; t.click(); return 'switched-to-'+t.dataset.sid; })()" },
+  { "wait": 3400 },
+  { "eval": "(() => { const b=document.querySelector('.cmp-bb-box.t-scene'); return JSON.stringify({afterSwitch:{l:b.style.left,t:b.style.top,w:b.style.width,h:b.style.height}, title:document.querySelector('.cmp-el.t-scene .cmp-el-title').textContent.trim()}); })()" }
+]

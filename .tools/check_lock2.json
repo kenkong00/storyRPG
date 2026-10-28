@@ -1,0 +1,13 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "click": "#cmp-add-scene" },
+  { "wait": 2600 },
+  { "click": "#cmp-add-char" },
+  { "wait": 2600 },
+  { "eval": "(() => { const sel = document.querySelector('.cmp-bb-box.sel'); return JSON.stringify({selType: sel ? sel.className : null}); })()" },
+  { "eval": "(() => { const b = document.querySelector('.cmp-bb-box.t-scene'); b.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, clientX: 30, clientY: 30, pointerId: 5})); b.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 5})); const sel = document.querySelector('.cmp-bb-box.sel'); return JSON.stringify({lockedClickIgnored: !!sel && !sel.classList.contains('t-scene')}); })()" },
+  { "click": ".cmp-el.t-scene [data-bact=\"lock\"]" },
+  { "wait": 500 },
+  { "eval": "(() => { const b = document.querySelector('.cmp-bb-box.t-scene'); b.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, clientX: 30, clientY: 30, pointerId: 6})); b.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 6})); const sel = document.querySelector('.cmp-bb-box.sel'); return JSON.stringify({unlockedNowSelectable: !!sel && sel.classList.contains('t-scene')}); })()" }
+]

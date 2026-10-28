@@ -1,0 +1,12 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 's'" },
+  { "wait": 3000 },
+  { "eval": "(() => { const c=document.getElementById('cmp-bb-canvas'); const b=document.querySelector('.cmp-bb-box.t-scene'); const cr=c.getBoundingClientRect(), br=b.getBoundingClientRect(); window.__a={style:{l:b.style.left,t:b.style.top,w:b.style.width,h:b.style.height}, canvas:{w:Math.round(cr.width),h:Math.round(cr.height),l:Math.round(cr.left),t:Math.round(cr.top)}, box:{l:Math.round(br.left-cr.left),t:Math.round(br.top-cr.top),w:Math.round(br.width),h:Math.round(br.height)}}; return JSON.stringify(window.__a); })()" },
+  { "eval": "document.querySelector('.cmp-el.t-scene .cmp-scene-big').click(); 'pop'" },
+  { "wait": 800 },
+  { "eval": "(() => { const p=document.getElementById('cmp-scene-pop'); const cells=[...p.querySelectorAll('.cmp-scene-cell')]; const cur=p.querySelector('.cmp-scene-cell.on'); const t=cells.find(c=>!cur||c.dataset.sid!==cur.dataset.sid); t.click(); return 'picked'; })()" },
+  { "wait": 3500 },
+  { "eval": "(() => { const c=document.getElementById('cmp-bb-canvas'); const b=document.querySelector('.cmp-bb-box.t-scene'); const cr=c.getBoundingClientRect(), br=b.getBoundingClientRect(); const now={style:{l:b.style.left,t:b.style.top,w:b.style.width,h:b.style.height}, canvas:{w:Math.round(cr.width),h:Math.round(cr.height),l:Math.round(cr.left),t:Math.round(cr.top)}, box:{l:Math.round(br.left-cr.left),t:Math.round(br.top-cr.top),w:Math.round(br.width),h:Math.round(br.height)}}; return JSON.stringify({before:window.__a, after:now, styleSame: JSON.stringify(window.__a.style)===JSON.stringify(now.style), canvasSame: JSON.stringify(window.__a.canvas)===JSON.stringify(now.canvas)}); })()" }
+]

@@ -1,0 +1,13 @@
+[
+  { "eval": "document.title" },
+  { "wait": 3500 },
+  { "click": ".nav-item[data-page='players']" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({opts: document.querySelectorAll('#uc-select option').length, hasEquip: !!document.getElementById('player-equip-slots'), hasBackpack: !!document.getElementById('player-backpack')})" },
+  { "shot": "players-page.png" },
+  { "eval": "(function(){const s=document.getElementById('uc-select'); if(s&&s.options.length>1){s.value=s.options[1].value; s.dispatchEvent(new Event('change')); return 'selected '+s.value;} return 'no-options';})()" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({equipSlots: document.getElementById('player-equip-slots')?.innerText?.slice(0,60), backpack: document.getElementById('player-backpack')?.innerText?.slice(0,60)})" },
+  { "shot": "players-detail.png" },
+  { "eval": "JSON.stringify({errors: window.__err||'none'})" }
+]

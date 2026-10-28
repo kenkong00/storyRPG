@@ -1,0 +1,1 @@
+cd "h:\trae work\RPG故事游戏\backend"; python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

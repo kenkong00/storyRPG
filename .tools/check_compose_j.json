@@ -1,0 +1,74 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+
+  { "eval": "JSON.stringify({w: document.querySelector('[data-k=\"width\"]').value, h: document.querySelector('[data-k=\"height\"]').value, steps: document.querySelector('[data-k=\"steps\"]').value, hasSwap: !!document.querySelector('[data-act=\"swap\"]')})" },
+  { "click": "[data-act=\"swap\"]" },
+  { "wait": 600 },
+  { "eval": "JSON.stringify({afterSwapW: document.querySelector('[data-k=\"width\"]').value, afterSwapH: document.querySelector('[data-k=\"height\"]').value, gp: (GenParams.get('scenes').width + 'x' + GenParams.get('scenes').height)})" },
+  { "click": "[data-act=\"swap\"]" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({backW: document.querySelector('[data-k=\"width\"]').value, backH: document.querySelector('[data-k=\"height\"]').value, gp: (GenParams.get('scenes').width + 'x' + GenParams.get('scenes').height)})" },
+
+  { "eval": "document.querySelector('.cmp-cfg-ck').click(); 'checked'" },
+  { "eval": "(window.__origPost = Admin.post, Admin.post = async (p, b) => { if (String(p).indexOf('/compose/batch') >= 0) { window.__cap = b; return { ok: true, count: 0, submitted: [], skipped: [] }; } return window.__origPost(p, b); }, 'patched')" },
+  { "click": "#cmp-render" },
+  { "wait": 1200 },
+  { "eval": "JSON.stringify({capSteps: window.__cap && window.__cap.steps, capCfg: window.__cap && window.__cap.cfg, capW: window.__cap && window.__cap.width, capH: window.__cap && window.__cap.height})" },
+  { "eval": "(Admin.post = window.__origPost, 'restored')" },
+
+  { "eval": "location.reload(); 'reload'" },
+  { "wait": 5000 },
+
+  { "click": "#cmp-add-scene" },
+  { "wait": 2800 },
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-scene'); const box = document.querySelector('.cmp-bb-box.t-scene'); return JSON.stringify({sceneEl: !!el, locked: !!(el && el.querySelector('[data-bact=\"lock\"]')), isLockedOn: !!(el && el.querySelector('[data-bact=\"lock\"].on')), boxLocked: !!(box && box.classList.contains('locked')), hasPickBtn: !!(el && el.querySelector('[data-bact=\"pick-scene\"]')), hasFillBtn: !!(el && el.querySelector('[data-bact=\"fill-scene\"]')), bodies: document.querySelectorAll('.cmp-el-body').length}); })()" },
+
+  { "click": ".cmp-el.t-scene [data-bact=\"pick-scene\"]" },
+  { "wait": 500 },
+  { "eval": "(() => { const pop = document.getElementById('cmp-scene-pop'); if (!pop) return 'NO_POP'; const cells = pop.querySelectorAll('.cmp-scene-cell'); return JSON.stringify({pop: true, cells: cells.length, vis: getComputedStyle(pop).display !== 'none'}); })()" },
+  { "shot": "compose-j-scenepop.png" },
+  { "eval": "(() => { const pop = document.getElementById('cmp-scene-pop'); const cur = document.querySelector('.cmp-scene-cell.on'); const cells = [...pop.querySelectorAll('.cmp-scene-cell')]; const t = cells.find(c => !cur || c.dataset.sid !== cur.dataset.sid); window.__pickSid = t ? t.dataset.sid : null; window.__oldCap = document.querySelector('.cmp-el.t-scene .cap-x').textContent; if (t) t.click(); return JSON.stringify({curSid: cur && cur.dataset.sid, picked: window.__pickSid}); })()" },
+  { "wait": 3000 },
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-scene'); const img = el.querySelector('.cmp-scene-pick-btn img'); const cap = el.querySelector('.cap-x').textContent; return JSON.stringify({title: el.querySelector('.cmp-el-title').textContent.trim(), hasImg: !!img, imgSame: img ? el.querySelector('.cmp-scene-pick-btn img').src === img.src : null, capLen: cap.length, capChanged: cap !== window.__oldCap, popClosed: !document.getElementById('cmp-scene-pop')}); })()" },
+
+  { "click": "#cmp-add-char" },
+  { "wait": 2600 },
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-character'); return JSON.stringify({charEl: !!el, miniBtns: el.querySelectorAll('.cmp-el-mini').length, hasCapBlock: !!el.querySelector('.cmp-el-cap .cap-x'), bodyVisible: !!el.querySelector('.cmp-el-body')}); })()" },
+
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-character'); el.querySelector('[data-bact=\"toggle\"]').click(); const e2 = document.querySelector('.cmp-el.t-character'); return JSON.stringify({collapsed: e2.classList.contains('collapsed'), bodyGone: !e2.querySelector('.cmp-el-body'), onlyHeader: e2.querySelector('.cmp-el-h') ? 1 : 0}); })()" },
+  { "eval": "(() => { document.querySelector('.cmp-el.t-character [data-bact=\"toggle\"]').click(); const e2 = document.querySelector('.cmp-el.t-character'); return JSON.stringify({expanded: !e2.classList.contains('collapsed'), bodyBack: !!e2.querySelector('.cmp-el-body')}); })()" },
+
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-character'); const inp = el.querySelector('input[data-ef=\"note\"]'); const cap = el.querySelector('.cap-x'); window.__capNode = cap; const before = cap.textContent; inp.value = '测试备注XYZ'; inp.dispatchEvent(new Event('input', {bubbles: true})); const live = document.querySelector('.cmp-el.t-character .cap-x'); return JSON.stringify({sameNode: live === cap, beforeTail: before.slice(-4), afterTail: live.textContent.slice(-8), endsWithNote: live.textContent.endsWith('测试备注XYZ')}); })()" },
+  { "eval": "(() => { const el = document.querySelector('.cmp-el.t-character'); const inp = el.querySelector('input[data-ef=\"note\"]'); inp.value = ''; inp.dispatchEvent(new Event('input', {bubbles: true})); return JSON.stringify({clearedTail: document.querySelector('.cmp-el.t-character .cap-x').textContent.slice(-6)}); })()" },
+
+  { "eval": "(() => { const sel = document.querySelector('.cmp-el.t-character select[data-ef=\"pose_id\"]'); const opts = [...sel.options]; const last = opts[opts.length - 1]; window.__poseLabel = last.textContent.trim(); sel.value = last.value; sel.dispatchEvent(new Event('change', {bubbles: true})); return JSON.stringify({poseId: last.value, label: window.__poseLabel, options: opts.length}); })()" },
+  { "wait": 1600 },
+  { "eval": "(() => { const cap = document.querySelector('.cmp-el.t-character .cap-x').textContent; window.__capWithPose = cap; return JSON.stringify({len: cap.length, hasPose: cap.indexOf(window.__poseLabel) >= 0}); })()" },
+  { "eval": "(() => { const sel = document.querySelector('.cmp-el.t-character select[data-ef=\"pose_id\"]'); sel.value = ''; sel.dispatchEvent(new Event('change', {bubbles: true})); return 'no-pose'; })()" },
+  { "wait": 1600 },
+  { "eval": "(() => { const cap = document.querySelector('.cmp-el.t-character .cap-x').textContent; return JSON.stringify({len: cap.length, hasPoseWord: cap.indexOf(window.__poseLabel) >= 0, changed: cap !== window.__capWithPose}); })()" },
+
+  { "click": "#cmp-add-char" },
+  { "wait": 2600 },
+  { "eval": "JSON.stringify({titles: [...document.querySelectorAll('.cmp-el .cmp-el-title')].map(t => t.textContent.trim()), chars: document.querySelectorAll('.cmp-el.t-character').length})" },
+  { "eval": "(() => { const boxes = [...document.querySelectorAll('.cmp-bb-box.t-character')]; const last = boxes[boxes.length - 1]; const before = [...document.querySelectorAll('.cmp-el .cmp-el-title')].map(t => t.textContent.trim()); last.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, clientX: 60, clientY: 60, pointerId: 7})); last.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 7})); return JSON.stringify({before}); })()" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({order: [...document.querySelectorAll('.cmp-el')].map(e => e.className.split(' ')[1] + ':' + e.querySelector('.cmp-el-title').textContent.trim()), first: document.querySelector('.cmp-el').className})" },
+
+  { "eval": "(() => { window.__n = document.querySelectorAll('.cmp-el').length; const boxes = [...document.querySelectorAll('.cmp-bb-box.t-character')]; const b = boxes[0]; b.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, clientX: 50, clientY: 50, pointerId: 9})); b.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 9})); return 'selected'; })()" },
+  { "wait": 400 },
+  { "eval": "(() => { const ev = new KeyboardEvent('keydown', {key: 'Delete', bubbles: true}); document.body.dispatchEvent(ev); return JSON.stringify({confirmShown: !!document.getElementById('confirm-overlay')}); })()" },
+  { "wait": 500 },
+  { "eval": "JSON.stringify({before: window.__n, after: document.querySelectorAll('.cmp-el').length, deletedByKey: document.querySelectorAll('.cmp-el').length === window.__n - 1})" },
+
+  { "eval": "(() => { const x = document.querySelector('.cmp-el .cmp-el-x'); const before = document.querySelectorAll('.cmp-el').length; x.click(); const shown = !!document.getElementById('confirm-overlay'); return JSON.stringify({before, confirmShown: shown}); })()" },
+  { "wait": 500 },
+  { "eval": "(() => { const btn = document.querySelector('#confirm-overlay [data-a=\"yes\"]'); if (!btn) return 'NO_OK_BTN'; btn.click(); return 'confirmed'; })()" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({afterConfirmDel: document.querySelectorAll('.cmp-el').length, overlayGone: !document.getElementById('confirm-overlay')})" },
+
+  { "eval": "document.querySelector('.cmp-puzzle').scrollIntoView(); 'scroll'" },
+  { "wait": 500 },
+  { "shot": "compose-j-view.png" }
+]

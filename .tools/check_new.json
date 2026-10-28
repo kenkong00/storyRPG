@@ -1,0 +1,8 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { window.__before=[...document.querySelectorAll('.cmp-cfg-card')].map(c=>c.dataset.id); return JSON.stringify({before:window.__before.length}); })()" },
+  { "eval": "document.getElementById('cmp-new').click(); 'new-clicked'" },
+  { "wait": 1500 },
+  { "eval": "(() => { const after=[...document.querySelectorAll('.cmp-cfg-card')]; const before=window.__before||[]; const added=after.filter(c=>!before.includes(c.dataset.id)); return JSON.stringify({afterCount:after.length, addedCount:added.length, newId: added[0]?added[0].dataset.id:null, newName: added[0]?added[0].querySelector('.t').textContent.trim():null}); })()" }
+]

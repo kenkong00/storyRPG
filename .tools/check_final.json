@@ -1,0 +1,23 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 3000 },
+  { "click": ".ch-card-img" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ modalOpen: !!document.querySelector('.modal-overlay'), overlayBg: getComputedStyle(document.querySelector('.modal-overlay')).backgroundColor })" },
+  { "eval": "document.getElementById('task-hub').click(); 'clicked-task-hub'" },
+  { "wait": 1500 },
+  { "eval": "JSON.stringify({ drawerOpen: !!document.querySelector('#task-drawer.on'), modalStill: !!document.querySelector('.modal-overlay'), taskRows: document.querySelectorAll('#task-drawer .td-row').length })" },
+  { "shot": "modal-topbar-click.png" },
+  { "eval": "document.querySelector('#task-drawer [data-act=\"close\"]').click(); 'close-drawer'" },
+  { "wait": 800 },
+  { "eval": "document.querySelector('.modal-close').click(); 'close-modal'" },
+  { "wait": 800 },
+  { "eval": "document.getElementById('image-hub').click(); 'open-images'" },
+  { "wait": 2500 },
+  { "eval": "document.querySelector('.id-card').click(); 'preview'" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ canvasMargin: getComputedStyle(document.querySelector('.ip-canvas')).marginRight, imgW: Math.round(document.querySelector('.ip-img').getBoundingClientRect().width), imgH: Math.round(document.querySelector('.ip-img').getBoundingClientRect().height) })" },
+  { "shot": "preview-final.png" }
+]

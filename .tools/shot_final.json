@@ -1,0 +1,9 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3000 },
+  { "eval": "document.querySelector('#cmp-add-char').click(); document.querySelector('#cmp-add-obj').click(); document.querySelector('#cmp-add-text').click(); 'added'" },
+  { "wait": 1000 },
+  { "eval": "document.querySelector('.cmp-puzzle').scrollIntoView(); 'scrolled'" },
+  { "wait": 500 },
+  { "shot": "compose-final.png" }
+]

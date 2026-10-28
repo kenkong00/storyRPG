@@ -1,0 +1,6 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { const w = document.querySelector('[data-k=\"width\"]'); const h = document.querySelector('[data-k=\"height\"]'); const s = document.querySelector('[data-act=\"swap\"]'); const r = (e) => { const b = e.getBoundingClientRect(); return Math.round(b.width) + 'x' + Math.round(b.height); }; return JSON.stringify({wBox: r(w), hBox: r(h), swap: r(s), wVal: w.value, hVal: h.value, fitsW: w.scrollWidth <= w.clientWidth + 1}); })()" },
+  { "shot": "compose-j-params.png" }
+]

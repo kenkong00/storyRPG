@@ -1,0 +1,11 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "document.getElementById('cmp-add-scene').click(); 's'" },
+  { "wait": 3000 },
+  { "eval": "document.getElementById('cmp-add-char').click(); 'c'" },
+  { "wait": 2600 },
+  { "eval": "(() => { const el=document.querySelector('.cmp-el.t-scene'); el.scrollIntoView({block:'start'}); return 'ok'; })()" },
+  { "wait": 500 },
+  { "shot": "scene-card-k.png" }
+]

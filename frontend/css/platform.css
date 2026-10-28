@@ -1,0 +1,486 @@
+/* ========== 游戏平台层（首页） ========== */
+
+#platform-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #050508;
+  color: var(--text);
+  font-family: var(--font-main);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#platform-layer.hidden { display: none; }
+
+#platform-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: rgba(8,8,16,0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.platform-logo {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+#platform-user-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.platform-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.platform-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  font-size: 14px;
+  overflow: hidden;
+}
+.platform-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.btn-platform {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-main);
+  transition: all 0.2s;
+}
+.btn-platform:hover { border-color: var(--accent); color: var(--accent); }
+.btn-platform.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.btn-platform.primary:hover { background: #e6c04a; }
+.btn-platform.danger { color: var(--red); border-color: var(--red-dim); }
+
+#platform-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px 40px;
+}
+
+/* ===== 轮播图 ===== */
+#platform-carousel {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+  background: #0a0a14;
+}
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  cursor: pointer;
+}
+.carousel-slide.active { opacity: 1; }
+.carousel-slide img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.carousel-slide::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(5,5,8,0.95) 0%, rgba(5,5,8,0.2) 50%, transparent 100%);
+}
+.carousel-info {
+  position: absolute;
+  left: 32px; bottom: 28px;
+  z-index: 2;
+  max-width: 60%;
+}
+.carousel-info h2 {
+  font-size: 28px;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+.carousel-info p {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.carousel-info .carousel-play {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 22px;
+  background: var(--accent);
+  color: #000;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 13px;
+}
+.carousel-dots {
+  position: absolute;
+  right: 24px; bottom: 24px;
+  z-index: 3;
+  display: flex; gap: 6px;
+}
+.carousel-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.carousel-dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+
+/* ===== 分类筛选 ===== */
+#platform-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.platform-cat {
+  padding: 6px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.platform-cat:hover { border-color: var(--border-hover); }
+.platform-cat.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== 游戏网格 ===== */
+#platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+.game-card {
+  background: rgba(15,15,28,0.8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.game-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(212,175,55,0.15);
+}
+.game-card-cover {
+  width: 100%; height: 220px;
+  background: #0a0a14;
+  overflow: hidden;
+  position: relative;
+}
+.game-card-cover img { width: 100%; height: 100%; object-fit: cover; }
+.game-card-cover .no-img {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); font-size: 12px;
+}
+.game-card-badge {
+  position: absolute; top: 8px; right: 8px;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: #000;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.game-card-badge.coming { background: var(--red); color: #fff; }
+.game-card-info { padding: 10px 12px; }
+.game-card-info h3 {
+  font-size: 14px;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.game-card-info .game-card-cat {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.game-card-lib-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px 0;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.game-card-lib-btn:hover {
+  background: #e6c04a;
+}
+.game-card-in-lib {
+  position: absolute; top: 8px; left: 8px;
+  padding: 2px 8px;
+  background: rgba(34,197,94,0.9);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+/* ===== 认证弹窗 ===== */
+#auth-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-modal.hidden { display: none; }
+.auth-box {
+  width: 360px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+}
+.auth-close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: 22px; cursor: pointer;
+}
+.auth-tabs {
+  display: flex; gap: 4px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  background: none; border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-main);
+}
+.auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.auth-form input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font-main);
+}
+.auth-form input:focus { outline: none; border-color: var(--accent); }
+#auth-submit {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font-main);
+}
+#auth-submit:hover { background: #e6c04a; }
+#auth-msg {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--red);
+  text-align: center;
+  min-height: 16px;
+}
+
+/* ===== 游戏开始画面 ===== */
+#game-start-modal {
+  position: fixed; inset: 0; z-index: 150;
+  background: #000;
+  display: block;
+}
+#game-start-modal.hidden { display: none; }
+#game-start-stage {
+  position: relative;
+  width: 100%; height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+.game-start-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%);
+}
+.game-start-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 140px;
+  padding: 12px 24px;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-main);
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  text-align: center;
+}
+.game-start-btn img { width: 100%; display: block; border-radius: var(--radius); }
+.game-start-btn:hover { background: var(--accent); color: #000; }
+.game-start-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--text-dim);
+  color: var(--text-dim);
+}
+.game-start-btn.disabled:hover { background: rgba(0,0,0,0.6); color: var(--text-dim); }
+.game-start-back {
+  position: fixed; top: 20px; left: 20px;
+  z-index: 160;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font-main);
+}
+.game-start-back:hover { border-color: var(--accent); color: var(--accent); }
+.game-start-desc {
+  position: absolute;
+  left: 50%; top: 18%;
+  transform: translateX(-50%);
+  max-width: 640px;
+  text-align: center;
+  color: var(--text-bright);
+  font-size: 14px;
+  line-height: 1.8;
+  padding: 20px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+}
+
+/* ===== 通用平台弹窗 ===== */
+#platform-modal {
+  position: fixed; inset: 0; z-index: 180;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+#platform-modal.hidden { display: none; }
+.platform-modal-box {
+  width: 560px;
+  max-width: 92vw;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+}
+.platform-modal-close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: var(--text-dim);
+  font-size: 22px; cursor: pointer;
+}
+.platform-modal-box h3 {
+  font-size: 18px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.platform-modal-box input,
+.platform-modal-box select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font-main);
+}
+.platform-modal-box input:focus,
+.platform-modal-box select:focus { outline: none; border-color: var(--accent); }
+.platform-modal-box label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+/* 角色选择卡片（新建人物） */
+.char-pick-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.char-pick-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.char-pick-card:hover { border-color: var(--border-hover); }
+.char-pick-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+.char-pick-card img {
+  width: 100%; height: 120px; object-fit: cover;
+  border-radius: var(--radius); margin-bottom: 6px;
+  background: rgba(0,0,0,0.3);
+}
+.char-pick-card .cp-name { font-size: 13px; color: var(--text-bright); }
+.char-pick-card .cp-stats { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+/* 角色存档列表（读取存档） */
+.save-list { display: flex; flex-direction: column; gap: 10px; }
+.save-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.save-item:hover { border-color: var(--accent); background: var(--accent-glow); }
+.save-item .si-info { flex: 1; }
+.save-item .si-name { font-size: 14px; color: var(--text-bright); }
+.save-item .si-meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.save-item .si-del {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--red-dim);
+  color: var(--red);
+  border-radius: var(--radius);
+  font-size: 11px;
+  cursor: pointer;
+}

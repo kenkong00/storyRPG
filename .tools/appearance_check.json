@@ -1,0 +1,17 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "eval": "document.title" },
+  { "click": ".nav-item[data-page='character_appearance']" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ tabs: Array.from(document.querySelectorAll('.ap-tab')).map(b=>b.textContent.trim()), assembly: !!document.querySelector('#ap-tab-assembly .ae-wrap'), dimRows: document.querySelectorAll('.ae-row').length, selCount: document.querySelectorAll('.ae-row select').length })" },
+  { "shot": "ap-assembly.png" },
+  { "click": ".ap-tab[data-tab='poses']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ cats: Array.from(document.querySelectorAll('#ap-tab-poses .ap-cat, #ap-tab-poses .lib-cat')).map(c=>c.textContent.trim()).slice(0,12), rows: document.querySelectorAll('#ap-tab-poses tbody tr').length })" },
+  { "shot": "ap-poses.png" },
+  { "click": ".ap-tab[data-tab='manage']" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ groups: document.querySelectorAll('#ap-tab-manage .mg-group').length, dims: document.querySelectorAll('#ap-tab-manage .mg-dim').length, text: (document.querySelector('#ap-tab-manage')?.innerText||'').replace(/\\s+/g,' ').slice(0,220) })" },
+  { "shot": "ap-manage.png" }
+]

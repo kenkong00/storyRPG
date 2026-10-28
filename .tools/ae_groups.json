@@ -1,0 +1,10 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 2500 },
+  { "eval": "(function(){const b=[...document.querySelectorAll('button.btn-edit')].find(x=>!x.classList.contains('btn-activate')&&!x.classList.contains('btn-deactivate')); b.click(); return 'opened';})()" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify([...document.querySelectorAll('#char-appearance-host .ae-group')].map(g=>({name:(g.querySelector('.ae-group-head,h4,header')?.textContent||'').trim().slice(0,10), collapsed:g.classList.contains('collapsed'), rows:g.querySelectorAll('.ae-row').length, hidden:[...g.querySelectorAll('.ae-row')].filter(r=>r.classList.contains('hide')).length})))" },
+  { "eval": "JSON.stringify({nudity: document.querySelector('#char-appearance-host .ae-row[data-dim=\"nudity\"] select')?.value, groups: document.querySelectorAll('#char-appearance-host .ae-group').length})" }
+]

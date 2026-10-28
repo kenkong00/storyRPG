@@ -1,0 +1,7 @@
+[
+  { "wait": 3000 },
+  { "eval": "JSON.stringify({hasAdmin: typeof Admin, pages: Object.keys(Admin&&Admin.pages||{}), playersRegistered: !!(Admin&&Admin.pages&&Admin.pages.players)})" },
+  { "click": ".nav-item[data-page='players']" },
+  { "wait": 1500 },
+  { "eval": "JSON.stringify({contentHead: (document.getElementById('content-area')?.innerText||'').slice(0,120)})" }
+]

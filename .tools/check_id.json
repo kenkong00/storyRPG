@@ -1,0 +1,9 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 4000 },
+  { "eval": "document.getElementById('image-hub').click(); 'open'" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ drawerW: Math.round(document.getElementById('image-drawer').getBoundingClientRect().width), listDisp: getComputedStyle(document.querySelector('.id-list')).display, listCols: getComputedStyle(document.querySelector('.id-list')).gridTemplateColumns, listGap: getComputedStyle(document.querySelector('.id-list')).gap, listOverflow: getComputedStyle(document.querySelector('.id-list')).overflowY, listH: Math.round(document.querySelector('.id-list').getBoundingClientRect().height), listScrollH: document.querySelector('.id-list').scrollHeight, wrapDisp: getComputedStyle(document.querySelector('.id-wrap')).display, wrapPos: getComputedStyle(document.querySelector('.id-wrap')).position, wrapH: Math.round(document.querySelector('.id-wrap').getBoundingClientRect().height) })" },
+  { "eval": "JSON.stringify(Array.from(document.querySelectorAll('.id-card')).slice(0,4).map(c=>{var r=c.getBoundingClientRect(); var im=c.querySelector('img'); var ir=im.getBoundingClientRect(); return {card:[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)], img:[Math.round(ir.x),Math.round(ir.y),Math.round(ir.width),Math.round(ir.height)], ar:getComputedStyle(im).aspectRatio, objFit:getComputedStyle(im).objectFit}}))" },
+  { "shot": "id-drawer-bug.png" }
+]

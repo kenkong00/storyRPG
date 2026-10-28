@@ -1,0 +1,64 @@
+[
+  { "eval": "'ready:' + (typeof Admin)" },
+  { "wait": 1500 },
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 5000 },
+
+  { "eval": "(() => { const pz = document.querySelector('.cmp-puzzle'); const cs = pz ? getComputedStyle(pz).gridTemplateColumns : ''; const cols = cs ? cs.trim().split(/\\s+/).length : 0; return JSON.stringify({ gridCols: cs, colCount: cols, cards: document.querySelectorAll('.cmp-cfg-card').length, bb: !!document.querySelector('.cmp-bb-panel'), el: !!document.querySelector('.cmp-elem-panel'), pr: !!document.querySelector('.cmp-prompt-panel'), addChar: !!document.querySelector('#cmp-add-char'), addObj: !!document.querySelector('#cmp-add-obj'), addText: !!document.querySelector('#cmp-add-text') }); })()" },
+  { "shot": "compose-h-1.png", "full": true },
+
+  { "eval": "(() => { const c = document.querySelector('.cmp-cfg-card'); if (!c) return 'no-card'; c.click(); return 'clicked-first'; })()" },
+  { "wait": 1000 },
+  { "eval": "(() => { const c = document.querySelector('.cmp-cfg-card'); const ck = c ? c.querySelector('.cmp-cfg-ck') : null; if (ck) ck.click(); return JSON.stringify({ selCards: document.querySelectorAll('.cmp-cfg-card.sel').length, onCards: document.querySelectorAll('.cmp-cfg-card.on').length }); })()" },
+  { "wait": 800 },
+
+  { "eval": "(() => { const btn = document.querySelector('.cmp-cfg-card [data-act=copy]'); if (!btn) return 'no-copy'; btn.click(); return 'copy-clicked'; })()" },
+  { "wait": 1000 },
+  { "eval": "(() => { const b = document.querySelector('#dialog-container [data-a=yes]'); if (!b) return 'no-confirm'; b.click(); return 'confirm-yes'; })()" },
+  { "wait": 1500 },
+  { "eval": "(() => { const s = document.querySelector('.cmp-cfg-card.sel'); return JSON.stringify({ selIdAfterCopy: s ? s.dataset.id : null, countAfterCopy: document.querySelectorAll('.cmp-cfg-card').length }); })()" },
+
+  { "eval": "(() => { const btn = document.querySelector('.cmp-cfg-card [data-act=del]'); if (!btn) return 'no-del'; btn.click(); return 'del-clicked'; })()" },
+  { "wait": 1000 },
+  { "eval": "(() => { const b = document.querySelector('#dialog-container [data-a=yes]'); if (!b) return 'no-confirm'; b.click(); return 'confirm-yes'; })()" },
+  { "wait": 1500 },
+  { "eval": "(() => { const s = document.querySelector('.cmp-cfg-card.sel'); return JSON.stringify({ selAfterDelete: s ? s.dataset.id : null, countAfterDelete: document.querySelectorAll('.cmp-cfg-card').length }); })()" },
+  { "eval": "(() => { const c = document.querySelector('.cmp-cfg-card'); const id = c.dataset.id; c.click(); const now = document.querySelector('.cmp-cfg-card.sel'); return JSON.stringify({ clickedId: id, nowSel: now ? now.dataset.id : null, focusOk: !!(now && now.dataset.id === id) }); })()" },
+  { "wait": 800 },
+
+  { "eval": "document.querySelector('#cmp-add-char').click(); 'add-char'" },
+  { "wait": 1600 },
+  { "eval": "(() => { return JSON.stringify({ totalBoxes: document.querySelectorAll('.cmp-bb-box').length, charBox: document.querySelectorAll('.cmp-bb-box.t-character').length, elChar: document.querySelectorAll('.cmp-el.t-character').length, promptHasChar: (document.querySelector('#cmp-prompt').value || '').includes('人物') }); })()" },
+  { "shot": "compose-h-2.png" },
+
+  { "eval": "window.__p0 = document.querySelector('#cmp-prompt').value; 'captured'" },
+  { "eval": "(() => { const s = document.querySelector('.cmp-el.t-character [data-ef=pose_id]'); if (!s) return 'no-pose-sel'; const cur = s.value; let idx = 0; for (let i = 0; i < s.options.length; i++) { if (s.options[i].value && s.options[i].value !== cur) { idx = i; break; } } if (!s.options[idx] || !s.options[idx].value) return 'no-other-pose'; s.selectedIndex = idx; s.dispatchEvent(new Event('change', { bubbles: true })); return 'pose->' + s.options[idx].value; })()" },
+  { "wait": 2000 },
+  { "eval": "JSON.stringify({ promptChangedByPose: (document.querySelector('#cmp-prompt').value || '') !== (window.__p0 || ''), len: (document.querySelector('#cmp-prompt').value || '').length })" },
+  { "eval": "(() => { const n = document.querySelector('.cmp-el.t-character [data-ef=note]'); if (!n) return 'no-note'; n.value = '右手握着断剑'; n.dispatchEvent(new Event('input', { bubbles: true })); n.dispatchEvent(new Event('change', { bubbles: true })); return 'note-set'; })()" },
+  { "wait": 1600 },
+  { "eval": "JSON.stringify({ promptIncludesNote: (document.querySelector('#cmp-prompt').value || '').includes('右手握着断剑') })" },
+
+  { "eval": "document.querySelector('#cmp-add-obj').click(); 'add-obj'" },
+  { "wait": 900 },
+  { "eval": "(() => { const t = document.querySelector('.cmp-el.t-object [data-ef=caption]'); if (!t) return 'no-obj-cap'; t.value = '雨夜中的石拱桥，桥下流水泛着月光'; t.dispatchEvent(new Event('input', { bubbles: true })); t.dispatchEvent(new Event('change', { bubbles: true })); return 'obj-cap-set'; })()" },
+  { "wait": 1600 },
+  { "eval": "JSON.stringify({ hasObjBox: document.querySelectorAll('.cmp-bb-box.t-object').length > 0, promptHasObj: (document.querySelector('#cmp-prompt').value || '').includes('景物') })" },
+
+  { "eval": "document.querySelector('#cmp-add-text').click(); 'add-text'" },
+  { "wait": 700 },
+  { "eval": "(() => { const t = document.querySelector('.cmp-el.t-text [data-ef=text]'); if (!t) return 'no-text-input'; t.value = '第三章 · 暗影纪元'; t.dispatchEvent(new Event('input', { bubbles: true })); t.dispatchEvent(new Event('change', { bubbles: true })); return 'text-set'; })()" },
+  { "wait": 1600 },
+  { "eval": "JSON.stringify({ hasTextBox: document.querySelectorAll('.cmp-bb-box.t-text').length > 0, promptHasText: (document.querySelector('#cmp-prompt').value || '').includes('文字') })" },
+  { "shot": "compose-h-3.png", "full": true },
+
+  { "eval": "document.querySelector('.cmp-bb-box[data-bi=\"0\"]').click(); 'box0'" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({ el0Sel: (document.querySelector('.cmp-el[data-ei=\"0\"]') || {}).classList ? document.querySelector('.cmp-el[data-ei=\"0\"]').classList.contains('sel') : false, box0Sel: document.querySelector('.cmp-bb-box[data-bi=\"0\"]').classList.contains('sel') })" },
+  { "eval": "document.querySelector('.cmp-el[data-ei=\"1\"]').click(); 'el1'" },
+  { "wait": 700 },
+  { "eval": "JSON.stringify({ el1Sel: document.querySelector('.cmp-el[data-ei=\"1\"]').classList.contains('sel'), box1Sel: document.querySelector('.cmp-bb-box[data-bi=\"1\"]').classList.contains('sel') })" },
+
+  { "eval": "JSON.stringify({ typeSelectorCount: document.querySelectorAll('[data-ef=type]').length, charBoxes: document.querySelectorAll('.cmp-bb-box.t-character').length, objBoxes: document.querySelectorAll('.cmp-bb-box.t-object').length, textBoxes: document.querySelectorAll('.cmp-bb-box.t-text').length })" },
+  { "shot": "compose-h-4.png", "full": true }
+]

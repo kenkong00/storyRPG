@@ -1,0 +1,12 @@
+[
+  { "wait": 2000 },
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 4500 },
+  { "click": "#cmp-bb-add-char" },
+  { "wait": 1500 },
+  { "click": "#cmp-bb-add-obj" },
+  { "wait": 400 },
+  { "eval": "document.getElementById('cmp-bb-canvas').scrollIntoView({block:'center'}); 'scrolled'" },
+  { "wait": 600 },
+  { "shot": "bb-canvas-view.png" }
+]

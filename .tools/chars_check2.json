@@ -1,0 +1,17 @@
+[
+  { "eval": "document.title" },
+  { "wait": 3000 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 2500 },
+  { "eval": "(function(){const btns=[...document.querySelectorAll('.btn-edit')].filter(b=>b.textContent.trim()==='编辑'); if(!btns.length) return 'no-edit-btn'; btns[0].click(); return 'opened-edit';})()" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ tabBtns: document.querySelectorAll('.char-tab-btn').length, tabs: [...document.querySelectorAll('.char-tab-btn')].map(b=>b.dataset.tab) })" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'equip\\']'); if(t){t.click(); return 'equip-tab-clicked';} return 'no-equip-tab';})()" },
+  { "wait": 3000 },
+  { "eval": "JSON.stringify({ createEquipBtn: !!document.getElementById('btn-create-equip'), slotsText: (document.getElementById('equip-slots-area')?.innerText||'').replace(/\\s+/g,' ').slice(0,700) })" },
+  { "shot": "chars-equip2.png" },
+  { "eval": "(function(){const t=document.querySelector('.char-tab-btn[data-tab=\\'backpack\\']'); if(t){t.click(); return 'backpack-tab';} return 'no';})()" },
+  { "wait": 2500 },
+  { "eval": "JSON.stringify({ addItemBtn: !!document.getElementById('btn-add-backpack'), createItemBtn: !!document.getElementById('btn-create-item') })" },
+  { "shot": "chars-backpack2.png" }
+]

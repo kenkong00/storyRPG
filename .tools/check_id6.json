@@ -1,0 +1,23 @@
+[
+ {
+  "eval": "location.href='http://127.0.0.1:8000/admin/index.html'; 'go'"
+ },
+ {
+  "wait": 4000
+ },
+ {
+  "eval": "document.getElementById('image-hub').click(); 'open'"
+ },
+ {
+  "wait": 4000
+ },
+ {
+  "eval": "var c=document.querySelector('.id-card'); var l=document.querySelector('.id-list'); JSON.stringify({cardH:Math.round(c.getBoundingClientRect().height), cardW:Math.round(c.getBoundingClientRect().width), imgH:Math.round(c.querySelector('img').getBoundingClientRect().height), scrollH:l.scrollHeight, clientH:l.clientHeight, rows:getComputedStyle(l).gridTemplateRows.split(' ').slice(0,3)})"
+ },
+ {
+  "eval": "JSON.stringify(Array.from(document.querySelectorAll('.id-card')).slice(0,4).map(c=>{var r=c.getBoundingClientRect(); return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]}))"
+ },
+ {
+  "shot": "id-drawer-fixed.png"
+ }
+]

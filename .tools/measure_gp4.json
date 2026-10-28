@@ -1,0 +1,5 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { const bar = document.querySelector('.gp-bar'); const cs = getComputedStyle(bar); const items = [...bar.children].map(e => { const b = e.getBoundingClientRect(); return {c: (e.className||'').split(' ').slice(-1)[0], t: (e.textContent||'').trim().slice(0,5), x: Math.round(b.left), y: Math.round(b.top), w: Math.round(b.width)}; }); return JSON.stringify({cols: cs.gridTemplateColumns, barW: Math.round(bar.getBoundingClientRect().width), items}); })()" }
+]

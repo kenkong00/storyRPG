@@ -1,0 +1,5 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "eval": "(() => { const fields = [...document.querySelectorAll('.gp-bar .gp-f')]; const rows = {}; fields.forEach(f => { const t = Math.round(f.getBoundingClientRect().top); const k = String(t); (rows[k] = rows[k] || []).push((f.querySelector('span')||{}).textContent); }); return JSON.stringify({rowCount: Object.keys(rows).length, rows: Object.values(rows).map(r => r.map(x => (x||'').slice(0,6)))}); })()" }
+]

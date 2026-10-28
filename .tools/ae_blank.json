@@ -1,0 +1,12 @@
+[
+  { "eval": "location.href = 'http://127.0.0.1:8000/admin/index.html'; 'go'" },
+  { "wait": 3500 },
+  { "click": ".nav-item[data-page='characters']" },
+  { "wait": 2500 },
+  { "eval": "(function(){const b=[...document.querySelectorAll('button.btn-edit')].find(x=>!x.classList.contains('btn-activate')&&!x.classList.contains('btn-deactivate')); b.click(); return 'opened';})()" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ blanks: [...document.querySelectorAll('#char-appearance-host .ae-blank-note')].map(n=>n.textContent), nude: document.querySelector('#char-appearance-host .ae-row[data-dim=\"nudity\"] select')?.value })" },
+  { "eval": "(function(){const h=document.getElementById('char-appearance-host'); h.scrollIntoView({block:'start'}); return 1;})()" },
+  { "wait": 700 },
+  { "shot": "ae-blank.png" }
+]

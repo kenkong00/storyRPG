@@ -1,0 +1,11 @@
+[
+  { "eval": "Admin.navigate('compose'); 'nav'" },
+  { "wait": 3500 },
+  { "click": "#cmp-add-scene" },
+  { "wait": 2600 },
+  { "eval": "(() => { const b = document.querySelector('.cmp-bb-box.t-scene'); if (!b) return 'NO_BOX'; const down = () => b.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, clientX: 30, clientY: 30, pointerId: 3})); down(); document.querySelector('.cmp-bb-box.t-scene').dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 3})); return JSON.stringify({lockedClass: !!document.querySelector('.cmp-bb-box.t-scene.locked'), selected: document.querySelectorAll('.cmp-bb-box.sel').length}); })()" },
+  { "click": ".cmp-el.t-scene [data-bact=\"lock\"]" },
+  { "wait": 500 },
+  { "eval": "(() => { const b = document.querySelector('.cmp-bb-box.t-scene'); const wasLocked = b.classList.contains('locked'); b.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, clientX: 30, clientY: 30, pointerId: 4})); document.querySelector('.cmp-bb-box.t-scene').dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 4})); return JSON.stringify({wasLocked, selectedAfterUnlock: document.querySelectorAll('.cmp-bb-box.sel').length, selIsScene: !!(document.querySelector('.cmp-bb-box.t-scene') || {}).classList && document.querySelector('.cmp-bb-box.t-scene').classList.contains('sel')}); })()" },
+  { "eval": "(() => { const ta = document.getElementById('cmp-prompt'); window.__n = document.querySelectorAll('.cmp-el').length; ta.focus(); ta.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true})); return JSON.stringify({inTextareaNoDelete: document.querySelectorAll('.cmp-el').length === window.__n}); })()" }
+]

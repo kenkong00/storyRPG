@@ -1,0 +1,6 @@
+[
+  { "eval": "var s=document.getElementById('sc-scene'); s.value = s.options[1].value; s.dispatchEvent(new Event('change')); 'select '+s.value" },
+  { "wait": 3500 },
+  { "eval": "JSON.stringify({ appCards: Array.from(document.querySelectorAll('.sc-app-card')).map(x=>x.innerText.replace(/\\s+/g,' ').trim()), dims: document.querySelectorAll('.sc-row').length, prompt: (document.getElementById('sc-prompt')||{}).innerText ? document.getElementById('sc-prompt').innerText.slice(0,220) : '' })" },
+  { "shot": "sc-appcards.png" }
+]
