@@ -14,6 +14,7 @@ from .routers import tts
 from .routers import character_appearance, comfyui, pose_library, jobs_api, generated_images
 from .routers import assets
 from .routers import scene_gen
+from .routers import comic
 from .config import TTS_CACHE_DIR, DATA_DIR
 
 app = FastAPI(title="RPG故事游戏 API", version="0.7.0")
@@ -56,6 +57,15 @@ def on_startup():
             db.close()
     except Exception as exc:  # noqa: BLE001
         print("[WARN] 战斗系统数据初始化失败：", exc)
+
+    # 漫画出图队列是进程内内存对象，重启后任务全丢 → 把残留的"渲染中"状态复位
+    try:
+        from .services.comic_gen import recover_stuck_cells
+        n = recover_stuck_cells()
+        if n:
+            print(f"[OK] 漫画队列已恢复：复位 {n} 个中断的格子任务")
+    except Exception as exc:  # noqa: BLE001
+        print("[WARN] 漫画队列恢复失败：", exc)
 
     # 素材库：把磁盘上已有的图（AI 出的 + 本地上传的老图）收进 assets，
     # 只补漏不删记录 —— 所以每次启动都跑一遍是安全的。
@@ -115,6 +125,8 @@ app.include_router(jobs_api.router)
 app.include_router(generated_images.router)
 app.include_router(assets.router)
 app.include_router(scene_gen.router)
+app.include_router(comic.router)
+app.include_router(comic.public_router)
 
 # 语音缓存静态托管：合成好的 MP3 从这里被 <audio> 直接拉取。
 # 这部分必须设较长缓存——同一句音频内容永远不会变，
@@ -126,6 +138,11 @@ app.mount("/tts-cache", StaticFiles(directory=TTS_CACHE_DIR), name="tts-cache")
 GENERATED_DIR = os.path.join(DATA_DIR, "generated")
 os.makedirs(GENERATED_DIR, exist_ok=True)
 app.mount("/generated", StaticFiles(directory=GENERATED_DIR), name="generated")
+
+# 漫画格子图（每个格子一个目录，多版本并存）
+COMIC_MEDIA_DIR = os.path.join(DATA_DIR, "comic")
+os.makedirs(COMIC_MEDIA_DIR, exist_ok=True)
+app.mount("/comic-media", StaticFiles(directory=COMIC_MEDIA_DIR), name="comic-media")
 
 # 前端静态文件 —— 挂载子目录，避免根路径挂载拦截 API 路由
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "frontend")
@@ -148,3 +165,20 @@ if os.path.exists(frontend_dir):
             with open(index_path, "r", encoding="utf-8") as f:
                 return HTMLResponse(content=f.read())
         return HTMLResponse(content="<h1>Frontend not found</h1>", status_code=404)
+
+    def _serve_comic():
+        page = os.path.join(frontend_dir, "comic.html")
+        if os.path.exists(page):
+            with open(page, "r", encoding="utf-8") as f:
+                resp = HTMLResponse(content=f.read())
+                resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                return resp
+        return HTMLResponse(content="<h1>comic.html not found</h1>", status_code=404)
+
+    @app.get("/comic", response_class=HTMLResponse)
+    async def serve_comic():
+        return _serve_comic()
+
+    @app.get("/comic.html", response_class=HTMLResponse)
+    async def serve_comic_html():
+        return _serve_comic()

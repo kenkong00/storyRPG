@@ -23,6 +23,7 @@ from .scene_appearance import SceneAppearance
 from .generated_image import GeneratedImage
 from .asset import Asset
 from .compose_config import ComposeConfig
+from .comic import ComicProject, ComicBook, ComicPage, ComicCell, ComicCellVersion
 
 __all__ = [
     "Character", "CharacterAttribute",
@@ -49,5 +50,6 @@ __all__ = [
     "GeneratedImage",
     "Asset",
     "ComposeConfig",
+    "ComicProject", "ComicBook", "ComicPage", "ComicCell", "ComicCellVersion",
     "CharacterSkillBook", "UserCharacterSkillBook",
 ]

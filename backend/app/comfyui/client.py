@@ -29,6 +29,9 @@ _SEED_MAX = 0xFFFFFFFFFFFFFFFF
 TEXT_NODE_CANDIDATES = ("109", "6", "4")
 
 # ComfyUI /models 接口返回的模型子目录（与参考项目的 MODEL_FOLDERS 对应）
+# 模型文件扩展名（过滤掉目录名/说明文件这类脏数据）
+MODEL_FILE_EXTS = (".safetensors", ".sft", ".ckpt", ".pt", ".pth", ".bin", ".gguf", ".onnx", ".pkl", ".engine")
+
 MODEL_FOLDERS = {
     "unet": "unet",
     "checkpoints": "checkpoints",
@@ -107,6 +110,24 @@ class ComfyUIClient:
     def has_node(self, class_type: str) -> bool:
         return class_type in self._node_cache()
 
+    @staticmethod
+    def _only_model_files(items) -> list[str]:
+        """只留下真正的模型文件。
+
+        有些 ComfyUI 版本对 GET /models/{folder} 不认识目录名，会把**模型目录清单**
+        （unet / clip / vae / loras 这些文件夹名）当成结果返回，于是「扩散模型」下拉里
+        塞进 60 个文件夹名。真模型一定带扩展名，按扩展名过滤既能挡住这种脏数据，
+        又不会误伤 `moss image\\xxx.safetensors` 这种带中文/子目录的路径。
+        """
+        out = []
+        for x in items or []:
+            v = str(x).strip()
+            if not v:
+                continue
+            if v.lower().endswith(MODEL_FILE_EXTS):
+                out.append(v)
+        return out
+
     def _models_in_folder(self, folder: str) -> list[str]:
         """取单个模型目录下的文件列表。
 
@@ -117,7 +138,7 @@ class ComfyUIClient:
         try:
             data = self._request("GET", f"/models/{folder}", as_json=True)
             if isinstance(data, list):
-                return [str(x).replace("/", "\\") for x in data if x]
+                return self._only_model_files(str(x).replace("/", "\\") for x in data if x)
             if isinstance(data, dict):
                 items = []
                 for sub, files in data.items():
@@ -125,21 +146,21 @@ class ComfyUIClient:
                         for fn in files:
                             rel = f"{sub}\\{fn}" if sub else str(fn)
                             items.append(rel.replace("/", "\\"))
-                return items
+                return self._only_model_files(items)
         except Exception:  # noqa: BLE001
             pass
         # 旧版：查询参数
         try:
             data = self._request("GET", f"/models?folder={folder}", as_json=True)
             if isinstance(data, list):
-                return [str(x).replace("/", "\\") for x in data if x]
+                return self._only_model_files(str(x).replace("/", "\\") for x in data if x)
             if isinstance(data, dict):
                 items = []
                 for sub, files in data.items():
                     if isinstance(files, list):
                         for fn in files:
                             items.append(f"{sub}\\{fn}".replace("/", "\\") if sub else str(fn))
-                return items
+                return self._only_model_files(items)
         except Exception:  # noqa: BLE001
             pass
         return []

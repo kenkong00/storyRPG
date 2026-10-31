@@ -8,6 +8,7 @@ const Admin = {
 
   async init() {
     this.bindNav();
+    this.bindSidebarToggle();
     this.registerPages();
     // 从 localStorage 恢复上次访问的页面，避免刷新后丢失
     const lastPage = localStorage.getItem('admin_current_page') || 'dashboard';
@@ -20,6 +21,27 @@ const Admin = {
         const page = item.dataset.page;
         this.navigate(page);
       });
+    });
+  },
+
+  // 收起 / 展开左侧栏目：状态存 localStorage，刷新后保持
+  bindSidebarToggle() {
+    const btn = document.getElementById('sb-toggle');
+    let collapsed = false;
+    try { collapsed = localStorage.getItem('admin_sidebar_collapsed') === '1'; } catch (_) {}
+    document.body.classList.toggle('sb-collapsed', collapsed);
+    btn?.addEventListener('click', () => {
+      const now = !document.body.classList.contains('sb-collapsed');
+      document.body.classList.toggle('sb-collapsed', now);
+      try { localStorage.setItem('admin_sidebar_collapsed', now ? '1' : '0'); } catch (_) {}
+      // 画布类页面依赖容器尺寸算缩放，收放后要让它们重算
+      window.dispatchEvent(new Event('resize'));
+    });
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        btn?.click();
+      }
     });
   },
 
@@ -44,9 +66,11 @@ const Admin = {
       dashboard: '仪表盘', characters: '人物管理', realms: '境界等级', items: '物品管理',
       equipments: '装备管理', affixes: '装备词条',
       scenes: '场景管理', skills: '技能书', story: '剧情管理', images: '图片管理',
+      prompt_lib: '提示词管理',
       tags: '标签管理', animations: '动效展示', sounds: '声音管理',
       games: '游戏设置', users: '用户管理', character_states: '人物状态管理', players: '玩家角色',
       character_appearance: '人物外观拼装', settings: '设置', compose: '人物场景合成',
+      comic: '漫画制作', comic_manage: '漫画管理',
     };
     document.getElementById('page-title').textContent = titles[page] || page;
     // 供 CSS 按栏目放大字号 / 定制面板样式用

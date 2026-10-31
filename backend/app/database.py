@@ -84,6 +84,45 @@ def _run_migrations():
                 conn.commit()
                 print("[OK] story_node_dialogues 表已添加 disappear_after 列")
 
+        # comic_cells 表添加 effects 列（漫画特效叠加层：符号/速度线/方向线）
+        if "comic_cells" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("comic_cells")}
+            if "effects" not in cols:
+                conn.execute(text("ALTER TABLE comic_cells ADD COLUMN effects TEXT"))
+                conn.commit()
+                print("[OK] comic_cells 表已添加 effects 列")
+
+        # comic_cells 表添加格子底色列（bg_enabled=0 表示不要背景）
+        if "comic_cells" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("comic_cells")}
+            if "bg_enabled" not in cols:
+                conn.execute(text("ALTER TABLE comic_cells ADD COLUMN bg_enabled INTEGER DEFAULT 1"))
+                conn.commit()
+                print("[OK] comic_cells 表已添加 bg_enabled 列")
+            if "bg_color" not in cols:
+                conn.execute(text("ALTER TABLE comic_cells ADD COLUMN bg_color VARCHAR(20) DEFAULT '#ffffff'"))
+                conn.commit()
+                print("[OK] comic_cells 表已添加 bg_color 列")
+
+        # comic_cell_versions 表添加版本名字列（可给版本重新起名）
+        if "comic_cell_versions" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("comic_cell_versions")}
+            if "name" not in cols:
+                conn.execute(text("ALTER TABLE comic_cell_versions ADD COLUMN name VARCHAR(120) DEFAULT ''"))
+                conn.commit()
+                print("[OK] comic_cell_versions 表已添加 name 列")
+            if "characters" not in cols:
+                conn.execute(text("ALTER TABLE comic_cell_versions ADD COLUMN characters TEXT"))
+                conn.commit()
+                print("[OK] comic_cell_versions 表已添加 characters 列")
+            # 版本配方：前置 / 后置自定义内容 + 高级整段覆盖。
+            # 老版本这三列为 NULL（走 prompt_positive 历史成品），新版本为 ''（走配方拼装），据此区分。
+            for col in ("prompt_prefix", "prompt_suffix", "prompt_override"):
+                if col not in cols:
+                    conn.execute(text(f"ALTER TABLE comic_cell_versions ADD COLUMN {col} TEXT"))
+                    conn.commit()
+                    print(f"[OK] comic_cell_versions 表已添加 {col} 列")
+
         # character_equipments 表：将唯一约束从 (character_id, slot) 迁移为 (character_id, slot, equipment_id)
         # SQLite 不支持直接删除约束，需要重建表
         if "character_equipments" in insp.get_table_names():

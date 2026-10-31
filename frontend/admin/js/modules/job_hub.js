@@ -14,6 +14,7 @@
   const KIND_LABEL = {
     pose_batch: '动作表情',
     appearance_render: '立绘生成',
+    comic_cell: '漫画生图',
   };
   const STATUS_LABEL = {
     running: '进行中',
@@ -85,9 +86,9 @@
         <path d="M17.5 15v1.6l1.1.7"/>
       </svg>
       <span class="th-badge" hidden>0</span>`;
-    // 插在「打开游戏」前面
-    const game = topbar.querySelector('a.btn');
-    if (game) topbar.insertBefore(btn, game);
+    // 固定插到顶栏右侧的圆形按钮组开头（顺序：任务中心 → 最新图片 → 打开前台）
+    const slot = topbar.querySelector('.topbar-actions');
+    if (slot) slot.insertBefore(btn, slot.firstChild);
     else topbar.appendChild(btn);
     btn.addEventListener('click', () => toggle());
 
@@ -103,7 +104,8 @@
         <circle cx="8.6" cy="10" r="1.6"/>
         <path d="M4 17l4.5-4.2L12 16l3.2-2.6L20 17"/>
       </svg>`;
-    if (game) topbar.insertBefore(img, game);
+    if (btn.parentNode) btn.parentNode.insertBefore(img, btn.nextSibling);
+    else if (slot) slot.insertBefore(img, slot.firstChild);
     else topbar.appendChild(img);
     img.addEventListener('click', () => toggleImages());
   }
@@ -227,7 +229,8 @@
     if (j.canceling && j.status === 'running') bits.push('取消中…');
 
     const acts = [];
-    if (j.status === 'running' || j.status === 'queued') {
+    // 漫画队列是整队暂停，不提供单条暂停（后端标了 nopause）
+    if ((j.status === 'running' || j.status === 'queued') && !j.nopause) {
       acts.push(`<button class="td-act" data-a="pause" data-id="${esc(j.id)}" title="暂停（当前这张会中断，继续后重跑）">⏸</button>`);
     }
     if (paused) {
@@ -300,11 +303,21 @@
         act(b.dataset.a, b.dataset.id);
       });
     });
-    // 点行本身 = 跳到它的页面（能定位的话）
+    // 单击 = 稍等一拍再跳（给双击留出时间，避免双击时跳两次）；双击 = 立刻跳
     box.querySelectorAll('.td-row').forEach((r) => {
-      r.addEventListener('click', () => {
+      let timer = 0;
+      const go = () => {
         const j = jobsOf().find((x) => x.id === r.dataset.id);
         if (j && canLocate(j)) PageFocus.run(j);
+      };
+      r.addEventListener('click', () => {
+        clearTimeout(timer);
+        timer = setTimeout(go, 220);
+      });
+      r.addEventListener('dblclick', () => {
+        clearTimeout(timer);
+        toggle(false);          // 双击先收起抽屉，直接落到运行的页面
+        go();
       });
     });
     d.querySelector('.td-head-btns [data-act="pause-all"]').disabled = live === 0;

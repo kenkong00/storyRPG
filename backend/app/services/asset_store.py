@@ -28,6 +28,7 @@ KINDS = {
     "pose": "人物动作",
     "scene": "场景",
     "illustration": "人物场景合成",
+    "comic": "漫画",
     "item": "物品",
     "monster": "怪物",
     "ui": "界面",

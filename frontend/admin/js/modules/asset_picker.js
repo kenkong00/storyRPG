@@ -13,14 +13,14 @@
 //   const list  = await AssetPicker.open({ multiple:true })         // 多选
 
 window.AssetPicker = (function () {
-  const KIND_ORDER = ['portrait', 'pose', 'scene', 'illustration', 'item', 'monster', 'ui', 'icon', 'other'];
+  const KIND_ORDER = ['portrait', 'pose', 'scene', 'illustration', 'comic', 'item', 'monster', 'ui', 'icon', 'other'];
   const KIND_LABEL = {
     portrait: '人物立绘', pose: '人物动作', scene: '场景', illustration: '人物场景合成',
-    item: '物品',
+    comic: '漫画', item: '物品',
     monster: '怪物', ui: '界面', icon: '图标', other: '其他',
   };
   const KIND_ICON = {
-    portrait: '👤', pose: '🎭', scene: '🏞', illustration: '🎨', item: '🎒',
+    portrait: '👤', pose: '🎭', scene: '🏞', illustration: '🎨', comic: '📖', item: '🎒',
     monster: '👹', ui: '🖼', icon: '✦', other: '📄',
   };
   // 上传时落到哪个目录（沿用后台已有的分类目录）

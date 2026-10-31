@@ -390,7 +390,8 @@ def _build_standard(g: _Graph, p: Preset, model_ref, clip_ref, vae_ref, *,
                     strength, seed, prefix, force_size=False, _node_exists=None) -> dict:
     _node_exists = _node_exists or (lambda c: True)
     pos_text = effective_prompt(p, prompt)
-    neg_text = negative or prompt or " "
+    # 负面词为空时不再拿正向词兜底（会白白多跑一次 CLIP 编码）
+    neg_text = negative or " "
     pos = g.add("CLIPTextEncode", {"clip": clip_ref, "text": pos_text})
     neg = g.add("CLIPTextEncode", {"clip": clip_ref, "text": neg_text})
 

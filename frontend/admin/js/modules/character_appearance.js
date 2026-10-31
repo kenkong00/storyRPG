@@ -57,7 +57,7 @@ Admin.registerPage('character_appearance', async (container) => {
             <label class="ap-field"><span>数量</span>
               <input id="ap-b-count" type="number" value="10" min="1" max="100" class="ap-inp"></label>
             <label class="ap-field"><span>名字前缀</span>
-              <input id="ap-b-prefix" value="角色" class="ap-inp" style="width:100px"></label>
+              <input id="ap-b-prefix" value="" placeholder="留空=按国籍随机" class="ap-inp" style="width:100px"></label>
             <label class="ap-field"><span>类型</span>
               <select id="ap-b-type" class="ap-sel">
                 <option value="npc">NPC</option><option value="player">玩家</option>
@@ -299,7 +299,7 @@ Admin.registerPage('character_appearance', async (container) => {
     const btn = e.currentTarget;
     const body = {
       count: Math.max(1, Math.min(100, parseInt($('ap-b-count').value) || 10)),
-      name_prefix: $('ap-b-prefix').value || '角色',
+      name_prefix: ($('ap-b-prefix').value || '').trim(),
       character_type: $('ap-b-type').value,
       category_path: $('ap-b-cat').value || null,
       theme: $('ap-b-theme').value || null,

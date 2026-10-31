@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>漫画 · 暗影纪元</title>
+<link rel="stylesheet" href="/css/comic_reader.css?v=20261030a">
+</head>
+<body>
+
+<!-- ========== 书架 ========== -->
+<div id="shelf">
+  <div class="shelf-head">
+    <span class="logo">漫画书架</span>
+    <span class="sub">暗影纪元 · 漫画</span>
+    <span class="sp"></span>
+    <a href="/">← 回到游戏</a>
+  </div>
+  <div class="shelf-body">
+    <div class="shelf-sec">全部作品</div>
+    <div class="shelf-grid" id="shelf-grid"></div>
+    <div class="shelf-empty" id="shelf-empty" style="display:none">
+      还没有发布的作品。<br>去后台 <b>漫画制作</b> 里做一个，点「发布」就会出现在这里。
+    </div>
+  </div>
+</div>
+
+<!-- ========== 阅读器 ========== -->
+<div id="reader">
+  <div class="rd-top">
+    <button class="rd-btn" id="rd-back">← 书架</button>
+    <span class="title" id="rd-title"></span>
+    <select class="book-sel" id="rd-book"></select>
+    <span class="sp"></span>
+    <button class="rd-btn" id="rd-toc-btn">目录</button>
+    <button class="rd-btn" id="rd-mode">翻页模式</button>
+    <button class="rd-btn" id="rd-save">保存本页</button>
+    <button class="rd-btn" id="rd-full">全屏</button>
+  </div>
+
+  <div class="rd-stage" id="rd-stage">
+    <div class="rd-nav left" id="rd-nav-left">‹</div>
+    <div class="rd-nav right" id="rd-nav-right">›</div>
+  </div>
+
+  <div class="rd-toc" id="rd-toc">
+    <div class="h" id="rd-toc-head">目录</div>
+    <div id="rd-toc-list"></div>
+  </div>
+
+  <div class="rd-hint" id="rd-hint"></div>
+
+  <div class="rd-bottom">
+    <button class="rd-btn" id="rd-prev">上一页</button>
+    <span class="rd-idx" id="rd-idx">1 / 1</span>
+    <div class="rd-progress" id="rd-progress"><i id="rd-progress-fill"></i></div>
+    <button class="rd-btn" id="rd-next">下一页</button>
+  </div>
+</div>
+
+<script src="/js/comic_reader.js?v=20261030a"></script>
+</body>
+</html>

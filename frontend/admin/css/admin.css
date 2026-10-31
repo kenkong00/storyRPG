@@ -126,6 +126,65 @@ body {
   font-size: 13px;
 }
 
+/* ===== 顶栏：折叠按钮 + 右侧圆形图标 ===== */
+.sb-toggle {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 15px; line-height: 1;
+  padding: 0 0 2px;
+  transition: color .16s, border-color .16s, transform .22s;
+}
+.sb-toggle:hover { color: var(--gold); border-color: var(--gold); }
+body.sb-collapsed .sb-toggle { transform: rotate(180deg); }
+
+.topbar-actions {
+  display: flex; align-items: center; gap: 8px;
+  flex: 0 0 auto;
+}
+
+.tb-round {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color .18s, border-color .18s, background .18s;
+}
+.tb-round:hover { color: var(--text-primary); border-color: var(--gold); }
+/* 「打开前台」：文字也是圆形图标，和左边两个图形按钮同一套外观 */
+.tb-round.tb-text {
+  width: 40px; height: 40px;
+  font-size: 12px; font-weight: 600; letter-spacing: .5px;
+  line-height: 1.1; text-align: center;
+  color: var(--text-secondary);
+}
+.tb-round.tb-text:hover { color: var(--gold); }
+/* 顶栏快捷图标：设置 / 提示词管理 / 图片管理（放在任务中心之前） */
+.tb-quick { color: var(--text-secondary); }
+.tb-quick.active { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,.12); }
+/* 快捷图标组与右侧「任务中心 / 最新图片 / 前台」之间分隔一下 */
+.tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex: 0 0 auto; }
+
+/* 收起左侧栏目 */
+.sidebar { transition: width .22s ease, opacity .18s ease; }
+body.sb-collapsed .sidebar {
+  width: 0 !important;
+  opacity: 0;
+  border-right: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 /* 内容区 */
 .content {
   flex: 1;

@@ -35,13 +35,24 @@
     return `<datalist id="${id}">${(list || []).map((v) => `<option value="${esc(v)}"></option>`).join('')}</datalist>`;
   }
 
+  // 「大模型」过滤器：ComfyUI 的 unet / diffusion_models 目录里经常混着
+  // 文本编码器、VAE、ControlNet（Flux 生态特别常见），下拉里只该出现真正的扩散模型。
+  const BIG_MODEL_EXT = /\.(safetensors|sft|ckpt|pt|pth|gguf|bin)$/i;
+  const NOT_BIG_MODEL = /(^|[^a-z])(clip|t5|t5xxl|umt5|ae|vae|text[_-]?encoder|controlnet|ipadapter|ip-adapter|pulid|instantid|sam|upscale|esrgan|embedding|lora|style)/i;
+  function isBigModel(p) {
+    const name = String(p || '');
+    if (!name || !BIG_MODEL_EXT.test(name)) return false;
+    const base = name.replace(/\\/g, '/').split('/').pop();
+    return !NOT_BIG_MODEL.test(base);
+  }
   function catModels() {
     const c = S.catalog || {};
     const seen = new Set();
     const out = [];
-    [...(c.unet || []), ...(c.diffusion_models || [])].forEach((v) => {
-      if (v && !seen.has(v)) { seen.add(v); out.push(v); }
-    });
+    [...(c.unet || []), ...(c.diffusion_models || []), ...(c.unet_gguf || []), ...(c.checkpoints || [])]
+      .forEach((v) => {
+        if (v && isBigModel(v) && !seen.has(v)) { seen.add(v); out.push(v); }
+      });
     return out.sort();
   }
   const catClips = () => {
@@ -57,17 +68,14 @@
 
   // ---------------- 数据加载 ----------------
   async function loadAll() {
-    const [cfg, presets, prompts, wfs, providers] = await Promise.all([
+    // 提示词已独立成「提示词管理」栏目、工作流也不再在本页维护，这里不再重复拉取
+    const [cfg, presets, providers] = await Promise.all([
       Admin.get('/comfyui/config'),
       Admin.get('/comfyui/model-presets').catch(() => []),
-      Admin.get('/comfyui/prompt-presets').catch(() => []),
-      Admin.get('/comfyui/workflow-presets').catch(() => []),
       Admin.get('/comfyui/providers').catch(() => []),
     ]);
     S.cfg = cfg || {};
     S.presets = Array.isArray(presets) ? presets : [];
-    S.prompts = Array.isArray(prompts) ? prompts : [];
-    S.wfs = Array.isArray(wfs) ? wfs : [];
     S.providers = Array.isArray(providers) ? providers : [];
     S.activePreset = S.cfg.active_model_preset || '';
     S.activeProvider = S.cfg.active_provider || '';
@@ -133,8 +141,6 @@
     ['conn', '连接'],
     ['providers', '服务商'],
     ['presets', '模型配置'],
-    ['prompts', '提示词'],
-    ['wfs', '工作流'],
   ];
 
   function tabBar() {
@@ -153,35 +159,8 @@
         <div class="cs-form" style="margin-top:12px">
           <div class="cs-field" style="grid-column:span 2"><label>服务地址</label>
             <input id="cf-url" type="text" value="${esc(c.url || '')}" placeholder="http://127.0.0.1:8188"></div>
-          <div class="cs-field"><label>输出文件名前缀</label>
-            <input id="cf-prefix" type="text" value="${esc(c.filename_prefix || 'RPG')}"></div>
-          <div class="cs-field"><label>批大小</label>
-            <input id="cf-batch" type="number" min="1" value="${esc(c.batch_size || 1)}"></div>
           <div class="cs-field"><label>超时（秒）</label>
             <input id="cf-timeout" type="number" min="30" value="${esc(c.timeout_sec || 600)}"></div>
-          <div class="cs-field"><label>轮询间隔（毫秒）</label>
-            <input id="cf-poll" type="number" min="100" value="${esc(c.poll_interval_ms || 500)}"></div>
-          <div class="cs-field"><label>随机种子</label>
-            <select id="cf-randseed">
-              <option value="1"${c.random_seed !== false ? ' selected' : ''}>每次随机</option>
-              <option value="0"${c.random_seed === false ? ' selected' : ''}>固定种子</option>
-            </select></div>
-          <div class="cs-field" style="grid-column:span 2"><label>输出目录（留空用默认）</label>
-            <input id="cf-outdir" type="text" value="${esc(c.output_dir || '')}"></div>
-        </div>
-
-        <div class="cs-sec">API 工作流模式（不使用模型配置方案时生效）</div>
-        <div class="cs-form">
-          <div class="cs-field" style="grid-column:span 2"><label>工作流 JSON 路径</label>
-            <input id="cf-wfpath" type="text" value="${esc(c.workflow_path || '')}" placeholder="D:\\\\ComfyUI\\\\workflows\\\\api.json"></div>
-          <div class="cs-field"><label>正向提示词节点 ID</label>
-            <input id="cf-pos" type="text" value="${esc(c.prompt_node_id || '')}" placeholder="自动识别"></div>
-          <div class="cs-field"><label>负面提示词节点 ID</label>
-            <input id="cf-neg" type="text" value="${esc(c.negative_node_id || '')}" placeholder="自动识别"></div>
-          <div class="cs-field"><label>批次节点 ID</label>
-            <input id="cf-batchid" type="text" value="${esc(c.batch_node_id || '')}" placeholder="自动识别"></div>
-          <div class="cs-field" style="grid-column:span 2"><label>默认负面提示词</label>
-            <textarea id="cf-negprompt">${esc(c.negative_prompt || '')}</textarea></div>
         </div>
 
         <div class="cs-sec">启动器（可选，用于从后台拉起 ComfyUI）</div>
@@ -190,14 +169,11 @@
             <input id="cf-installdir" type="text" value="${esc(c.install_dir || '')}"></div>
           <div class="cs-field"><label>Python 目录</label>
             <input id="cf-pydir" type="text" value="${esc(c.python_dir || '')}"></div>
-          <div class="cs-field"><label>启动参数</label>
-            <input id="cf-args" type="text" value="${esc(c.launch_args || '')}" placeholder="--listen --port 8188"></div>
         </div>
 
         <div class="cs-ft" style="margin-top:16px">
-          <button class="btn btn-primary btn-sm" data-act="save-conn">保存连接设置</button>
+          <button class="btn btn-primary btn-sm" data-act="save-conn">保存设置</button>
           <button class="btn btn-outline btn-sm" data-act="test-conn">测试连接</button>
-          <button class="btn btn-outline btn-sm" data-act="reload-catalog">刷新模型清单</button>
         </div>
         <div id="cf-test-out" class="cs-test" style="display:none"></div>
       </div>
@@ -295,283 +271,15 @@
       </div>`;
   }
 
-  // ---------------- Tab 4：提示词 ----------------
-  function viewPrompts() {
-    const groups = {};
-    S.prompts.forEach((p, i) => {
-      const f = p.folder || '未分类';
-      (groups[f] = groups[f] || []).push({ ...p, _i: i });
-    });
-    const body = Object.keys(groups).length
-      ? Object.entries(groups).map(([f, list]) => `
-        <div class="cs-sec">${esc(f)} <span class="cs-badge gray">${list.length}</span></div>
-        <div class="cs-grid">
-          ${list.map((p) => `<div class="cs-card">
-            <div class="cs-title">${esc(p.name)}</div>
-            <div class="cs-sub" style="max-height:64px;overflow:hidden">${esc(p.text || '')}</div>
-            <div class="cs-ft">
-              <button class="btn btn-outline btn-sm" data-act="copy-prompt" data-idx="${p._i}">复制</button>
-              <button class="btn btn-outline btn-sm" data-act="edit-prompt" data-idx="${p._i}">编辑</button>
-              <button class="btn btn-outline btn-sm" data-act="del-prompt" data-idx="${p._i}">删除</button>
-            </div>
-          </div>`).join('')}
-        </div>`).join('')
-      : '<div class="cs-empty">还没有提示词</div>';
-
-    return `<div class="cs-head"><button class="btn btn-primary btn-sm" data-act="new-prompt">＋ 新建提示词</button></div>${body}`;
-  }
-
-  // ---------------- Tab 5：工作流 ----------------
-  function viewWfs() {
-    const cards = S.wfs.map((w, i) => {
-      const on = w.name === S.activeWf;
-      const isPath = !/^\s*[{[]/.test(String(w.workflow || ''));
-      return `<div class="cs-card${on ? ' on' : ''}">
-        <div class="cs-title">${esc(w.name)} ${on ? '<span class="cs-badge">使用中</span>' : ''}</div>
-        <div class="cs-sub">${isPath ? '文件：' + esc(w.workflow) : '内联 JSON（' + String(w.workflow || '').length + ' 字符）'}</div>
-        <div class="cs-kv"><span>覆盖参数 <b>${Object.keys(w.overrides || {}).length}</b></span>${w.note ? `<span>${esc(w.note)}</span>` : ''}</div>
-        <div class="cs-ft">
-          <button class="btn btn-outline btn-sm" data-act="edit-wf" data-idx="${i}">编辑</button>
-          ${on ? '' : `<button class="btn btn-primary btn-sm" data-act="activate-wf" data-idx="${i}">设为当前</button>`}
-          <button class="btn btn-outline btn-sm" data-act="del-wf" data-idx="${i}">删除</button>
-        </div>
-      </div>`;
-    }).join('');
-
-    return `
-      <div class="cs-head">
-        <button class="btn btn-primary btn-sm" data-act="new-wf">＋ 新建工作流</button>
-        <span class="cs-hint" style="margin:0">不使用模型配置方案时生效：加载 ComfyUI 里「另存为 API 格式」的 JSON，再把提示词注入指定节点。</span>
-      </div>
-      ${cards ? `<div class="cs-grid">${cards}</div>` : '<div class="cs-empty">还没有工作流方案</div>'}`;
-  }
-
   // ---------------- 模态：模型方案编辑器 ----------------
-  function blankPreset() {
-    return {
-      name: '新方案', recipe: 'standard', comfy: '', load_mode: 'unet',
-      diffusion_model: '', weight_dtype: 'default',
-      clip_name: '', clip_type: '', vae_name: '', latent: 'flux2',
-      skip_single_layers: '', skip_double_layers: '', skip_end_percent: 0.5,
-      loras: [], use_ref_latent: true,
-      sampler: 'euler', scheduler: 'normal', steps: 20, cfg: 7.0, denoise: 1.0,
-      long_edge: 1024.0, seed: -1, negative: '', prefix: 'RPG', system_prompt: '',
-    };
-  }
-
-  let loraState = [];
-
-  function loraRows() {
-    if (!loraState.length) {
-      return '<div class="cs-hint">还没有 LoRA，点下面「添加 LoRA」。</div>';
-    }
-    return loraState.map((l, i) => `
-      <div class="cs-lora">
-        <input type="checkbox" data-lora="${i}" data-k="enabled" ${l.enabled ? 'checked' : ''} title="启用">
-        <input type="text" list="dl-lora" data-lora="${i}" data-k="name" value="${esc(l.name || '')}"
-          placeholder="选择或粘贴 LoRA 文件名" class="${l.enabled ? '' : 'off'}">
-        <input type="number" step="0.05" data-lora="${i}" data-k="strength" value="${esc(l.strength)}" title="权重">
-        <div style="display:flex;gap:4px">
-          <button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:10px" data-act="lora-up" data-i="${i}">↑</button>
-          <button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:10px" data-act="lora-del" data-i="${i}">✕</button>
-        </div>
-      </div>`).join('') + `<div style="margin-top:8px"><button class="btn btn-outline btn-sm" data-act="lora-add">＋ 添加 LoRA</button></div>`;
-  }
-
+  // 表单本体由共用部件 ModelPresetEditor 提供（改一处，设置页 / 漫画 / 人物外观 全生效）
   function openPresetEditor(idx, preset, isNew) {
-    const draft = JSON.parse(JSON.stringify(preset || blankPreset()));
-    loraState = (draft.loras || []).map((l) => ({
-      name: l.name || '', strength: l.strength == null ? 1.0 : Number(l.strength), enabled: !!l.enabled,
-    }));
-    const origName = isNew ? '' : draft.name;
-
-    const body = `
-      ${datalist('dl-unet', catModels())}
-      ${datalist('dl-clip', catClips())}
-      ${datalist('dl-vae', catVaes())}
-      ${datalist('dl-lora', catLoras())}
-
-      <div class="cs-sec" style="margin-top:0">基础</div>
-      <div class="cs-form">
-        <div class="cs-field" style="grid-column:span 2"><label>方案名称（唯一）</label>
-          <input id="mp-name" type="text" value="${esc(draft.name || '')}"></div>
-        <div class="cs-field"><label>工作流类型</label>
-          <select id="mp-recipe">
-            <option value="standard"${draft.recipe === 'standard' ? ' selected' : ''}>通用（UNET / Checkpoint 直出）</option>
-            <option value="qwen_edit"${draft.recipe === 'qwen_edit' ? ' selected' : ''}>Qwen-Image-Edit（指令编辑）</option>
-          </select></div>
-        <div class="cs-field"><label>加载方式</label>
-          <select id="mp-loadmode">
-            <option value="unet"${draft.load_mode !== 'checkpoint' ? ' selected' : ''}>UNET（单独加载 diffusion model）</option>
-            <option value="checkpoint"${draft.load_mode === 'checkpoint' ? ' selected' : ''}>Checkpoint（一体包）</option>
-          </select></div>
-      </div>
-
-      <div class="cs-sec">模型 / 文本编码器 / VAE</div>
-      <div class="cs-form">
-        <div class="cs-field" style="grid-column:span 2"><label>扩散模型（UNET）</label>
-          <input id="mp-model" type="text" list="dl-unet" value="${esc(draft.diffusion_model || '')}" placeholder="moss image\\moss_image_sft_int8_convrot.safetensors"></div>
-        <div class="cs-field"><label>权重精度</label>
-          <input id="mp-dtype" type="text" value="${esc(draft.weight_dtype || 'default')}" list="dl-dtype">
-          <datalist id="dl-dtype"><option value="default"></option><option value="fp8_e4m3fn"></option><option value="fp8_e5m2"></option><option value="fp16_accumulation"></option></datalist></div>
-        <div class="cs-field" style="grid-column:span 2"><label>文本编码器（CLIP）</label>
-          <input id="mp-clip" type="text" list="dl-clip" value="${esc(draft.clip_name || '')}"></div>
-        <div class="cs-field"><label>CLIP 类型</label>
-          <input id="mp-cliptype" type="text" value="${esc(draft.clip_type || '')}" list="dl-cliptype">
-          <datalist id="dl-cliptype">
-            <option value="moss_image"></option><option value="flux"></option><option value="flux2"></option>
-            <option value="sd3"></option><option value="qwen_image"></option><option value="wan"></option>
-            <option value="stable_diffusion"></option><option value="sd2"></option>
-          </datalist></div>
-        <div class="cs-field" style="grid-column:span 2"><label>VAE</label>
-          <input id="mp-vae" type="text" list="dl-vae" value="${esc(draft.vae_name || '')}"></div>
-        <div class="cs-field"><label>Latent 类型</label>
-          <select id="mp-latent">
-            <option value="flux2"${draft.latent === 'flux2' ? ' selected' : ''}>Flux2 / MOSS（16 倍数）</option>
-            <option value="sd3"${draft.latent === 'sd3' ? ' selected' : ''}>SD3 / Flux（16 倍数）</option>
-            <option value="sd"${draft.latent === 'sd' ? ' selected' : ''}>SD / SDXL（8 倍数）</option>
-          </select></div>
-        <div class="cs-field"><label>使用参考 Latent</label>
-          <select id="mp-reflatent">
-            <option value="1"${draft.use_ref_latent !== false ? ' selected' : ''}>是</option>
-            <option value="0"${draft.use_ref_latent === false ? ' selected' : ''}>否</option>
-          </select></div>
-      </div>
-
-      <div class="cs-sec">SkipLayer 引导</div>
-      <div class="cs-form">
-        <div class="cs-field"><label>跳过单层（逗号分隔）</label>
-          <input id="mp-skipsingle" type="text" value="${esc(draft.skip_single_layers || '')}" placeholder="22"></div>
-        <div class="cs-field"><label>跳过双层（逗号分隔）</label>
-          <input id="mp-skipdouble" type="text" value="${esc(draft.skip_double_layers || '')}" placeholder="7,8"></div>
-        <div class="cs-field"><label>结束百分比</label>
-          <input id="mp-skipend" type="number" step="0.05" min="0" max="1" value="${esc(draft.skip_end_percent == null ? 0.5 : draft.skip_end_percent)}"></div>
-      </div>
-
-      <div class="cs-sec">采样参数</div>
-      <div class="cs-form">
-        <div class="cs-field"><label>采样器</label>
-          <input id="mp-sampler" type="text" value="${esc(draft.sampler || '')}" list="dl-sampler">
-          <datalist id="dl-sampler">
-            <option value="euler"></option><option value="euler_ancestral"></option><option value="er_sde"></option>
-            <option value="dpmpp_2m"></option><option value="dpmpp_2m_sde"></option><option value="dpmpp_sde"></option>
-            <option value="ddim"></option><option value="uni_pc"></option><option value="res_multistep"></option>
-          </datalist></div>
-        <div class="cs-field"><label>调度器</label>
-          <input id="mp-scheduler" type="text" value="${esc(draft.scheduler || '')}" list="dl-sched">
-          <datalist id="dl-sched">
-            <option value="normal"></option><option value="karras"></option><option value="exponential"></option>
-            <option value="sgm_uniform"></option><option value="simple"></option><option value="ddim_uniform"></option>
-            <option value="beta"></option>
-          </datalist></div>
-        <div class="cs-field"><label>步数</label><input id="mp-steps" type="number" min="1" value="${esc(draft.steps)}"></div>
-        <div class="cs-field"><label>CFG</label><input id="mp-cfg" type="number" step="0.1" value="${esc(draft.cfg)}"></div>
-        <div class="cs-field"><label>降噪强度</label><input id="mp-denoise" type="number" step="0.05" min="0" max="1" value="${esc(draft.denoise == null ? 1 : draft.denoise)}"></div>
-        <div class="cs-field"><label>长边像素</label><input id="mp-longedge" type="number" value="${esc(draft.long_edge || 1024)}"></div>
-        <div class="cs-field"><label>种子（-1 随机）</label><input id="mp-seed" type="number" value="${esc(draft.seed == null ? -1 : draft.seed)}"></div>
-      </div>
-
-      <div class="cs-sec">LoRA（按顺序叠加）</div>
-      <div id="mp-lora-list">${loraRows()}</div>
-
-      <div class="cs-sec">提示词</div>
-      <div class="cs-form">
-        <div class="cs-field" style="grid-column:span 2"><label>系统提示词（自动拼在正向前面）</label>
-          <input id="mp-sysprompt" type="text" value="${esc(draft.system_prompt || '')}" placeholder="isolated on a transparent background,"></div>
-        <div class="cs-field" style="grid-column:span 2"><label>默认负面提示词</label>
-          <textarea id="mp-negative">${esc(draft.negative || '')}</textarea></div>
-        <div class="cs-field"><label>文件名前缀</label><input id="mp-prefix" type="text" value="${esc(draft.prefix || 'RPG')}"></div>
-      </div>`;
-
-    Admin.showModal(isNew ? '新建模型配置方案' : '编辑模型配置方案', body, async () => {
-      const g = (id) => document.getElementById(id);
-      const n = (id, d) => { const v = parseFloat(g(id).value); return isNaN(v) ? d : v; };
-      const name = (g('mp-name').value || '').trim();
-      if (!name) { Admin.toast('方案名称不能为空', 'error'); return; }
-      const out = {
-        ...draft,
-        name,
-        recipe: g('mp-recipe').value,
-        load_mode: g('mp-loadmode').value,
-        diffusion_model: g('mp-model').value.trim(),
-        weight_dtype: g('mp-dtype').value.trim() || 'default',
-        clip_name: g('mp-clip').value.trim(),
-        clip_type: g('mp-cliptype').value.trim(),
-        vae_name: g('mp-vae').value.trim(),
-        latent: g('mp-latent').value,
-        use_ref_latent: g('mp-reflatent').value === '1',
-        skip_single_layers: g('mp-skipsingle').value.trim(),
-        skip_double_layers: g('mp-skipdouble').value.trim(),
-        skip_end_percent: n('mp-skipend', 0.5),
-        sampler: g('mp-sampler').value.trim(),
-        scheduler: g('mp-scheduler').value.trim(),
-        steps: Math.round(n('mp-steps', 20)),
-        cfg: n('mp-cfg', 7),
-        denoise: n('mp-denoise', 1),
-        long_edge: n('mp-longedge', 1024),
-        seed: Math.round(n('mp-seed', -1)),
-        negative: g('mp-negative').value,
-        prefix: g('mp-prefix').value.trim() || 'RPG',
-        system_prompt: g('mp-sysprompt').value.trim(),
-        loras: loraState
-          .filter((l) => (l.name || '').trim())
-          .map((l) => ({ name: l.name.trim(), strength: Number(l.strength) || 0, enabled: !!l.enabled })),
-      };
-      try {
-        if (isNew) {
-          await Admin.post('/comfyui/model-presets', { preset: out });
-        } else if (name !== origName) {
-          // 后端 PUT 以路径名为准、不支持改名：走「新建 + 删旧」
-          await Admin.post('/comfyui/model-presets', { preset: out });
-          await Admin.del(`/comfyui/model-presets/${q(origName)}`).catch(() => {});
-          if (S.activePreset === origName) await Admin.post(`/comfyui/model-presets/${q(name)}/activate`).catch(() => {});
-        } else {
-          await Admin.put(`/comfyui/model-presets/${q(origName)}`, { preset: out });
-        }
-        Admin.toast('已保存：' + name, 'success');
-        Admin.closeModal();
-        await loadAll();
-        paint();
-      } catch (e) {
-        Admin.toast(e.message, 'error');
-      }
-    }, { size: 'xl' });
-
-    // 模型 / LoRA 这类长路径输入：把 <datalist> 换成「可搜索 + 完整路径弹层」的下拉
-    // （原生 datalist 的弹层又窄又白，模型路径根本看不全，右边的箭头还点不动）
-    if (window.Combo) {
-      Combo.upgradeDatalists(document.querySelector('.modal-body'));
-    }
-
-    // 绑定 LoRA 行交互
-    const rerender = () => {
-      const box = document.getElementById('mp-lora-list');
-      if (box) { box.innerHTML = loraRows(); bindLora(); }
-    };
-    function bindLora() {
-      document.querySelectorAll('#mp-lora-list [data-lora]').forEach((el) => {
-        el.addEventListener('input', () => {
-          const i = +el.dataset.lora;
-          const k = el.dataset.k;
-          if (!loraState[i]) return;
-          loraState[i][k] = k === 'enabled' ? el.checked : (k === 'strength' ? (parseFloat(el.value) || 0) : el.value);
-          if (k === 'enabled') rerender();
-        });
-      });
-      document.querySelectorAll('#mp-lora-list [data-act]').forEach((el) => {
-        el.addEventListener('click', () => {
-          const act = el.dataset.act;
-          if (act === 'lora-add') { loraState.push({ name: '', strength: 1.0, enabled: true }); rerender(); return; }
-          const i = +el.dataset.i;
-          if (act === 'lora-del') loraState.splice(i, 1);
-          if (act === 'lora-up' && i > 0) {
-            const t = loraState[i - 1]; loraState[i - 1] = loraState[i]; loraState[i] = t;
-          }
-          rerender();
-        });
-      });
-    }
-    bindLora();
+    if (!window.ModelPresetEditor) { Admin.toast("模型方案编辑器未加载", "error"); return; }
+    ModelPresetEditor.setCatalog(S.catalog);   // 复用本页已读到的模型清单，避免重复拉取
+    ModelPresetEditor.openForm(preset, isNew, {
+      activeName: S.activePreset,
+      onSaved: async () => { await loadAll(); paint(); },
+    });
   }
 
   // ---------------- 事件 ----------------
@@ -588,22 +296,13 @@
     // ---- 连接 ----
     if (act === 'save-conn') {
       const g = (id) => document.getElementById(id);
+      // 只保留：服务地址 / 超时 / ComfyUI 安装目录 / Python 目录
+      // （后端是 PATCH 语义，没提交的字段不会被动到，保留原值）
       const patch = {
         url: g('cf-url').value.trim(),
-        filename_prefix: g('cf-prefix').value.trim() || 'RPG',
-        batch_size: parseInt(g('cf-batch').value, 10) || 1,
         timeout_sec: parseInt(g('cf-timeout').value, 10) || 600,
-        poll_interval_ms: parseInt(g('cf-poll').value, 10) || 500,
-        random_seed: g('cf-randseed').value === '1',
-        output_dir: g('cf-outdir').value.trim(),
-        workflow_path: g('cf-wfpath').value.trim(),
-        prompt_node_id: g('cf-pos').value.trim(),
-        negative_node_id: g('cf-neg').value.trim(),
-        batch_node_id: g('cf-batchid').value.trim(),
-        negative_prompt: g('cf-negprompt').value,
         install_dir: g('cf-installdir').value.trim(),
         python_dir: g('cf-pydir').value.trim(),
-        launch_args: g('cf-args').value.trim(),
       };
       try {
         S.cfg = await Admin.put('/comfyui/config', patch);
@@ -776,121 +475,6 @@
       return;
     }
 
-    // ---- 提示词 ----
-    if (act === 'new-prompt' || act === 'edit-prompt') {
-      const isNew = act === 'new-prompt';
-      const p = isNew ? { name: '', text: '', folder: '未分类' } : S.prompts[+el.dataset.idx];
-      if (!p) return;
-      Admin.showModal(isNew ? '新建提示词' : '编辑提示词', `
-        <div class="cs-form">
-          <div class="cs-field"><label>名称</label><input id="pp-name" type="text" value="${esc(p.name)}"></div>
-          <div class="cs-field"><label>分组</label><input id="pp-folder" type="text" value="${esc(p.folder || '未分类')}"></div>
-          <div class="cs-field" style="grid-column:span 2"><label>内容</label>
-            <textarea id="pp-text" style="min-height:140px">${esc(p.text || '')}</textarea></div>
-        </div>`, async () => {
-        const body = {
-          name: document.getElementById('pp-name').value.trim(),
-          folder: document.getElementById('pp-folder').value.trim() || '未分类',
-          text: document.getElementById('pp-text').value,
-        };
-        if (!body.name) { Admin.toast('名称必填', 'error'); return; }
-        try {
-          if (isNew) await Admin.post('/comfyui/prompt-presets', body);
-          else await Admin.put(`/comfyui/prompt-presets/${+el.dataset.idx}`, body);
-          Admin.toast('已保存', 'success');
-          Admin.closeModal();
-          await loadAll(); paint();
-        } catch (err) { Admin.toast(err.message, 'error'); }
-      });
-      return;
-    }
-
-    if (act === 'copy-prompt') {
-      const p = S.prompts[+el.dataset.idx];
-      if (!p) return;
-      try {
-        await navigator.clipboard.writeText(p.text || '');
-        Admin.toast('已复制', 'success');
-      } catch (_) {
-        Admin.toast('复制失败，请手动选择文本', 'error');
-      }
-      return;
-    }
-
-    if (act === 'del-prompt') {
-      const p = S.prompts[+el.dataset.idx];
-      if (!p) return;
-      if (!(await Admin.confirm(`删除提示词「${p.name}」？`))) return;
-      try {
-        await Admin.del(`/comfyui/prompt-presets/${+el.dataset.idx}`);
-        await loadAll(); paint();
-      } catch (err) { Admin.toast(err.message, 'error'); }
-      return;
-    }
-
-    // ---- 工作流 ----
-    if (act === 'new-wf' || act === 'edit-wf') {
-      const isNew = act === 'new-wf';
-      const w = isNew ? { name: '', workflow: '', overrides: {}, note: '' } : S.wfs[+el.dataset.idx];
-      if (!w) return;
-      const origName = isNew ? '' : w.name;
-      Admin.showModal(isNew ? '新建工作流方案' : '编辑工作流方案', `
-        <div class="cs-form">
-          <div class="cs-field"><label>名称</label><input id="wf-name" type="text" value="${esc(w.name)}"></div>
-          <div class="cs-field"><label>备注</label><input id="wf-note" type="text" value="${esc(w.note || '')}"></div>
-          <div class="cs-field" style="grid-column:span 2"><label>工作流（JSON 全文，或填文件绝对路径）</label>
-            <textarea id="wf-json" style="min-height:220px;font-family:Consolas,monospace;font-size:11px">${esc(w.workflow || '')}</textarea></div>
-          <div class="cs-field" style="grid-column:span 2"><label>覆盖参数（JSON，可选）</label>
-            <textarea id="wf-ov" style="min-height:80px;font-family:Consolas,monospace;font-size:11px">${esc(JSON.stringify(w.overrides || {}, null, 2))}</textarea></div>
-        </div>`, async () => {
-        const name = document.getElementById('wf-name').value.trim();
-        if (!name) { Admin.toast('名称必填', 'error'); return; }
-        let ov = {};
-        try {
-          const t = document.getElementById('wf-ov').value.trim();
-          if (t) ov = JSON.parse(t);
-        } catch (_) { Admin.toast('覆盖参数不是合法 JSON', 'error'); return; }
-        const body = {
-          name,
-          workflow: document.getElementById('wf-json').value,
-          overrides: ov,
-          note: document.getElementById('wf-note').value.trim(),
-        };
-        try {
-          if (isNew) await Admin.post('/comfyui/workflow-presets', body);
-          else if (name !== origName) {
-            await Admin.post('/comfyui/workflow-presets', body);
-            await Admin.del(`/comfyui/workflow-presets/${q(origName)}`).catch(() => {});
-          } else await Admin.put(`/comfyui/workflow-presets/${q(origName)}`, body);
-          Admin.toast('已保存', 'success');
-          Admin.closeModal();
-          await loadAll(); paint();
-        } catch (err) { Admin.toast(err.message, 'error'); }
-      }, { size: 'xl' });
-      return;
-    }
-
-    if (act === 'activate-wf') {
-      const w = S.wfs[+el.dataset.idx];
-      if (!w) return;
-      try {
-        await Admin.post(`/comfyui/workflow-presets/${q(w.name)}/activate`, {});
-        await loadAll(); paint();
-        Admin.toast('当前工作流：' + w.name, 'success');
-      } catch (err) { Admin.toast(err.message, 'error'); }
-      return;
-    }
-
-    if (act === 'del-wf') {
-      const w = S.wfs[+el.dataset.idx];
-      if (!w) return;
-      if (!(await Admin.confirm(`删除工作流「${w.name}」？`))) return;
-      try {
-        await Admin.del(`/comfyui/workflow-presets/${q(w.name)}`);
-        await loadAll(); paint();
-      } catch (err) { Admin.toast(err.message, 'error'); }
-      return;
-    }
   }
 
   function paint() {
@@ -900,8 +484,7 @@
     if (S.tab === 'conn') body = viewConn();
     else if (S.tab === 'providers') body = viewProviders();
     else if (S.tab === 'presets') body = viewPresets();
-    else if (S.tab === 'prompts') body = viewPrompts();
-    else body = viewWfs();
+    else { S.tab = 'conn'; body = viewConn(); }   // 提示词/工作流标签已移到独立栏目，兜底回连接页
 
     rootEl.innerHTML = `
       <div class="cs-head">

@@ -171,6 +171,8 @@ def request_pause(job_id: str) -> bool:
         j = _jobs.get(job_id)
         if not j or j["status"] not in ("queued", "running"):
             return False
+        if j.get("nopause"):        # 漫画队列是整队暂停，单条不支持
+            return False
         j["_pause"] = True
         j["paused"] = True
         j["status"] = "paused"
@@ -194,6 +196,7 @@ def request_resume(job_id: str) -> bool:
 
 def request_cancel(job_id: str) -> bool:
     """取消一条任务：置旗标，工作线程会在最近的一个卡点退出。"""
+    ctl = None
     with _lock:
         j = _jobs.get(job_id)
         if not j or j["status"] in DEAD:
@@ -204,6 +207,13 @@ def request_cancel(job_id: str) -> bool:
         j["paused"] = False
         j["message"] = "正在取消…"
         j["updated_ts"] = time.time()
+        # 非 jobs 线程自己跑的任务（漫画队列）注册了 cancel 回调，交给它真去掐
+        ctl = (j.get("_ctl") or {}).get("cancel")
+    if ctl:
+        try:
+            ctl()
+        except Exception:  # noqa: BLE001
+            pass
     return True
 
 

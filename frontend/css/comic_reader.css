@@ -1,0 +1,146 @@
+/* ========== 前台漫画阅读 ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: #0a0b0f;
+  color: #e6e8ef;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; }
+
+/* ---------- 书架 ---------- */
+#shelf {
+  height: 100%; overflow-y: auto;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(201,168,76,.10), transparent 60%),
+    #0a0b0f;
+}
+.shelf-head {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 28px;
+  background: rgba(10,11,15,.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #1c1f28;
+}
+.shelf-head .logo { font-size: 17px; font-weight: 700; color: #c9a84c; letter-spacing: 2px; }
+.shelf-head .sub { font-size: 12px; color: #6d7383; }
+.shelf-head .sp { flex: 1; }
+.shelf-head a, .shelf-head button {
+  color: #b9bfcd; text-decoration: none; font-size: 12.5px;
+  border: 1px solid #2a2f3c; background: #14171f; border-radius: 16px;
+  padding: 6px 14px; transition: .15s;
+}
+.shelf-head a:hover, .shelf-head button:hover { color: #c9a84c; border-color: #c9a84c; }
+
+.shelf-body { padding: 26px 28px 60px; max-width: 1360px; margin: 0 auto; }
+.shelf-sec { font-size: 13px; color: #c9a84c; letter-spacing: 1px; margin: 6px 0 16px; display: flex; align-items: center; gap: 10px; }
+.shelf-sec::after { content: ''; flex: 1; height: 1px; background: #1e2230; }
+.shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 20px; }
+.comic-card { cursor: pointer; transition: transform .18s; }
+.comic-card:hover { transform: translateY(-4px); }
+.comic-card .cover {
+  position: relative; width: 100%; aspect-ratio: 3/4; border-radius: 6px; overflow: hidden;
+  background: linear-gradient(160deg, #1b1f2a, #101319);
+  border: 1px solid #262b38;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+.comic-card .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.comic-card .cover .ph {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: #39404f; font-size: 34px;
+}
+.comic-card .cover .mode {
+  position: absolute; left: 8px; top: 8px; font-size: 10px; padding: 2px 7px; border-radius: 10px;
+  background: rgba(0,0,0,.62); color: #d6dbe8; backdrop-filter: blur(4px);
+}
+.comic-card .t { margin-top: 8px; font-size: 13.5px; color: #e2e6f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comic-card .m { font-size: 11px; color: #6d7383; margin-top: 3px; }
+.shelf-empty { text-align: center; color: #5d6374; padding: 90px 20px; font-size: 13.5px; line-height: 2; }
+.shelf-empty b { color: #c9a84c; }
+
+/* ---------- 阅读器 ---------- */
+#reader { position: fixed; inset: 0; display: none; flex-direction: column; background: #07080b; z-index: 50; }
+#reader.on { display: flex; }
+
+.rd-top {
+  height: 52px; flex: 0 0 52px; display: flex; align-items: center; gap: 10px; padding: 0 14px;
+  background: linear-gradient(180deg, rgba(10,12,16,.96), rgba(10,12,16,.72));
+  border-bottom: 1px solid #191d26; z-index: 6;
+}
+.rd-top .title { font-size: 14px; color: #e6e8ef; max-width: 30vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-top .book-sel {
+  background: #141821; color: #cfd4e0; border: 1px solid #262b38; border-radius: 4px;
+  height: 28px; font-size: 12px; padding: 0 6px;
+}
+.rd-top .sp { flex: 1; }
+.rd-btn {
+  height: 30px; padding: 0 12px; border-radius: 4px; border: 1px solid #262b38;
+  background: #141821; color: #b9bfcd; font-size: 12.5px; display: inline-flex;
+  align-items: center; gap: 5px; transition: .15s;
+}
+.rd-btn:hover { color: #c9a84c; border-color: #c9a84c; }
+.rd-btn.on { color: #0f1116; background: #c9a84c; border-color: #c9a84c; font-weight: 700; }
+
+.rd-stage {
+  flex: 1; position: relative; overflow: auto; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(1000px 500px at 50% 0%, #12151d, #07080b 70%);
+}
+.rd-stage.scroll { display: block; padding: 18px 0 60px; }
+.rd-page-wrap { position: relative; line-height: 0; }
+.rd-stage canvas { display: block; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.6); border-radius: 2px; }
+.rd-stage.scroll .rd-page-wrap { margin: 0 auto 18px; display: flex; justify-content: center; }
+.rd-stage.scroll canvas { margin: 0 auto; }
+
+.rd-nav {
+  position: absolute; top: 0; bottom: 0; width: 34%; display: flex; align-items: center;
+  color: rgba(255,255,255,.0); font-size: 30px; user-select: none; cursor: pointer; transition: .2s;
+  z-index: 3;
+}
+.rd-nav:hover { color: rgba(201,168,76,.75); background: linear-gradient(90deg, rgba(201,168,76,.06), transparent); }
+.rd-nav.left { left: 0; justify-content: flex-start; padding-left: 18px; }
+.rd-nav.right { right: 0; justify-content: flex-end; padding-right: 18px;
+  background: linear-gradient(270deg, rgba(201,168,76,.06), transparent); }
+.rd-nav.right:hover { background: linear-gradient(270deg, rgba(201,168,76,.12), transparent); }
+
+.rd-bottom {
+  flex: 0 0 auto; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 16px;
+  background: #0b0d12; border-top: 1px solid #191d26; font-size: 12px; color: #8b91a1;
+}
+.rd-progress { flex: 1; height: 4px; background: #1c2130; border-radius: 2px; overflow: hidden; cursor: pointer; }
+.rd-progress i { display: block; height: 100%; background: #c9a84c; width: 0; transition: width .2s; }
+.rd-idx { font-variant-numeric: tabular-nums; color: #cfd4e0; }
+
+/* 目录 */
+.rd-toc {
+  position: absolute; right: 0; top: 52px; bottom: 46px; width: 268px; overflow: auto;
+  background: rgba(16,19,26,.97); border-left: 1px solid #232936; z-index: 8;
+  transform: translateX(100%); transition: transform .22s;
+}
+.rd-toc.on { transform: none; }
+.rd-toc .h { padding: 10px 12px; font-size: 12px; color: #c9a84c; border-bottom: 1px solid #232936; }
+.rd-toc .item {
+  display: flex; gap: 8px; align-items: center; padding: 8px 12px; font-size: 12.5px; color: #b9bfcd; cursor: pointer;
+}
+.rd-toc .item:hover { background: #1a1f2a; }
+.rd-toc .item.on { background: rgba(201,168,76,.12); color: #e8d9a8; }
+.rd-toc .item .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-toc .item .c { font-size: 10px; color: #6d7383; }
+.rd-toc .thumb { width: 30px; height: 40px; background: #fff; border-radius: 2px; flex: 0 0 auto; overflow: hidden; }
+.rd-toc .thumb canvas { width: 100%; height: 100%; box-shadow: none; }
+
+.rd-hint {
+  position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+  background: rgba(20,24,33,.92); border: 1px solid #2b3244; color: #cfd4e0;
+  font-size: 12px; padding: 7px 14px; border-radius: 16px; z-index: 9;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.rd-hint.on { opacity: 1; }
+
+@media (max-width: 720px) {
+  .shelf-body { padding: 16px; }
+  .shelf-grid { grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); gap: 12px; }
+  .rd-top .title { max-width: 40vw; }
+  .rd-nav { width: 40%; }
+}

@@ -105,6 +105,20 @@ async function main() {
       console.log('[click] ' + st.click + ' -> ' + r.result.value);
       continue;
     }
+    if (st.mouse) {
+      // 真实鼠标点击：用 CDP Input.dispatchMouseEvent 在元素中心按下+抬起，
+      // 会同时产生 pointerdown/pointerup（cell 选中靠 pointerdown，故不能用 el.click()）。
+      const rect = await send('Runtime.evaluate', {
+        expression: `(() => { const el = document.querySelector(${JSON.stringify(st.mouse)}); if (!el) return null; const r = el.getBoundingClientRect(); const ox = ${Number(st.ox || 0)}, oy = ${Number(st.oy || 0)}; return { x: Math.round(r.left + r.width / 2 + ox), y: Math.round(r.top + r.height / 2 + oy) }; })()`,
+        returnByValue: true
+      });
+      const rp = rect.result && rect.result.value;
+      if (!rp) { console.log('[mouse] ' + st.mouse + ' -> NOT_FOUND'); continue; }
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: rp.x, y: rp.y, button: 'left', clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: rp.x, y: rp.y, button: 'left', clickCount: 1 });
+      console.log('[mouse] ' + st.mouse + ' -> @' + rp.x + ',' + rp.y);
+      continue;
+    }
     if (st.eval) {
       const r = await send('Runtime.evaluate', {
         expression: st.eval,

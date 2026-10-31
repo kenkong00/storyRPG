@@ -16,7 +16,7 @@ ComfyUI 接入路由（完整移植自「windows轻量AI桌面助手 5.0」的 C
 import os
 import json
 import uuid
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 from fastapi import APIRouter, HTTPException
@@ -81,6 +81,13 @@ class PromptPresetReq(BaseModel):
     name: str
     text: str = ""
     folder: str = "未分类"
+
+
+class PromptPresetDeleteManyReq(BaseModel):
+    """批量删除：id / name / index 三种定位方式任一命中即删。"""
+    ids: List[str] = []
+    names: List[str] = []
+    indices: List[int] = []
 
 
 class WorkflowPresetReq(BaseModel):
@@ -335,6 +342,20 @@ def delete_prompt_preset(index: int):
     except IndexError:
         raise HTTPException(status_code=404, detail="提示词不存在")
     return {"ok": True}
+
+
+@router.post("/prompt-presets/delete-many")
+def delete_many_prompt_presets(req: PromptPresetDeleteManyReq):
+    """批量删除（支持按 id / 名称 / 下标混合指定）。"""
+    removed = _store().delete_prompt_presets(req.ids, req.names, req.indices)
+    return {"ok": True, "removed": removed}
+
+
+@router.post("/prompt-presets/restore-builtin")
+def restore_builtin_prompts():
+    """把被删掉的内置提示词补回来（按名称判重，不覆盖已存在的同名条目）。"""
+    added, total = _store().restore_builtin_prompts()
+    return {"ok": True, "added": added, "total": total}
 
 
 # ===================== 成人维度开关 =====================

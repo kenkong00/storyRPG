@@ -7,7 +7,8 @@
 (function () {
   if (window.AppearanceEditor) return;
 
-  const EXCLUDE = new Set(['gender', 'age', 'role', 'nationality', 'mode', 'nudity']);
+  const EXCLUDE = new Set(['gender', 'age', 'role', 'nationality', 'mode', 'nudity',
+    'framing', 'pose', 'poseCategory', 'expression']);
   // 工具栏只留「国族 / 性别 / 年龄」，身份·性格·风格定位已从维度库移除
   const GLOBAL_DIMS = ['nationality', 'gender', 'age'];
 
@@ -47,6 +48,14 @@
       .ae-group-head .n{margin-left:auto;font-size:11px;color:var(--text-muted);font-weight:400}
       .ae-group.collapsed .ae-rows{display:none}
       .ae-group-blank .ae-rows{padding:6px 9px 9px}
+      /* 自定义追加词：醒目的整框分区（位于分组之前） */
+      .ae-free-sec{margin:0 0 10px}
+      .ae-free-sec .ae-free-desc{font-size:11.5px;color:var(--text-muted);line-height:1.55;margin-bottom:6px}
+      .ae-free-ta{width:100%;box-sizing:border-box;min-height:84px;max-height:220px;resize:vertical;
+        background:var(--bg-card,#1a1a1a);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);
+        font-size:13px;line-height:1.6;padding:8px;font-family:inherit}
+      .ae-free-ta:focus{outline:1px solid var(--gold)}
+      .ae-free-ta::placeholder{color:var(--text-muted);opacity:.7}
       .ae-blank-note{font-size:11.5px;color:var(--text-muted);line-height:1.55}
       .ae-nude-hint{font-size:11.5px;color:var(--gold);opacity:.85;line-height:1.55;
         padding:3px 0 5px;border-bottom:1px dashed var(--border);margin-bottom:4px}
@@ -155,32 +164,48 @@
     host.innerHTML = `
       <div class="ae-root${split ? ' ae-split' : ''}">
         <div class="ae-toolbar">
+          <button class="ae-btn" id="ae-reset" title="把所有参数归为默认（无）；不影响自定义文字框">🔄 重置</button>
           <label class="ae-field"><span>题材（定向随机）</span>
             <select class="ae-sel" id="ae-theme">
               <option value="">全部 / 不限定</option>
               ${(defs.themes || []).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}
             </select>
           </label>
+          <label class="ae-field"><span>姓名</span>
+            <input class="ae-inp" id="ae-name" value="${esc(state.app.name || '')}" placeholder="角色姓名（留空出图不加）" style="min-width:130px">
+          </label>
           ${GLOBAL_DIMS.filter(id => dims[id]).map(id => `
             <label class="ae-field"><span>${esc(dims[id].name)}</span>
               ${optionSel(dims[id], state.app[id] || '', `id="ae-g-${id}"`)}
             </label>`).join('')}
-          ${dims.nudity ? `<label class="ae-field"><span>裸露状态</span>
+          ${dims.nudity ? `<label class="ae-field"><span>${esc(dims.nudity.name)}</span>
             ${optionSel(dims.nudity, state.app.nudity || 'none', 'id="ae-g-nudity"')}
           </label>` : ''}
-          <label class="ae-field"><span>立绘取景</span>
+          ${dims.framing ? `<label class="ae-field"><span>${esc(dims.framing.name)}</span>
+            ${optionSel(dims.framing, state.app.framing || 'full', 'id="ae-g-framing"')}
+          </label>` : `<label class="ae-field"><span>立绘取景</span>
             <select class="ae-sel" id="ae-g-framing">
               <option value="full"${state.app.framing !== 'half' ? ' selected' : ''}>全身</option>
               <option value="half"${state.app.framing === 'half' ? ' selected' : ''}>半身</option>
             </select>
-          </label>
+          </label>`}
           <div class="ae-actions">
             <button class="ae-btn" id="ae-random">🎲 整体随机</button>
             <button class="ae-btn primary" id="ae-save">💾 保存外观</button>
           </div>
         </div>
         <div class="ae-body">
-          <div class="ae-groups" id="ae-groups"></div>
+          <div class="ae-main">
+            <section class="ae-group ae-free-sec">
+              <div class="ae-group-head"><span>✎</span><span>自定义追加词</span>
+                <span class="n">接在提示词末尾</span></div>
+              <div class="ae-rows">
+                <div class="ae-free-desc">下面的内容会接在拼装提示词的末尾，属于提示词的一部分（留空＝无）。例如：眼神锐利，背景飘落樱花，电影感打光。</div>
+                <textarea id="ae-free" class="ae-free-ta" spellcheck="false" placeholder="例如：眼神锐利，背景有飘落的樱花，电影感打光">${esc(state.app.free_text || '')}</textarea>
+              </div>
+            </section>
+            <div class="ae-groups" id="ae-groups"></div>
+          </div>
           <div class="ae-side">
             <div class="ae-prompt" id="ae-prompt-box">
               <div class="ae-prompt-head">
@@ -396,6 +421,13 @@
       if (nudEl) nudEl.value = state.app.nudity || 'none';
       const frEl = host.querySelector('#ae-g-framing');
       if (frEl) frEl.value = state.app.framing || 'full';
+      // 姓名 / 自定义追加词 / 题材 同步回控件（整体随机或重置后保持视觉一致）
+      const nameEl = host.querySelector('#ae-name');
+      if (nameEl) nameEl.value = state.app.name || '';
+      const freeEl = host.querySelector('#ae-free');
+      if (freeEl) freeEl.value = state.app.free_text || '';
+      const themeEl = host.querySelector('#ae-theme');
+      if (themeEl) themeEl.value = state.app.theme || '';
       refreshFramingHint();
       groupsHost.querySelectorAll('.ae-row').forEach(row => {
         const id = row.dataset.dim;
@@ -455,6 +487,41 @@
       refreshFramingHint();
       refreshPrompt();
       markDirty();
+    });
+
+    // 姓名（拼装进提示词的人物名）
+    const nameEl = host.querySelector('#ae-name');
+    if (nameEl) nameEl.addEventListener('input', () => {
+      state.app.name = nameEl.value;
+      refreshPrompt();
+      markDirty();
+    });
+
+    // 自定义追加词（接在提示词末尾，属于拼装的一部分；重置不影响它）
+    const freeEl = host.querySelector('#ae-free');
+    if (freeEl) freeEl.addEventListener('input', () => {
+      state.app.free_text = freeEl.value;
+      refreshPrompt();
+      markDirty();
+    });
+
+    // 重置按钮：把所有维度参数归为默认（无 / 填空），但保留
+    // 裸露状态、立绘取景、自定义追加词（用户明确要求这三处不受重置影响）。
+    const resetEl = host.querySelector('#ae-reset');
+    if (resetEl) resetEl.addEventListener('click', () => {
+      GLOBAL_DIMS.forEach(id => { state.app[id] = ''; });
+      groupsHost.querySelectorAll('.ae-row').forEach(row => {
+        const id = row.dataset.dim;
+        if (id && id !== 'nudity' && id !== 'framing') {
+          delete state.app[id];
+        }
+      });
+      delete state.app.theme;
+      // nudity / framing / free_text / name 保留不动
+      syncWholeUI();
+      refreshPrompt();
+      markDirty();
+      Admin.toast('已重置：所有外观参数归默认（外观状态 / 立绘取景 / 自定义追加词不变）', 'success');
     });
 
     groupsHost.querySelectorAll('.ae-row select').forEach(sel => {

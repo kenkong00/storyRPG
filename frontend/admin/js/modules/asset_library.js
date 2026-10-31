@@ -7,7 +7,7 @@
 window.AssetLibrary = (function () {
   const KIND_LABEL = {
     portrait: '人物立绘', pose: '人物动作', scene: '场景', illustration: '人物场景合成',
-    item: '物品',
+    comic: '漫画', item: '物品',
     monster: '怪物', ui: '界面', icon: '图标', other: '其他',
   };
   const KIND_LIST = Object.keys(KIND_LABEL);

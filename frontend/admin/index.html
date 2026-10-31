@@ -7,13 +7,15 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>暗影纪元 - 后台管理系统</title>
-<link rel="stylesheet" href="css/admin.css?v=20261028c4">
+<link rel="stylesheet" href="css/admin.css?v=20261030b">
 <link rel="stylesheet" href="css/char-gear.css?v=20260930a">
+<link rel="stylesheet" href="css/comic.css?v=20261105k">
+<link rel="stylesheet" href="css/prompt-pad.css?v=20261103c">
 </head>
 <body>
 
 <!-- 侧边栏 -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h1>暗影纪元</h1>
     <span>后台管理系统 v0.3</span>
@@ -69,6 +71,13 @@
     <div class="nav-item" data-page="sounds">
       <span class="icon">&#9835;</span> 声音管理
     </div>
+    <div class="nav-section">创作</div>
+    <div class="nav-item" data-page="comic">
+      <span class="icon">&#9638;</span> 漫画制作
+    </div>
+    <div class="nav-item" data-page="comic_manage">
+      <span class="icon">&#128218;</span> 漫画管理
+    </div>
     <div class="nav-section">用户</div>
     <div class="nav-item" data-page="users">
       <span class="icon">&#128100;</span> 用户管理
@@ -76,6 +85,9 @@
     <div class="nav-section">工具</div>
     <div class="nav-item" data-page="images">
       <span class="icon">&#128247;</span> 图片管理
+    </div>
+    <div class="nav-item" data-page="prompt_lib">
+      <span class="icon">&#128214;</span> 提示词管理
     </div>
     <div class="nav-item" data-page="tags">
       <span class="icon">&#127991;</span> 标签管理
@@ -89,8 +101,12 @@
 <!-- 主区域 -->
 <main class="main-area">
   <header class="topbar">
+    <button class="sb-toggle" id="sb-toggle" title="收起 / 展开左侧栏目">&#8249;</button>
     <h2 id="page-title">仪表盘</h2>
-    <a href="/" class="btn btn-outline btn-sm" target="_blank">&#8599; 打开游戏</a>
+    <div class="topbar-actions" id="topbar-actions">
+      <!-- 任务中心 / 最新图片由 job_hub 注入 -->
+      <a href="/" class="tb-round tb-text" target="_blank" title="打开前台">前台</a>
+    </div>
   </header>
   <div class="content" id="content-area"></div>
 </main>
@@ -102,21 +118,23 @@
 <div class="toast-container" id="toast-container"></div>
 
 <script src="js/modules/cropper.js?v=20261028c4"></script>
-<script src="js/admin.js?v=20261028c4"></script>
+<script src="js/admin.js?v=20261030b"></script>
 <!-- 通用组件：可搜索下拉 / 全局出图参数 / 图片预览 / 任务监视 -->
-<script src="js/modules/combo.js?v=20261028c4"></script>
+<script src="js/modules/combo.js?v=20261031e"></script>
 <script src="js/modules/gen_params.js?v=20261028c4"></script>
 <script src="js/modules/image_preview.js?v=20261028c4"></script>
 <script src="js/modules/job_monitor.js?v=20261028c4"></script>
-<script src="js/modules/job_hub.js?v=20261028c4"></script>
-<script src="js/modules/asset_picker.js?v=20261028c4"></script>
+<script src="js/modules/job_hub.js?v=20261103a"></script>
+<script src="js/modules/topbar_quick.js?v=20261031b"></script>
+<script src="js/modules/prompt_pad.js?v=20261103c"></script>
+<script src="js/modules/asset_picker.js?v=20261030a"></script>
 <script src="js/modules/category-bar.js?v=20261027u"></script>
 <script src="js/modules/pickers.js?v=20261028c4"></script>
 <script src="js/modules/games.js?v=20261028c4"></script>
-<script src="js/modules/appearance_editor.js?v=20261028c4"></script>
+<script src="js/modules/appearance_editor.js?v=20261030a"></script>
 <script src="js/modules/character_pose_panel.js?v=20261028c4"></script>
 <script src="js/modules/characters.js?v=20261028c4"></script>
-<script src="js/modules/character_appearance.js?v=20261028c4"></script>
+<script src="js/modules/character_appearance.js?v=20261028c5"></script>
 <script src="js/modules/players.js?v=20261028c4"></script>
 <script src="js/modules/character_states.js?v=20261028c4"></script>
 <script src="js/modules/realms.js?v=20261028c4"></script>
@@ -129,12 +147,16 @@
 <script src="js/modules/story.js?v=20261028c4"></script>
 <script src="js/modules/animations.js?v=20261028c4"></script>
 <script src="js/modules/sounds.js?v=20261028c4"></script>
-<script src="js/modules/asset_library.js?v=20261028c4"></script>
+<script src="js/modules/asset_library.js?v=20261030a"></script>
 <script src="js/modules/generated_library.js?v=20261028c4"></script>
 <script src="js/modules/images.js?v=20261028c4"></script>
+<script src="js/modules/prompt_library.js?v=20261031d"></script>
 <script src="js/modules/tags.js?v=20261028c4"></script>
-<script src="js/modules/comfyui_settings.js?v=20261028c4"></script>
+<script src="js/modules/comfyui_settings.js?v=20261031g"></script>
+<script src="js/modules/model_preset_editor.js?v=20261031e"></script>
 <script src="js/modules/users.js?v=20261028c4"></script>
+<script src="js/modules/comic.js?v=20261105k"></script>
+<script src="js/modules/comic_manage.js?v=20261030b"></script>
 <script src="js/modules/dashboard.js?v=20261028c4"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => Admin.init());

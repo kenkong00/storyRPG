@@ -13,6 +13,7 @@
 """
 
 import json
+import random
 from typing import Optional
 
 from pydantic import BaseModel
@@ -60,7 +61,7 @@ class RerollReq(BaseModel):
 
 class BatchCreateReq(BaseModel):
     count: int = 10
-    name_prefix: str = "角色"
+    name_prefix: str = ""
     character_type: str = "npc"
     category_path: Optional[str] = None
     gender: Optional[str] = None
@@ -445,22 +446,26 @@ def batch_create_characters(req: BatchCreateReq, db: Session = Depends(get_db)):
     """一次按同一题材生成多个人物（各自独立随机外观）。"""
     n = max(1, min(req.count, 100))
     created = []
-    # 同批重复名会很烦，先算出该前缀下已用到的最大序号
-    existing = [c.name for c in db.query(Character).filter(
-        Character.name.like(f"{req.name_prefix}%")).all()]
-    start = 1
-    for name in existing:
-        tail = name[len(req.name_prefix):]
-        if tail.isdigit():
-            start = max(start, int(tail) + 1)
-
+    used_names = set()
     for i in range(n):
         appearance = generator.random_appearance(
             gender=req.gender, age=req.age, style=req.style, theme=req.theme,
             nationality=req.nationality, mode=req.mode,
             include_sensitive=req.include_sensitive,
         )
-        name = f"{req.name_prefix}{start + i:02d}"
+        nat = appearance.get("nationality")
+        # 角色姓名：按国籍产出汉字姓名（不同国籍不同命名习惯，但都用汉字）。
+        # 保留了「姓氏」输入：填了就用它当姓氏，否则整名随机；批次内去重避免撞名。
+        if req.name_prefix and req.name_prefix.strip():
+            given_pool = (generator._NAME_POOLS.get(nat) or generator._NAME_POOLS["cn"])["given"]
+            name = req.name_prefix.strip() + random.choice(given_pool)
+        else:
+            name = generator.random_name(nat)
+        guard = 0
+        while name in used_names and guard < 500:
+            name = generator.random_name(nat)
+            guard += 1
+        used_names.add(name)
         appearance["name"] = name
         ch = Character(
             name=name,

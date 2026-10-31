@@ -3,7 +3,7 @@
 //   1) <datalist> 的原生下拉又白又窄，模型/LoRA 的长路径根本看不全，右边的下拉箭头
 //      还会吞掉点击；
 //   2) 几百个模型时纯 select 翻起来要命。
-// 现在的行为：输入框 + ▾ 按钮（真的点得开），弹层宽度取「输入框宽度的 2 倍或 420px」，
+// 现在的行为：输入框 + ▾ 按钮（真的点得开），弹层宽度跟随输入框自身宽度，
 // 长路径换行显示完整，输入即筛选（包含匹配），↑↓ 选择、回车确认、Esc 关闭。
 //
 // 用法 A（显式创建）：
@@ -28,7 +28,11 @@
         border-bottom-right-radius:var(--radius,4px);background:var(--bg-input,#1a1a1a);
         color:var(--text-muted);cursor:pointer;font-size:10px;user-select:none;padding:0}
       .cb-btn:hover{color:var(--gold);border-color:var(--gold)}
-      .cb-pop{position:fixed;z-index:99999;background:var(--bg-card,#17171b);border:1px solid var(--gold);
+      /* 背景写死 fallback 链，杜绝主题变量缺失时弹层变白（在深色面板里极其刺眼） */
+      .cb-pop{position:fixed;z-index:99999;box-sizing:border-box;
+        background:var(--bg-card,var(--bg-input,#17171b));background-color:var(--bg-card,var(--bg-input,#17171b));
+        color:var(--text-primary,#e8e8e8);
+        border:1px solid var(--gold);
         border-radius:6px;box-shadow:0 12px 34px rgba(0,0,0,.6);overflow:hidden;display:flex;flex-direction:column}
       .cb-pop .h{font-size:10px;color:var(--text-muted);padding:5px 9px;border-bottom:1px solid var(--border);
         background:rgba(255,255,255,.03);display:flex;gap:8px;align-items:center}
@@ -58,11 +62,19 @@
       if (cur && cur.wrap.contains(e.target)) return;
       close();
     }, true);
-    window.addEventListener('resize', close);
+    // 页面滚动时不要直接关掉弹层：点 ▼ 会触发 input.focus()，浏览器把输入框滚进可视区
+    // 从而冒出一个 scroll 事件——原来的写法会把刚打开的弹层立刻关掉（表现为「点了没反应」）。
+    // 现在改成跟着输入框重新定位。
+    const onMove = () => {
+      if (!pop || pop.style.display === 'none') return;
+      if (!cur) { close(); return; }
+      place(cur);
+    };
+    window.addEventListener('resize', onMove);
     document.addEventListener('scroll', (e) => {
       if (!pop || pop.style.display === 'none') return;
       if (pop.contains(e.target)) return;
-      close();
+      onMove();
     }, true);
     return pop;
   }
@@ -159,6 +171,21 @@
     if (inst.opts.onChange) inst.opts.onChange(inst.input.value);
   }
 
+  /** 把弹层摆到输入框正下方（宽度跟随输入框），空间不够时翻到上方 */
+  function place(src) {
+    const r = src.wrap.getBoundingClientRect();
+    const maxW = window.innerWidth - 24;
+    const width = Math.min(Math.max(r.width, 200), maxW);
+    pop.style.width = Math.round(width) + 'px';
+    pop.style.left = Math.round(Math.min(Math.max(8, r.left), window.innerWidth - width - 12)) + 'px';
+    const h = Math.min(360, pop.offsetHeight || 300);
+    if (r.bottom + h > window.innerHeight - 8 && r.top > h) {
+      pop.style.top = Math.max(8, Math.round(r.top - h - 2)) + 'px';
+    } else {
+      pop.style.top = Math.round(r.bottom + 2) + 'px';
+    }
+  }
+
   function open(explicit) {
     const src = explicit || (document.activeElement && document.activeElement._cb) || window.__lastCb;
     if (!src) return;
@@ -169,16 +196,6 @@
     const all = src.getOptions() || [];
     const list = kw ? all.filter((v) => String(v).toLowerCase().includes(kw.toLowerCase())) : all;
 
-    const r = src.wrap.getBoundingClientRect();
-    const width = Math.max(r.width * 2, 420);
-    pop.style.width = Math.min(width, window.innerWidth - 24) + 'px';
-    pop.style.left = Math.min(Math.max(8, r.left), window.innerWidth - Math.min(width, window.innerWidth - 24) - 12) + 'px';
-    const h = Math.min(360, 40 + list.length * 30);
-    if (r.bottom + h > window.innerHeight - 8 && r.top > h) {
-      pop.style.top = Math.max(8, r.top - h - 2) + 'px';
-    } else {
-      pop.style.top = (r.bottom + 2) + 'px';
-    }
     pop.querySelector('.cnt').textContent =
       `共 ${all.length} 项` + (kw ? `，筛选出 ${list.length} 项` : '') + '（输入可筛选，↑↓ 选择，回车确认）';
     pop.querySelector('.l').innerHTML = list.length
@@ -192,6 +209,7 @@
       });
     });
     pop.style.display = 'flex';
+    place(src);   // 先渲染再量高，才能保证「放不下就往上翻」判断准确
   }
 
   // 记录最近聚焦的 combo 输入框（open() 里用）

@@ -236,6 +236,7 @@ SEED_MODEL_PRESETS = [
 ]
 
 SEED_PROMPT_PRESETS = [
+    {"name": "三视图", "text": "生成这个角色的三视图，包含正面，侧面，背面，灰色背景", "folder": "角色", "builtin": True},
     {"name": "四视图", "text": "生成这个角色的四视图，从左到右分别为：面部特写，全身正面，全身侧面，全身背面，灰色背景", "folder": "角色", "builtin": True},
     {"name": "表情九宫格", "text": "根据图中人物制作九宫格表情包，表情依次为：开心，吐舌，愤怒，悲伤，生气，恐惧，哭泣，微笑，害羞。最终输出包含9个表情的九宫格图片", "folder": "角色", "builtin": True},
     {"name": "姿势九宫格", "text": "基于提供的 IP 形象，设计 9 种风格各异的姿势，涵盖站立、坐姿、动态动作（如跳跃、挥手）、静态姿态（如托腮、叉腰）等不同类型，每种姿势需贴合该 IP 的核心特征与性格特质，清晰呈现 IP 在各姿势下的整体形态与细节，最终输出包含9个姿势的九宫格图片。", "folder": "角色", "builtin": True},
@@ -528,10 +529,20 @@ class ComfyUIConfigStore:
 
     # ---------- 提示词词库 ----------
     def get_prompt_presets(self):
+        # 老数据没有 id：补一次并落盘，之后所有增删改都以 id 定位，
+        # 避免「按下标删 / 下标在删除后错位」把别的条目误删。
+        dirty = False
+        for p in self._data["prompt_presets"]:
+            if not p.get("id"):
+                p["id"] = uuid.uuid4().hex[:12]
+                dirty = True
+        if dirty:
+            self.save()
         return self._data["prompt_presets"]
 
     def add_prompt_preset(self, name, text, folder="未分类"):
         self._data["prompt_presets"].append({
+            "id": uuid.uuid4().hex[:12],
             "name": name or "新提示词", "text": text,
             "folder": folder, "builtin": False,
         })
@@ -546,6 +557,51 @@ class ComfyUIConfigStore:
         if 0 <= index < len(self._data["prompt_presets"]):
             del self._data["prompt_presets"][index]
             self.save()
+
+    def delete_prompt_presets(self, ids=None, names=None, indices=None):
+        """批量删除：id / name / index 任一命中即删，返回删掉几条。"""
+        id_set = {str(x) for x in (ids or []) if x}
+        name_set = {str(x) for x in (names or []) if x}
+        idx_set = set()
+        for i in (indices or []):
+            try:
+                idx_set.add(int(i))
+            except (TypeError, ValueError):
+                continue
+        if not (id_set or name_set or idx_set):
+            return 0
+        keep = []
+        removed = 0
+        for i, p in enumerate(self._data["prompt_presets"]):
+            if (str(p.get("id") or "") in id_set
+                    or str(p.get("name") or "") in name_set
+                    or i in idx_set):
+                removed += 1
+            else:
+                keep.append(p)
+        if removed:
+            self._data["prompt_presets"] = keep
+            self.save()
+        return removed
+
+    def restore_builtin_prompts(self):
+        """把被删掉的内置提示词按名称补回来（不覆盖用户改过的同名条目）。
+
+        和参考项目 prompt_lib.merge_defaults 一个套路：文件存在就以文件为准，
+        只有「名字没了」才补，用户改过的内容不会被冲掉。
+        返回 (补了几条, 补完后的总数)。
+        """
+        have = {p.get("name") for p in self._data["prompt_presets"]}
+        added = 0
+        for seed in SEED_PROMPT_PRESETS:
+            if seed["name"] not in have:
+                item = json.loads(json.dumps(seed))
+                item["id"] = uuid.uuid4().hex[:12]
+                self._data["prompt_presets"].append(item)
+                added += 1
+        if added:
+            self.save()
+        return added, len(self._data["prompt_presets"])
 
     # ---------- 成人维度开关 ----------
     def get_include_sensitive(self):
