@@ -25,8 +25,16 @@ Admin.registerPage('story', async (container) => {
 
   const NODE_TYPES = { dialogue: '对话', choice: '选择', battle: '战斗', cutscene: '过场' };
 
+  /** 当前章节的节点下拉选项 —— 战斗配置里「打赢/打输/逃跑去哪个节点」用它。 */
+  function nodeOptionList() {
+    return (nodes || []).map((n) =>
+      `<option value="${n.id}">#${n.id} ${esc(n.title || n.node_type || '')}</option>`).join('');
+  }
+
   // ===== 模块级共享变量（节点表单使用） =====
   let nodeFormChars = [];
+  // 语音生成：TTS 音色分组缓存（/tts/voices?grouped=true），对话行语音面板复用
+  let _voiceGroups = null;
   // 动作 id → 中文名（打开表情选择时从动作库载入；对话里存的就是动作 id）
   let poseNameMap = {};
   // 页面打开就先拉一遍动作库，让对话行上的表情名直接显示中文，
@@ -65,6 +73,38 @@ Admin.registerPage('story', async (container) => {
     if (!exp) return '无表情';
     if (poseNameMap[exp]) return poseNameMap[exp];
     return (nodeFormExpTypes.find(e => e.key === exp) || { label: exp }).label;
+  }
+
+  // ===== 语音生成：音色分组加载 + 下拉构建（与语音任务页同一数据源） =====
+  async function ensureVoiceGroups() {
+    if (!_voiceGroups) {
+      try {
+        const r = await Admin.get('/tts/voices?grouped=true');
+        _voiceGroups = (r && r.groups) || r || [];
+      } catch (_) { _voiceGroups = []; }
+    }
+    return _voiceGroups;
+  }
+
+  function voiceOptionsHtml(groups, engine, current) {
+    const list = (groups || []).filter(g => (g.voices || []).length
+      && (!engine || g.id === engine));
+    let html = '<option value="">（跟随人物配置 / 引擎默认）</option>';
+    let found = false;
+    list.forEach(g => {
+      html += `<optgroup label="${esc(g.name || g.id)}">`;
+      (g.voices || []).forEach(v => {
+        const sel = v.voice_id === current ? ' selected' : '';
+        if (sel) found = true;
+        const origin = v.derived && v.base_name
+          ? ` = ${v.base_name}${v.rate ? ` 语速${v.rate >= 0 ? '+' : ''}${v.rate}%` : ''}${v.pitch ? ` 音调${v.pitch >= 0 ? '+' : ''}${v.pitch}` : ''}`
+          : '';
+        html += `<option value="${esc(v.voice_id)}"${sel}>${esc((v.label || v.name || v.voice_id) + origin)}</option>`;
+      });
+      html += '</optgroup>';
+    });
+    if (current && !found) html += `<option value="${esc(current)}" selected>${esc(current)}（当前）</option>`;
+    return html;
   }
 
   // 表情网格（9列）
@@ -1460,6 +1500,8 @@ Admin.registerPage('story', async (container) => {
           <input type="hidden" class="dlg-expression" value="${esc(d.expression || '')}">
           <input type="text" class="dlg-content" placeholder="这句台词的内容…" value="${esc(d.content || '')}">
           <button type="button" class="dlg-cfg-btn" title="参数配置：坐标 / 大小 / 裁剪 / 动效 / 翻转 / 消失">⚙</button>
+          <button type="button" class="dlg-voice-btn${(d.voice && !(d.voice || '').startsWith('ERR:')) ? ' has' : ''}${(d.voice || '').startsWith('ERR:') ? ' err' : ''}" title="${(d.voice || '').startsWith('ERR:') ? '上次生成失败：' + esc((d.voice || '').slice(4)) + '（点开可重试）' : (d.voice ? '语音已生成，点开可试听 / 重新生成' : '语音生成：把这句台词变成声音（默认沿用角色的语音配置）')}">🎙</button>
+          <input type="hidden" class="dlg-voice" value="${esc(d.voice || '')}">
           <button type="button" class="btn btn-outline btn-sm dlg-copy" title="复制配置（不含台词）：说话人 / 表情 / 坐标 / 缩放 / 动效…">⚙⧉</button>
           <div class="dlg-params" style="display:none">
             <input class="dlg-x" type="number" step="1" value="${nz(d.pos_x, 50)}">
@@ -1526,6 +1568,7 @@ Admin.registerPage('story', async (container) => {
           speaker_id: parseInt(el.querySelector('.dlg-speaker')?.value) || null,
           content: el.querySelector('.dlg-content')?.value || '',
           expression: el.querySelector('.dlg-expression')?.value || null,
+          voice: el.querySelector('.dlg-voice')?.value || '',
           pos_x: parseFloat(el.querySelector('.dlg-x')?.value),
           pos_y: parseFloat(el.querySelector('.dlg-y')?.value),
           scale: parseFloat(el.querySelector('.dlg-scale')?.value),
@@ -2229,6 +2272,54 @@ Admin.registerPage('story', async (container) => {
         hint.textContent = `已隐藏其余 ${other} 句 · 点某一句可单独预览`;
         box.appendChild(hint);
       }
+
+      // ===== 对话框（按前台真实比例画一个） =====
+      // 前台 #dialogue-box：底边距 ≈ 画面高 6%、高度 ≈ 12%、宽度 88%、圆角 12、金线描边、
+      // 发言人名牌压在框顶。这里同比例缩到预览里，才能看出人物下半身会被框挡掉多少。
+      // 注意：必须排在人物之后 append，前台对话框层级本来就高于立绘。
+      const dlgBox = document.createElement('div');
+      dlgBox.className = 'stage-dlgbox';
+      const boxH = Math.max(30, Math.round(H * 0.13));
+      dlgBox.style.cssText = `position:absolute;left:50%;bottom:${Math.round(H * 0.055)}px;
+        transform:translateX(-50%);width:88%;height:${boxH}px;box-sizing:border-box;
+        border-radius:${Math.max(6, Math.round(boxH * 0.18))}px;
+        background:linear-gradient(180deg,rgba(20,22,32,.94),rgba(9,10,15,.97));
+        border:1px solid rgba(201,168,76,.52);
+        box-shadow:0 8px 24px rgba(0,0,0,.6),inset 0 0 26px rgba(201,168,76,.05);
+        padding:${Math.round(boxH * 0.2)}px ${Math.round(boxH * 0.28)}px;
+        overflow:hidden;z-index:20;pointer-events:none`;
+
+      // 发言人名牌（旁白不画名字）
+      // 注意：必须挂在对话框「外面」——对话框本身是 overflow:hidden（为了裁掉溢出的台词），
+      // 名牌用的是负 top 压在框沿上，放在框里会被直接裁掉、看起来像没画。
+      const spk = r && r.speaker_id ? chars.find(c => c.id === r.speaker_id) : null;
+      if (spk && spk.name) {
+        const chip = document.createElement('div');
+        const chipH = Math.max(12, Math.round(boxH * 0.32));
+        chip.textContent = spk.name;
+        // 对齐对话框左内边距：对话框宽 88%、水平居中 → 左边缘在 6% 处
+        chip.style.cssText = `position:absolute;
+          left:calc(6% + ${Math.round(boxH * 0.26)}px);
+          bottom:${Math.round(H * 0.055) + boxH - Math.round(chipH * 0.5)}px;
+          height:${chipH}px;line-height:${chipH}px;
+          padding:0 7px;border-radius:3px;max-width:70%;overflow:hidden;text-overflow:ellipsis;
+          font-size:${Math.max(8, Math.round(chipH * 0.6))}px;font-weight:700;color:#171208;
+          white-space:nowrap;letter-spacing:1px;z-index:21;pointer-events:none;
+          background:linear-gradient(135deg,#b8963f,#e8cf85 48%,#b8963f);
+          box-shadow:0 2px 8px rgba(0,0,0,.45)`;
+        box.appendChild(chip);
+      }
+
+      // 台词：截断显示（预览只为看位置，不追求全文）
+      const txt = document.createElement('div');
+      const line = ((r && r.content) || '').trim();
+      txt.textContent = line || '（这一句还没有台词）';
+      txt.style.cssText = `font-size:${Math.max(8, Math.round(boxH * 0.24))}px;
+        line-height:1.55;color:${line ? '#f2efe6' : 'rgba(242,239,230,.45)'};
+        letter-spacing:.5px;overflow:hidden;display:-webkit-box;
+        -webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all`;
+      dlgBox.appendChild(txt);
+      box.appendChild(dlgBox);
     }
 
     function scheduleDialogueSave() {
@@ -2303,6 +2394,12 @@ Admin.registerPage('story', async (container) => {
         row.querySelector('.dlg-cfg-btn')?.addEventListener('click', (e) => {
           e.stopPropagation();
           openCfgPop(row.querySelector('.dlg-cfg-btn'));
+        });
+
+        // 语音生成按钮 → 弹出语音面板（和参数面板一个样式）
+        row.querySelector('.dlg-voice-btn')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openVoicePop(row.querySelector('.dlg-voice-btn'));
         });
 
         // 切换说话者 → 刷新表情缩略图
@@ -2384,6 +2481,249 @@ Admin.registerPage('story', async (container) => {
           reorderDialogueRows(from, to, after);
         });
       });
+    }
+
+    // ===== 对话行语音面板（与参数面板同款弹窗样式） =====
+    function closeVoicePop() {
+      const old = document.getElementById('dlg-voice-pop');
+      if (old) old.remove();
+      document.removeEventListener('mousedown', voicePopOutsideHandler, true);
+    }
+    function voicePopOutsideHandler(e) {
+      const p = document.getElementById('dlg-voice-pop');
+      if (p && !p.contains(e.target) && !e.target.closest?.('.dlg-voice-btn')) closeVoicePop();
+    }
+
+    // 当前这行要保存的语音路径（隐藏 input）+ 按钮高亮
+    function setRowVoice(row, url) {
+      const hid = row.querySelector('.dlg-voice');
+      if (hid) hid.value = url || '';
+      const btn = row.querySelector('.dlg-voice-btn');
+      if (btn) {
+        const err = (url || '').startsWith('ERR:');
+        btn.classList.toggle('has', !err && !!url);
+        btn.classList.toggle('err', err);
+        btn.title = err
+          ? '上次生成失败：' + (url.slice(4) || '未知原因') + '（点开可重试）'
+          : (url ? '语音已生成，点开可试听 / 重新生成' : '语音生成：把这句台词变成声音（默认沿用角色的语音配置）');
+      }
+    }
+
+    async function openVoicePop(btn) {
+      closeVoicePop();
+      const row = btn.closest('.dlg-row');
+      if (!row) return;
+      const idx = parseInt(row.dataset.idx, 10) + 1;
+      const speakerId = parseInt(row.querySelector('.dlg-speaker')?.value) || null;
+      const ch = (chars || []).find(c => c.id === speakerId) || null;
+
+      const pop = document.createElement('div');
+      pop.className = 'dlg-voice-pop';
+      pop.id = 'dlg-voice-pop';
+      pop.innerHTML = `
+        <div class="dlg-cfg-head">
+          <span>#${idx} 语音生成${ch ? ' · ' + esc(ch.name) : ''}</span>
+          <button type="button" class="dlg-cfg-close">&times;</button>
+        </div>
+        <div class="dv-body">
+          <div class="dv-row">
+            <label>语音引擎
+              <select class="dv-engine">
+                <option value="">跟随人物配置</option>
+                <option value="edge">Edge TTS（在线 · 推荐）</option>
+                <option value="onecore">本机 Windows 语音（离线）</option>
+              </select>
+            </label>
+            <label style="flex:2">音色
+              <select class="dv-voice"></select>
+            </label>
+          </div>
+          <div class="dv-row">
+            <label>语速 <b class="dv-rate-v">0%</b><input type="range" class="dv-rate" min="-50" max="50" value="0"></label>
+            <label>音调 <b class="dv-pitch-v">0%</b><input type="range" class="dv-pitch" min="-30" max="30" value="0"></label>
+            <label>音量 <b class="dv-volume-v">0%</b><input type="range" class="dv-volume" min="-50" max="50" value="0"></label>
+          </div>
+          <div class="dv-current" style="display:none"></div>
+          <div class="dv-note"></div>
+          <div class="dv-actions">
+            <button type="button" class="btn btn-outline btn-sm dv-reset" title="把面板恢复成角色的语音配置">↻ 用角色配置</button>
+            <span style="flex:1"></span>
+            <button type="button" class="btn btn-gold btn-sm dv-gen">🎙 生成此句语音</button>
+          </div>
+          <div class="dv-state"></div>
+        </div>
+      `;
+      document.body.appendChild(pop);
+
+      const q = (s) => pop.querySelector(s);
+      const genBtn = q('.dv-gen');
+      const stateEl = q('.dv-state');
+
+      // 预填：人物角色的语音配置
+      function fillFromCharacter() {
+        q('.dv-engine').value = (ch && ch.tts_engine) || '';
+        q('.dv-rate').value = (ch && ch.tts_rate) || 0;
+        q('.dv-pitch').value = (ch && ch.tts_pitch) || 0;
+        q('.dv-volume').value = (ch && ch.tts_volume) || 0;
+        q('.dv-rate-v').textContent = q('.dv-rate').value + '%';
+        q('.dv-pitch-v').textContent = q('.dv-pitch').value + '%';
+        q('.dv-volume-v').textContent = q('.dv-volume').value + '%';
+        refreshVoiceList((ch && ch.tts_voice) || '');
+      }
+      async function refreshVoiceList(cur) {
+        const groups = await ensureVoiceGroups();
+        q('.dv-voice').innerHTML = voiceOptionsHtml(groups, q('.dv-engine').value, cur || '');
+      }
+
+      // 状态区：这句已有的语音 → 试听 / 清除
+      function paintCurrent() {
+        const cur = (row.querySelector('.dlg-voice') || {}).value || '';
+        const box = q('.dv-current');
+        if (!box) return;
+        if (cur) {
+          box.style.display = 'block';
+          box.innerHTML = `<span style="font-size:11px;color:var(--text-muted)">这句已生成语音：</span>
+            <audio controls src="${esc(cur)}" style="height:28px;max-width:210px"></audio>
+            <button type="button" class="btn btn-outline btn-sm dv-clear" style="padding:1px 8px;font-size:11px">清除</button>`;
+          box.querySelector('.dv-clear')?.addEventListener('click', () => {
+            setRowVoice(row, '');
+            paintCurrent();
+            scheduleDialogueSave();
+            Admin.toast('已清除这句的语音', 'success');
+          });
+        } else {
+          box.style.display = 'none';
+        }
+      }
+      function paintNote() {
+        const content = (row.querySelector('.dlg-content')?.value || '').trim();
+        q('.dv-note').textContent = content
+          ? `台词：${content}` : '这一句还没有台词，先在行里填上内容再生成。';
+      }
+
+      fillFromCharacter();
+      paintCurrent();
+      paintNote();
+      if (!ch) stateEl.textContent = '这一行没有说话者（旁白无法配角色语音），请先在上方选择角色。';
+
+      q('.dv-engine').addEventListener('change', () => {
+        refreshVoiceList((ch && ch.tts_voice) || '');
+      });
+      ['rate', 'pitch', 'volume'].forEach(k => {
+        const el = q('.dv-' + k);
+        el.addEventListener('input', () => { q('.dv-' + k + '-v').textContent = el.value + '%'; });
+      });
+      q('.dv-reset').addEventListener('click', () => { fillFromCharacter(); Admin.toast('已恢复角色的语音配置', 'info'); });
+      q('.dlg-cfg-close').addEventListener('click', closeVoicePop);
+
+      genBtn.addEventListener('click', async () => {
+        const content = (row.querySelector('.dlg-content')?.value || '').trim();
+        if (!ch) { Admin.toast('请先给这一句选一个说话者（角色）', 'error'); return; }
+        if (!content) { Admin.toast('这一句还没有台词', 'error'); return; }
+        genBtn.disabled = true;
+        stateEl.textContent = '合成中…';
+        try {
+          const r = await Admin.post('/voice-gen/dialogue', {
+            rows: [{
+              speaker_id: ch.id,
+              content,
+              engine: q('.dv-engine').value || null,
+              voice_id: q('.dv-voice').value || null,
+              rate: parseInt(q('.dv-rate').value, 10),
+              pitch: parseInt(q('.dv-pitch').value, 10),
+              volume: parseInt(q('.dv-volume').value, 10),
+            }],
+            pack_path: nodeVoicePackPath(),
+          });
+          const item = (r.items || [])[0];
+          if (!item || !item.ok) {
+            const msg = ((item && item.error) || '未知错误');
+            setRowVoice(row, 'ERR:' + msg);
+            scheduleDialogueSave();
+            stateEl.textContent = '生成失败：' + msg + '（这行 🎙 已标红，可重新生成）';
+            return;
+          }
+          setRowVoice(row, item.sound.url);
+          paintCurrent();
+          stateEl.textContent = `已生成：${item.sound.name}（${item.sound.duration ? item.sound.duration.toFixed(2) + 's' : ''}）→ 已存进声音管理`;
+          scheduleDialogueSave();
+        } catch (e) {
+          setRowVoice(row, 'ERR:' + e.message);
+          scheduleDialogueSave();
+          stateEl.textContent = '生成失败：' + e.message + '（这行 🎙 已标红，可重新生成）';
+        }
+        finally { genBtn.disabled = false; }
+      });
+
+      // 定位：跟表情/参数弹窗一致，别盖住右侧舞台预览
+      const r = btn.getBoundingClientRect();
+      const pw = pop.offsetWidth || 420, ph = pop.offsetHeight || 320;
+      let left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
+      let top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - ph - 8));
+      const preview = document.getElementById('dlg-stage-preview');
+      if (preview) {
+        const pr = preview.getBoundingClientRect();
+        if (left + pw > pr.left - 8 && left < pr.right && top < pr.bottom && top + ph > pr.top) {
+          left = Math.max(8, pr.left - pw - 12);
+          top = Math.max(8, Math.min(r.top, window.innerHeight - ph - 8));
+        }
+      }
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+      setTimeout(() => document.addEventListener('mousedown', voicePopOutsideHandler, true), 0);
+    }
+
+    // 这个节点生成的对话语音 → 声音库分类路径（声音管理里可按「剧情语音」分类看）
+    function nodeVoicePackPath() {
+      const title = (data && data.title) || '';
+      const tag = (title || '节点' + (data ? data.id : '')).slice(0, 30);
+      return `剧情语音/${tag}`;
+    }
+
+    // ===== 批量生成：对话列表上方的按钮，有说话者且有台词的句子一起合成 =====
+    async function batchGenVoice() {
+      const rows = collectDialogueRows();
+      const targets = rows.map((r, i) => ({ r, i }))
+        .filter(x => x.r.speaker_id && (x.r.content || '').trim());
+      if (!targets.length) {
+        Admin.toast('没有可生成的句子：需要同时有说话者和台词', 'info');
+        return;
+      }
+      const skip = rows.length - targets.length;
+      if (!await Admin.confirm(
+        `批量生成 ${targets.length} 句语音？（${skip} 句旁白/空台词会跳过）\n\n每句都用它说话者的角色语音配置合成，产物进声音管理 → 剧情语音。`)) return;
+      try {
+        const res = await Admin.post('/voice-gen/dialogue', {
+          rows: targets.map(x => ({
+            speaker_id: x.r.speaker_id,
+            content: (x.r.content || '').trim(),
+          })),
+          pack_path: nodeVoicePackPath(),
+        });
+        const items = res.items || [];
+        const rowsEl = document.querySelectorAll('.dlg-row');
+        let ok = 0; const fails = [];
+        items.forEach(it => {
+          const t = targets.find(x => x.i === it.index);
+          if (!t) return;
+          if (it.ok) { setRowVoice(rowsEl[t.i], it.sound.url); ok++; }
+          else {
+            const msg = it.error || '未知错误';
+            setRowVoice(rowsEl[t.i], 'ERR:' + msg);
+            fails.push({ i: t.i, r: t.r, error: msg });
+          }
+        });
+        scheduleDialogueSave();
+        if (fails.length) {
+          const nameOf = sid => (window._charMap && window._charMap[sid]) ? window._charMap[sid].name : ('角色' + sid);
+          const list = fails.slice(0, 3)
+            .map(f => `第${f.i + 1}句【${nameOf(f.r.speaker_id)}】「${(f.r.content || '').slice(0, 12)}」：${f.error}`)
+            .join('\n');
+          Admin.toast(`批量生成：${ok} 句成功，${fails.length} 句失败：\n${list}${fails.length > 3 ? `\n…还有 ${fails.length - 3} 句` : ''}\n\n失败行 🎙 已标红，鼠标放上去看原因，点开可单独重试`, 'error');
+        } else {
+          Admin.toast(`批量生成完成：${ok} 句成功，产物进声音管理 → 剧情语音`, 'success');
+        }
+      } catch (e) { Admin.toast('批量生成失败：' + e.message, 'error'); }
     }
 
     function moveDialogueRow(idx, dir) {
@@ -2542,6 +2882,7 @@ Admin.registerPage('story', async (container) => {
           <span class="node-sec-tip">左键=选中 · 右键=菜单（复制/粘贴配置） · 拖住行首 <b>⋮⋮</b> 排序 · 点 <b>⚙</b> 配参数</span>
           <span style="flex:1"></span>
           <button class="btn btn-outline btn-sm" id="btn-dlg-from-node" title="把该节点旧的单句对白转成对话列表">↧ 导入旧内容</button>
+          <button class="btn btn-outline btn-sm" id="btn-dlg-voice-batch" title="把当前所有带说话者、有台词的句子，按各角色的语音配置批量合成声音（产物进声音管理）">🎙 批量生成语音</button>
           <button class="btn btn-gold btn-sm" id="btn-add-dialogue">+ 添加一句</button>
         </div>
         <div style="display:flex;gap:14px;align-items:flex-start">
@@ -2611,6 +2952,20 @@ Admin.registerPage('story', async (container) => {
             <button type="button" class="btn btn-outline btn-sm" data-btpl="boss">BOSS 模板</button>
             <button type="button" class="btn btn-outline btn-sm" data-btpl="group">群战模板</button>
             <button type="button" class="btn btn-outline btn-sm" id="btn-battle-from-npc">按登场人物生成敌人</button>
+          </div>
+
+          <!-- 结局分支：用下拉选节点，不用手写 JSON -->
+          <div class="bt-outcome" id="bt-outcome">
+            <div class="bt-outcome-t">打完之后去哪（对应 battle_config 里的三个 node_id 字段）</div>
+            <div class="bt-outcome-grid">
+              <label>打赢了 → <select data-out="victory_node_id"><option value="">不指定：继续下一节点</option>${nodeOptionList()}</select></label>
+              <label>打输了 → <select data-out="defeat_node_id"><option value="">不指定：继续下一节点</option>${nodeOptionList()}</select></label>
+              <label>逃跑了 → <select data-out="flee_node_id"><option value="">不指定：继续下一节点</option>${nodeOptionList()}</select></label>
+            </div>
+            <div class="bt-outcome-tip">
+              不指定时，三种结局都会走「这个战斗节点的下一节点」—— 玩家会感觉赢和输没区别，
+              所以建议至少给「打输了」单独接一段剧情。
+            </div>
           </div>
           <div class="bt-doc">
             <div class="bt-doc-t">字段说明（看不懂就用上面的模板按钮，再改 character_id）</div>
@@ -2689,7 +3044,38 @@ Admin.registerPage('story', async (container) => {
         },
       };
 
-      ta.addEventListener('input', validate);
+      // ---- 结局分支下拉：直接读写 battle_config 的三个字段 ----
+      const outSel = document.querySelectorAll('#bt-outcome select[data-out]');
+      const readCfg = () => {
+        const raw = (ta.value || '').trim();
+        if (!raw) return {};
+        try { const o = JSON.parse(raw); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; }
+        catch (_) { return {}; }
+      };
+      const writeCfg = (cfg) => {
+        ta.value = JSON.stringify(cfg, null, 2);
+        validate();
+      };
+      const syncOutcome = () => {
+        const cfg = readCfg();
+        outSel.forEach((sel) => {
+          const v = cfg[sel.dataset.out];
+          sel.value = (v === undefined || v === null || v === '') ? '' : String(v);
+        });
+      };
+      outSel.forEach((sel) => {
+        sel.addEventListener('change', () => {
+          const cfg = readCfg();
+          const key = sel.dataset.out;
+          if (sel.value) cfg[key] = Number(sel.value);
+          else delete cfg[key];
+          writeCfg(cfg);
+        });
+      });
+      // 手改 / 粘贴 JSON 时下拉也要跟着变，否则两边显示不一致会让人以为没存上
+      ta.addEventListener('input', syncOutcome);
+      syncOutcome();
+      ta.addEventListener('input', () => { validate(); syncOutcome(); });
       document.querySelectorAll('.modal-body [data-btpl]').forEach(btn => {
         btn.addEventListener('click', () => {
           const tpl = TPLS[btn.dataset.btpl];
@@ -2896,6 +3282,12 @@ Admin.registerPage('story', async (container) => {
         } catch (e) {
           Admin.toast('导入失败: ' + e.message, 'error');
         }
+      });
+
+      // 🎙 批量生成语音：所有有说话者且有台词的句子，按角色语音配置一起合成
+      document.getElementById('btn-dlg-voice-batch')?.addEventListener('click', () => {
+        // 不要求先保存：直接按当前列表里的内容合成，成功后自动保存语音字段
+        batchGenVoice();
       });
 
       // 音乐试听

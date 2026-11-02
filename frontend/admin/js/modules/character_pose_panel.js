@@ -275,7 +275,7 @@
           '分类': im.category || '',
           '外观配置': im.appearance_name || '（旧图 / 未记录）',
           '取景': (im.framing || 'full') === 'half' ? '半身' : '全身',
-          '模型方案': im.model_preset || (GenParams.get('characters').model_preset || '激活方案'),
+          '模型方案': im.model_preset || (GenParams.get('characters').model_preset || '跟随全局'),
           '尺寸': im.width && im.height ? `${im.width}×${im.height}` : '',
           '时间': im.created_at || '',
         },

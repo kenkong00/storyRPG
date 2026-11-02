@@ -53,8 +53,17 @@ const Admin = {
     this.pages[name] = renderFn;
   },
 
-  async navigate(page) {
-    if (this.currentPage === page && document.getElementById('content-area').children.length > 0) return;
+  // 页面之间的「带参数跳转」：navigate(page, { params, force })，目标页面从
+  // Admin.navParams 里读（例如从各栏目的齿轮跳到 设置 > 模型配置 并选中某套方案）。
+  navParams: null,
+
+  async navigate(page, opts) {
+    opts = opts || {};
+    if (!opts.force && this.currentPage === page && document.getElementById('content-area').children.length > 0) {
+      this.navParams = null;
+      return;
+    }
+    this.navParams = opts.params || null;
 
     // 更新导航高亮
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -67,10 +76,11 @@ const Admin = {
       equipments: '装备管理', affixes: '装备词条',
       scenes: '场景管理', skills: '技能书', story: '剧情管理', images: '图片管理',
       prompt_lib: '提示词管理',
-      tags: '标签管理', animations: '动效展示', sounds: '声音管理',
+      tags: '标签管理', animations: '动效展示', sounds: '声音管理', voice_tasks: '语音任务',
       games: '游戏设置', users: '用户管理', character_states: '人物状态管理', players: '玩家角色',
       character_appearance: '人物外观拼装', settings: '设置', compose: '人物场景合成',
-      comic: '漫画制作', comic_manage: '漫画管理',
+      comic: '漫画制作', comic_manage: '漫画管理', cards: '卡牌系统',
+      card_appearance: '卡牌外观拼装',
     };
     document.getElementById('page-title').textContent = titles[page] || page;
     // 供 CSS 按栏目放大字号 / 定制面板样式用
@@ -83,7 +93,7 @@ const Admin = {
 
     try {
       if (this.pages[page]) {
-        await this.pages[page](content);
+        await this.pages[page](content, this.navParams);
       } else {
         content.innerHTML = `<div class="table-empty">页面 "${page}" 尚未实现</div>`;
       }
@@ -108,11 +118,12 @@ const Admin = {
     return res.json();
   },
 
-  async post(path, data) {
+  async post(path, data, signal) {
     const res = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+      signal,
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -254,6 +265,56 @@ const Admin = {
     document.getElementById('dlg-cfg-pop')?.remove();
     document.getElementById('dlg-ctxmenu')?.remove();
     document.getElementById('modal-container').innerHTML = '';
+    // 底层弹窗都关了，叠在它上面的那几层就没有依附对象了，一起收掉
+    const layer = document.getElementById('layer-container');
+    if (layer) layer.innerHTML = '';
+  },
+
+  // ===== 叠加层弹窗 =====
+  // 画在 #layer-container 上（z-index 高于 #modal-container），用在「已经有一层弹窗开着」
+  // 的场合：人物编辑弹窗里点出图参数的 ⚙、齿轮弹窗里再点「编辑方案」。
+  // 这两层都不能往 #modal-container 里写 —— 一写就把底下正在填的那张表单整个冲掉。
+  // 支持多层：每次追加一层，closeLayerModal 只关最上面那一层。
+  // 返回 { root, body, close }，调用方拿 body 作用域内查节点，别用全局 querySelector。
+  showLayerModal(title, bodyHtml, onSave, options = {}) {
+    const size = options.size || 'normal';
+    const sizeClass = size === 'xl' ? 'modal-xl' : (size === 'large' ? 'modal-large' : '');
+    let layer = document.getElementById('layer-container');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'layer-container';
+      document.body.appendChild(layer);
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'layer-modal-item';
+    wrap.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal ${sizeClass}">
+          <div class="modal-header">
+            <h3>${title}</h3>
+            <button class="modal-close" data-a="close">&times;</button>
+          </div>
+          <div class="modal-body">${bodyHtml}</div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" data-a="close">${options.okOnly ? '关闭' : (options.cancelText || '取消')}</button>
+            ${options.okOnly ? '' : `<button class="btn btn-primary" data-a="save">${options.saveText || '保存'}</button>`}
+          </div>
+        </div>
+      </div>`;
+    layer.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelectorAll('[data-a="close"]').forEach((b) => b.addEventListener('click', close));
+    const sb = wrap.querySelector('[data-a="save"]');
+    if (sb && onSave) sb.addEventListener('click', onSave);
+    return { root: wrap, body: wrap.querySelector('.modal-body'), close };
+  },
+
+  /** 只关最上面的叠加层，底下 #modal-container 里的弹窗（和更下面的叠加层）原样保留 */
+  closeLayerModal() {
+    const layer = document.getElementById('layer-container');
+    if (!layer) return;
+    const last = layer.lastElementChild;
+    if (last) last.remove();
   },
 
   // 标签筛选弹窗（替代直接显示所有标签芯片）

@@ -11,9 +11,11 @@
     prompts: [],
     wfs: [],
     providers: [],
-    activePreset: '',
     activeProvider: '',
     activeWf: '',
+    globalPreset: '',   // 全局出图参数里选的方案（各栏目的默认）
+    focusPreset: '',    // 从某栏目的齿轮跳进来时，要高亮 / 滚动到的方案
+    focusFrom: '',      // 跳转来源栏目名（如「场景出图参数」）
     busy: false,
   };
 
@@ -77,9 +79,9 @@
     S.cfg = cfg || {};
     S.presets = Array.isArray(presets) ? presets : [];
     S.providers = Array.isArray(providers) ? providers : [];
-    S.activePreset = S.cfg.active_model_preset || '';
     S.activeProvider = S.cfg.active_provider || '';
     S.activeWf = S.cfg.active_workflow_preset || '';
+    S.globalPreset = ((S.cfg.gen_params || {}).model_preset) || '';
   }
 
   async function loadCatalog(force) {
@@ -179,9 +181,10 @@
       </div>
 
       <div class="cs-card" style="margin-top:12px">
-        <div class="cs-title">全局出图参数（所有出图入口共用）</div>
-        <div class="cs-hint">动作表情批量、立绘生成等所有要调 ComfyUI 的地方都读这一份；
-          在任意一处改，别处立刻同步。这里和出图页上看到的是同一份数据。</div>
+        <div class="cs-title">全局出图参数（所有栏目的起点）</div>
+        <div class="cs-hint">这里是<b>默认值</b>：哪个栏目没单独调过参数就跟这里走。
+          一旦在某个栏目（人物管理 / 人物外观 / 场景 / 场景合成 / 漫画 / 卡牌）里改过，
+          那个栏目就用自己那份，改这里也不会再影响它 —— 各栏目之间互不串扰。</div>
         <div id="cs-gen-params" style="margin-top:10px"></div>
       </div>
 
@@ -231,14 +234,21 @@
   }
 
   // ---------------- Tab 3：模型配置 ----------------
+  // 「设为当前」已彻底下线（用户要求，以后也没有这个功能）：
+  // 每个栏目在各自的「出图参数」里选方案，没选就跟「全局出图参数」，不再有全局激活概念。
+  // 从栏目齿轮跳进来时，用 S.focusPreset 高亮「本栏目正在用的那套」。
   function viewPresets() {
+    const focus = (S.focusPreset || '').trim();
     const cards = S.presets.map((p, i) => {
-      const on = p.name === S.activePreset;
+      const on = !!focus && p.name === focus;
       const loras = (p.loras || []);
       const enabled = loras.filter((l) => l.enabled).length;
       const kind = p.recipe === 'qwen_edit' ? '指令编辑' : (p.load_mode === 'checkpoint' ? 'Checkpoint' : 'UNET');
-      return `<div class="cs-card${on ? ' on' : ''}">
-        <div class="cs-title">${esc(p.name)} ${on ? '<span class="cs-badge">使用中</span>' : ''}</div>
+      const isGlobalDefault = p.name === (S.globalPreset || '');
+      return `<div class="cs-card${on ? ' on' : ''}" data-preset="${esc(p.name)}">
+        <div class="cs-title">${esc(p.name)}
+          ${on ? `<span class="cs-badge">${esc(S.focusFrom || '本栏目')}使用</span>` : ''}
+          ${!on && isGlobalDefault ? '<span class="cs-badge gray">全局默认</span>' : ''}</div>
         <div class="cs-sub">${esc(base(p.diffusion_model) || '（未选模型）')}</div>
         <div class="cs-kv">
           <span>${esc(kind)}</span>
@@ -251,13 +261,16 @@
         <div class="cs-ft">
           <button class="btn btn-outline btn-sm" data-act="edit-preset" data-idx="${i}">编辑</button>
           <button class="btn btn-outline btn-sm" data-act="dup-preset" data-idx="${i}">复制</button>
-          ${on ? '' : `<button class="btn btn-primary btn-sm" data-act="activate-preset" data-idx="${i}">设为当前</button>`}
-          ${on || S.presets.length <= 1 ? '' : `<button class="btn btn-outline btn-sm" data-act="del-preset" data-idx="${i}">删除</button>`}
+          ${S.presets.length <= 1 ? '' : `<button class="btn btn-outline btn-sm" data-act="del-preset" data-idx="${i}">删除</button>`}
         </div>
       </div>`;
     }).join('');
 
     return `
+      ${focus ? `<div class="cs-hint" style="margin:0 0 12px;color:var(--gold)">
+        从「${esc(S.focusFrom || '出图参数')}」跳过来 · 下面高亮的就是该栏目正在用的方案（${esc(focus)}）。
+        想换方案请回到那个栏目的出图参数里选，这里只负责维护方案本身。
+      </div>` : ''}
       <div class="cs-head">
         <button class="btn btn-primary btn-sm" data-act="new-preset">＋ 新建方案</button>
         <button class="btn btn-outline btn-sm" data-act="reload-catalog">刷新模型清单</button>
@@ -267,7 +280,7 @@
       </div>
       ${cards ? `<div class="cs-grid">${cards}</div>` : '<div class="cs-empty">还没有模型配置方案</div>'}
       <div class="cs-hint" style="margin-top:14px">
-        每个方案 = 一套「模型 + LoRA + 采样参数」，人物外观页的生图卡片可以指定用哪套方案，从而实现「不同配置生成不同人物」。
+        每个方案 = 一套「模型 + LoRA + 采样参数」。各栏目在「出图参数」里各自挑一套，互不影响。
       </div>`;
   }
 
@@ -277,7 +290,6 @@
     if (!window.ModelPresetEditor) { Admin.toast("模型方案编辑器未加载", "error"); return; }
     ModelPresetEditor.setCatalog(S.catalog);   // 复用本页已读到的模型清单，避免重复拉取
     ModelPresetEditor.openForm(preset, isNew, {
-      activeName: S.activePreset,
       onSaved: async () => { await loadAll(); paint(); },
     });
   }
@@ -453,17 +465,6 @@
       return;
     }
 
-    if (act === 'activate-preset') {
-      const p = S.presets[+el.dataset.idx];
-      if (!p) return;
-      try {
-        await Admin.post(`/comfyui/model-presets/${q(p.name)}/activate`, {});
-        await loadAll(); paint();
-        Admin.toast('当前方案：' + p.name, 'success');
-      } catch (err) { Admin.toast(err.message, 'error'); }
-      return;
-    }
-
     if (act === 'del-preset') {
       const p = S.presets[+el.dataset.idx];
       if (!p) return;
@@ -490,7 +491,7 @@
       <div class="cs-head">
         <div class="cs-title" style="font-size:15px">ComfyUI · 模型配置中心</div>
         <span class="cs-hint" style="margin:0">
-          当前服务商 <b>${esc(S.activeProvider || '-')}</b> · 当前模型方案 <b>${esc(S.activePreset || '未选择')}</b>
+          当前服务商 <b>${esc(S.activeProvider || '-')}</b> · 全局默认方案 <b>${esc(S.globalPreset || '未指定（用第一套）')}</b>
         </span>
       </div>
       ${tabBar()}
@@ -501,11 +502,26 @@
       const gpHost = document.getElementById('cs-gen-params');
       if (gpHost) GenParams.init(gpHost).catch(() => {});
     }
+
+    // 从栏目齿轮跳进来：滚到该栏目正在用的那套方案，别让用户自己翻
+    if (S.tab === 'presets' && S.focusPreset) {
+      const card = rootEl.querySelector(`.cs-card[data-preset="${S.focusPreset.replace(/"/g, '\\"')}"]`);
+      if (card) requestAnimationFrame(() => card.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    }
   }
 
   // ---------------- 注册页面 ----------------
-  Admin.registerPage('settings', async (container) => {
+  Admin.registerPage('settings', async (container, params) => {
     ensureCss();
+    // 带参数跳转（各栏目出图参数的 ⚙）：{ tab: 'presets', preset: '方案名', from: '场景出图参数' }
+    if (params) {
+      if (params.tab) S.tab = params.tab;
+      S.focusPreset = params.preset || '';
+      S.focusFrom = params.from || '';
+    } else {
+      S.focusPreset = '';
+      S.focusFrom = '';
+    }
     container.innerHTML = '<div id="cs-root"><div class="cs-empty">加载配置…</div></div>';
     rootEl = document.getElementById('cs-root');
     rootEl.addEventListener('click', onAction);

@@ -23,7 +23,12 @@ from .scene_appearance import SceneAppearance
 from .generated_image import GeneratedImage
 from .asset import Asset
 from .compose_config import ComposeConfig
+from .voice_task import VoiceTask, VoiceTaskLine
 from .comic import ComicProject, ComicBook, ComicPage, ComicCell, ComicCellVersion
+from .cardgame import (
+    CardClass, CardDef, CardEmotion, CardDialogue, CardLoadout, CardBattle,
+    CardArt, CardArtSet, CardSetting, CardCharacterEmotion,
+)
 
 __all__ = [
     "Character", "CharacterAttribute",
@@ -52,4 +57,7 @@ __all__ = [
     "ComposeConfig",
     "ComicProject", "ComicBook", "ComicPage", "ComicCell", "ComicCellVersion",
     "CharacterSkillBook", "UserCharacterSkillBook",
+    "CardClass", "CardDef", "CardEmotion", "CardDialogue", "CardLoadout",
+    "CardBattle", "CardArt", "CardArtSet", "CardSetting", "CardCharacterEmotion",
+    "VoiceTask", "VoiceTaskLine",
 ]

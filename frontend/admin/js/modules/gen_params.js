@@ -3,17 +3,22 @@
 // 用户根本不知道当前会用多大的图，也没法调。
 //
 // 现在参数存在服务端（/api/comfyui/gen-params?scope=xxx），前端这个组件负责渲染它。
-// 作用域（scope）让不同出图入口用各自独立的配置，互不污染：
-//   global     —— ComfyUI 设置面板（全局默认）
-//   scenes     —— 场景出图（场景管理 / 场景合成）
-//   characters —— 人物动作表情 / 人物外观出图
-// 任何一处改动 → 写回服务端（带 scope）→ 只广播给同作用域的面板，跨作用域互不影响。
+// 作用域（scope）= 一个出图栏目，每个栏目各存一份，**互不影响**：
+//   global               —— 设置 > 全局出图参数（所有栏目的起点 / 默认值）
+//   characters           —— 人物管理 / 人物动作表情
+//   character_appearance —— 人物外观拼装
+//   scenes               —— 场景管理
+//   scene_compose        —— 人物场景合成
+//   comic                —— 漫画制作
+//   cards                —— 卡牌系统
+//   cards_appearance     —— 卡牌外观拼装
+// 语义：栏目没单独改过 → 跟随 global；在栏目里改过一次 → 写进自己的格子，从此与别处无关。
 //
 // 用法：
-//   const p = await GenParams.mount(hostEl, { scope: 'characters' });
-//   GenParams.get('characters')   // 起任务时取当前作用域参数
-//   GenParams.onChange(fn, 'characters')   // 同作用域改了参数时通知我
-//   GenParams.summary('characters')        // "832×1216 · Moss_8步_透明底"
+//   const p = await GenParams.mount(hostEl, { scope: 'scenes' });
+//   GenParams.get('scenes')   // 起任务时取当前作用域参数
+//   GenParams.onChange(fn, 'scenes')   // 同作用域改了参数时通知我
+//   GenParams.summary('scenes')        // "832×1216 · Moss_8步_透明底"
 (function () {
   if (window.GenParams) return;
 
@@ -25,15 +30,23 @@
     savedByScope: {},
     presets: [],          // 模型方案名（全局配置，不随 scope 变）
     sizePresets: [],
-    activePreset: '',
+    globalPreset: '',     // 全局出图参数里选的方案，给「跟随全局」提示用
   };
   const subs = new Set();      // 每项 { fn, scope }
   const instances = new Set(); // 每项 { host, opts, scope, repaint, params }
 
   const SCOPE_LABEL = {
-    global: { tag: '全局出图参数', title: '这份参数是全局的：任何一处改动，其它出图入口同步生效' },
-    scenes: { tag: '场景出图参数', title: '仅作用于场景出图，与人物 / 全局配置互不影响' },
-    characters: { tag: '人物出图参数', title: '仅作用于人物动作表情 / 外观出图，与场景 / 全局配置互不影响' },
+    global: {
+      tag: '全局出图参数',
+      title: '所有栏目的起点。这里只是默认值：哪个栏目没单独调过就跟这里走，一旦在栏目里改过就以栏目自己的为准',
+    },
+    characters: { tag: '人物出图参数', title: '仅作用于「人物管理 / 人物动作表情」，改这里不影响别的栏目' },
+    character_appearance: { tag: '人物外观参数', title: '仅作用于「人物外观拼装」，改这里不影响别的栏目' },
+    scenes: { tag: '场景出图参数', title: '仅作用于「场景管理」，改这里不影响别的栏目' },
+    scene_compose: { tag: '场景合成参数', title: '仅作用于「人物场景合成」，改这里不影响别的栏目' },
+    comic: { tag: '漫画出图参数', title: '仅作用于「漫画制作」，改这里不影响别的栏目' },
+    cards: { tag: '卡牌出图参数', title: '仅作用于「卡牌系统」，改这里不影响别的栏目' },
+    cards_appearance: { tag: '卡牌外观参数', title: '仅作用于「卡牌外观拼装」，改这里不影响别的栏目' },
   };
 
   function esc(s) {
@@ -47,52 +60,51 @@
     const st = document.createElement('style');
     st.id = 'gp-style-tag';
     st.textContent = `
-      .gp-bar{display:grid;grid-template-columns:repeat(9,minmax(104px,1fr)) 112px;
-        gap:9px 12px;align-items:end;
+      /* 仅保留「模型方案」+「尺寸·宽×高」两组，标签在上、控件在下、底对齐 */
+      .gp-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 30px;
         background:var(--bg-input);border:1px solid var(--border);border-radius:6px;
-        padding:10px 13px 12px}
-      .gp-bar .gp-tag{grid-column:1/-1;font-size:11px;color:var(--gold);border:1px solid var(--gold);
-        border-radius:10px;padding:2px 9px;align-self:start;justify-self:start;
-        white-space:nowrap;margin-bottom:-2px}
-      .gp-f{display:flex;flex-direction:column;gap:4px;min-width:0;justify-content:flex-end}
-      /* 宽 × 高 占两格：中间要塞一个对调按钮，一格放不下两个 4 位数字框 */
-      .gp-f.wh{grid-column:span 2}
-      .gp-f>span{font-size:12px;color:var(--text-muted);white-space:nowrap;
-        overflow:hidden;text-overflow:ellipsis;height:17px;line-height:17px}
-      .gp-f .row{display:flex;align-items:center;gap:4px}
-      .gp-f .row .gp-sel{flex:0 0 76px;width:76px;min-width:0}
-      .gp-f .row .gp-inp{flex:1 1 0;width:auto;min-width:0}
+        padding:12px 15px 13px}
+      .gp-tag{font-size:11px;color:var(--gold);border:1px solid var(--gold);
+        border-radius:10px;padding:2px 9px;white-space:nowrap;align-self:flex-start;
+        margin-bottom:3px}
+      .gp-group{display:flex;flex-direction:column;gap:5px;min-width:0}
+      .gp-lbl{font-size:12px;color:var(--text-muted);white-space:nowrap;height:17px;line-height:17px}
+      .gp-group .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+      /* 模型方案这一排：下拉与齿轮必须始终同一行，靠下拉收缩让位，不靠换行 */
+      .gp-group.gp-scheme .row{min-width:300px;flex-wrap:nowrap}
+      .gp-group.gp-scheme .row>.cb-wrap{flex:1 1 0;min-width:150px}
+      .gp-group.gp-size .row{min-width:440px}
+      .gp-bar .cb-wrap{flex:1 1 auto;min-width:0}
       .gp-sel,.gp-inp{background:var(--bg-card,#1a1a1a);border:1px solid var(--border);
-        border-radius:4px;color:var(--text-primary);font-size:13px;height:32px;padding:0 7px;
-        box-sizing:border-box;font-family:inherit;width:100%;min-width:0}
-      .gp-sel{min-width:0}
-      .gp-inp{width:100%;text-align:center}
-      .gp-inp.wide{width:100%}
-      .gp-x{color:var(--text-muted);font-size:12px;flex:0 0 auto}
+        border-radius:4px;color:var(--text-primary);font-size:13px;height:32px;padding:0 8px;
+        box-sizing:border-box;font-family:inherit}
+      .gp-sel{flex:1 1 auto;min-width:130px;width:auto}
+      .gp-inp{flex:0 0 86px;width:86px;text-align:center}
       /* 宽高对调小按钮：夹在宽、高两个输入框中间 */
-      .gp-f .gp-swap{flex:0 0 auto;width:26px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;
+      .gp-swap{flex:0 0 auto;width:28px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;
         border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-muted);
         cursor:pointer;font-size:13px;line-height:1;font-family:inherit}
-      .gp-f .gp-swap:hover{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,.10)}
-      .gp-actions{display:flex;align-items:center;gap:8px;justify-self:end;padding-bottom:1px;
-        min-width:0;white-space:nowrap}
-      .gp-actions button{white-space:nowrap}
+      .gp-swap:hover{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,.10)}
+      .gp-actions{display:flex;align-items:flex-end;gap:8px;margin-left:auto}
       .gp-state{font-size:11px;color:var(--text-muted);min-width:54px;text-align:right}
       .gp-state.ok{color:#7bd88f}
-      .gp-more{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6}
-      .gp-neg{grid-column:1/-1;width:100%;margin-top:2px;background:var(--bg-card,#1a1a1a);
-        border:1px solid var(--border);border-radius:4px;color:var(--text-primary);
-        font-size:12px;padding:6px 8px;min-height:52px;box-sizing:border-box;
-        font-family:inherit;display:none}
-      .gp-bar.open .gp-neg{display:block}
+      /* 齿轮弹窗顶部的说明条 */
+      .gp-modal-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+        padding:9px 12px;margin-bottom:12px;border:1px solid rgba(201,168,76,.45);
+        border-radius:8px;background:rgba(201,168,76,.10)}
+      .gp-modal-tag{font-size:12px;color:var(--gold);border:1px solid var(--gold);
+        border-radius:10px;padding:2px 9px;white-space:nowrap}
+      .gp-modal-hint{font-size:12px;color:var(--text-muted);line-height:1.6}
+      .gp-modal-sp{flex:1 1 auto}
       /* 可搜索下拉（模型方案）与数字框同高，避免整排参差不齐 */
       .gp-bar .cb-wrap>input{height:32px;border:1px solid var(--border);
         border-radius:4px 0 0 4px;background:var(--bg-card,#1a1a1a);
         color:var(--text-primary);font-size:13px;padding:0 7px;box-sizing:border-box;width:100%}
       .gp-bar .cb-btn{height:32px;box-sizing:border-box}
-      @media (max-width:1280px){
-        .gp-bar{grid-template-columns:repeat(4,minmax(0,1fr))}
-        .gp-bar .gp-tag{grid-column:1/-1;justify-self:start}
+      @media (max-width:1080px){
+        .gp-group{width:100%}
+        .gp-group.gp-scheme .row,.gp-group.gp-size .row{min-width:0;width:100%}
+        .gp-actions{margin-left:0}
       }
     `;
     document.head.appendChild(st);
@@ -103,16 +115,16 @@
     if (S.byScope[scope] && !force) return S.byScope[scope];
     if (S.loadingByScope[scope] && !force) return S.loadingByScope[scope];
     S.loadingByScope[scope] = (async () => {
-      const [gp, cfg] = await Promise.all([
+      const [gp, cfg, _g] = await Promise.all([
         Admin.get(`${API}/gen-params?scope=${encodeURIComponent(scope)}`),
         Admin.get(`${API}/config`).catch(() => ({})),
+        // 非 global 作用域顺带把 global 读进来，用来提示「跟随全局：XX」，并给齿轮跳转兜底
+        scope === 'global' ? Promise.resolve(null) : load('global').catch(() => null),
       ]);
       S.byScope[scope] = gp.params || {};
       S.sizePresets = gp.size_presets || [];
       S.presets = ((cfg && cfg.model_presets) || []).map((p) => p.name);
-      if (cfg && cfg.active_model_preset && !S.byScope[scope].model_preset) {
-        S.activePreset = cfg.active_model_preset;
-      }
+      S.globalPreset = (S.byScope.global || {}).model_preset || '';
       return S.byScope[scope];
     })();
     return S.loadingByScope[scope];
@@ -156,6 +168,48 @@
     return push({ size_preset: id, width: p.width, height: p.height }, scope);
   }
 
+  /** 齿轮弹窗：模型配置（切换 / 编辑 / 新建方案，全在原地完成）
+   *  注意：这里必须用「叠加层弹窗」而不是普通 showModal —— 齿轮可能是从
+   *  人物编辑弹窗里点出来的，往 #modal-container 里一写就把正在填的表单冲掉了。 */
+  function openPresetModal(scope, curPreset, followName, label) {
+    if (!window.ModelPresetEditor) { Admin.toast('模型方案编辑器未加载', 'error'); return; }
+    if (!Admin.showLayerModal) { Admin.toast('界面组件版本不一致，请 Ctrl+F5 强刷', 'error'); return; }
+    // 同一时刻只留一个齿轮弹窗
+    if (document.querySelector('#layer-container .gp-modal-bar')) return;
+    const hostId = 'gp-preset-modal-host';
+    const effective = curPreset || (scope === 'global' ? (followName || '') : '');
+    const followTxt = followName ? `全局正在用「${followName}」` : '全局还没选方案';
+    const body = `
+      <div class="gp-modal-bar">
+        <span class="gp-modal-tag">${esc(label.tag)}</span>
+        <span class="gp-modal-hint">${scope === 'global'
+          ? '这里是所有栏目的起点：栏目没单独改过就跟这里走。'
+          : `只影响「${esc(label.tag)}」，其它栏目互不影响。${esc(followTxt)}`}</span>
+        <span class="gp-modal-sp"></span>
+        ${scope === 'global' ? '' : '<button type="button" class="btn btn-outline btn-sm" id="gp-modal-follow">改为跟随全局</button>'}
+      </div>
+      <div id="${hostId}"></div>`;
+    const dlg = Admin.showLayerModal('模型配置', body, null, { size: 'xl', okOnly: true });
+    const host = dlg.body.querySelector('#' + hostId);
+    if (!host) return;
+    const closeIt = () => Admin.closeLayerModal();
+    ModelPresetEditor.mount(host, {
+      current: effective,
+      selectable: true,
+      onSelect: (name) => {
+        push({ model_preset: name || '' }, scope);
+        closeIt();
+        Admin.toast(`「${label.tag}」已改用「${name}」`, 'success');
+      },
+    });
+    const fb = dlg.body.querySelector('#gp-modal-follow');
+    if (fb) fb.addEventListener('click', () => {
+      push({ model_preset: '' }, scope);
+      closeIt();
+      Admin.toast('已改为跟随全局', 'success');
+    });
+  }
+
   function render(host, opts) {
     opts = opts || {};
     const scope = opts.scope || 'global';
@@ -173,53 +227,43 @@
       const p = S.byScope[scope] || {};
       const sizes = S.sizePresets || [];
       const cur = p.size_preset || 'custom';
-      const fixed = p.seed_mode === 'fixed';
       bar.innerHTML = `
         <span class="gp-tag" title="${esc(label.title)}">${esc(label.tag)}</span>
-        <label class="gp-f"><span>尺寸</span>
-          <select class="gp-sel" data-k="size_preset">
-            ${sizes.map((s) => `<option value="${esc(s.id)}"${s.id === cur ? ' selected' : ''}>${esc(s.name)}${s.width ? ` ${s.width}×${s.height}` : ''}</option>`).join('')}
-          </select>
-        </label>
-        <label class="gp-f wh"><span>宽 × 高（像素）</span>
+        <div class="gp-group gp-scheme">
+          <span class="gp-lbl">模型方案（选一套 / 编辑 / 新建）</span>
+          <span class="row" id="gp-preset-host"></span>
+        </div>
+        <div class="gp-group gp-size">
+          <span class="gp-lbl">尺寸 · 宽 × 高（像素）</span>
           <span class="row">
+            <select class="gp-sel" data-k="size_preset">
+              ${sizes.map((s) => `<option value="${esc(s.id)}"${s.id === cur ? ' selected' : ''}>${esc(s.name)}${s.width ? ` ${s.width}×${s.height}` : ''}</option>`).join('')}
+            </select>
             <input class="gp-inp" type="number" min="64" max="4096" step="8" data-k="width" value="${esc(p.width || 832)}">
             <button type="button" class="gp-swap" data-act="swap" title="宽高对调（横竖换向）">⇄</button>
             <input class="gp-inp" type="number" min="64" max="4096" step="8" data-k="height" value="${esc(p.height || 1216)}">
           </span>
-        </label>
-        <label class="gp-f"><span>模型方案</span>
-          <span class="row" id="gp-preset-host"></span>
-        </label>
-        <label class="gp-f"><span title="0 表示使用模型方案自带的步数">步数覆盖</span>
-          <input class="gp-inp" type="number" min="0" max="200" data-k="steps" value="${esc(p.steps || 0)}">
-        </label>
-        <label class="gp-f"><span title="0 表示使用模型方案自带的 CFG">CFG 覆盖</span>
-          <input class="gp-inp" type="number" min="0" max="30" step="0.1" data-k="cfg" value="${esc(p.cfg || 0)}">
-        </label>
-        <label class="gp-f"><span>种子</span>
-          <span class="row">
-            <select class="gp-sel" data-k="seed_mode" style="min-width:76px">
-              <option value="random"${!fixed ? ' selected' : ''}>随机</option>
-              <option value="fixed"${fixed ? ' selected' : ''}>固定</option>
-            </select>
-            <input class="gp-inp" type="number" data-k="seed" value="${esc(p.seed == null ? -1 : p.seed)}"
-              ${fixed ? '' : 'disabled'} style="width:88px" title="固定种子可复现同一张图">
-          </span>
-        </label>
-        <label class="gp-f"><span>批量张数</span>
-          <input class="gp-inp" type="number" min="1" max="60" data-k="count" value="${esc(p.count || 10)}">
-        </label>
+        </div>
         <div class="gp-actions">
-          <button class="gp-btn" data-act="neg" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-muted);cursor:pointer">附加负面</button>
           <span class="gp-state" id="gp-state"></span>
         </div>
-        <textarea class="gp-neg" data-k="extra_negative" placeholder="追加到负面的词（可留空）">${esc(p.extra_negative || '')}</textarea>
       `;
       bar.querySelectorAll('[data-k]').forEach((el) => {
         const k = el.dataset.k;
         if (el.classList.contains('gp-neg')) return;
         el.addEventListener('change', () => {
+          // 勾选框（如「随机」）：直接读 checked，并联动种子输入框的可用状态
+          if (el.type === 'checkbox') {
+            if (k === 'seed_mode') {
+              const on = el.checked;
+              const seedInput = bar.querySelector('[data-k="seed"]');
+              if (seedInput) seedInput.disabled = on;
+              push({ seed_mode: on ? 'random' : 'fixed' }, scope);
+              return;
+            }
+            push({ [k]: el.checked }, scope);
+            return;
+          }
           let v = el.value;
           if (el.type === 'number') v = v === '' ? 0 : Number(v);
           if (k === 'size_preset') { applySizePreset(v, scope); return; }
@@ -228,11 +272,8 @@
             return;
           }
           push({ [k]: v }, scope);
-          if (k === 'seed_mode') repaint();
         });
       });
-      const neg = bar.querySelector('.gp-neg');
-      neg.addEventListener('change', () => push({ extra_negative: neg.value }, scope));
 
       // 宽高对调：一键把横竖换向（同时切成自定义尺寸，避免预设又把值覆盖回去）
       const swapBtn = bar.querySelector('[data-act="swap"]');
@@ -244,27 +285,36 @@
         repaint();                       // 主动重画：按钮点着时中间层会跳过自动重绘
       });
 
-      const negBtn = bar.querySelector('[data-act="neg"]');
-      if (negBtn) negBtn.addEventListener('click', () => {
-        bar.classList.toggle('open');
-        if (bar.classList.contains('open')) neg.focus();
-      });
-
       // 模型方案：用可搜索下拉（方案名可能很多）
       const presetHost = bar.querySelector('#gp-preset-host');
       if (presetHost) {
-        const activeName = S.activePreset || '';
         const curPreset = p.model_preset || '';
+        // 本栏目没选方案时跟谁走：非 global 跟「设置 > 全局出图参数」，global 自动用第一套
+        const followName = scope === 'global' ? (S.presets[0] || '') : (S.globalPreset || '');
+        const placeholder = curPreset ? '' : (scope === 'global'
+          ? (followName ? `未选（自动用「${followName}」）` : '还没建模型方案')
+          : (followName ? `跟随全局：${followName}` : '跟随全局参数'));
         const inst2 = Combo.create(presetHost, {
           value: curPreset,
           options: S.presets.slice(),
           inputClass: 'gp-sel',
-          placeholder: activeName ? `激活方案：${activeName}` : '用激活方案',
+          placeholder,
           onChange: (v) => push({ model_preset: (v || '').trim() }, scope),
         });
-        // 空值表示「跟随激活方案」
+        // 清空 = 回到「跟随」
         inst2.input.addEventListener('change', () => {
           if (!inst2.getValue()) push({ model_preset: '' }, scope);
+        });
+        // 齿轮：原地弹窗显示「模型配置」，不再跳去设置页（跳一次就丢了当前页面的编辑状态）。
+        // 交互对齐漫画格子参数面板里的「模型方案」：卡片上直接「使用这套」，选完即关窗。
+        const mgrBtn = document.createElement('button');
+        mgrBtn.type = 'button';
+        mgrBtn.className = 'gp-swap';
+        mgrBtn.title = '打开模型配置（弹窗），可切换 / 编辑本栏目使用的模型方案';
+        mgrBtn.textContent = '⚙';
+        presetHost.appendChild(mgrBtn);
+        mgrBtn.addEventListener('click', () => {
+          openPresetModal(scope, curPreset, followName, label);
         });
       }
       // 同步状态提示
@@ -294,7 +344,8 @@
   async function init(host, opts) {
     opts = opts || {};
     const scope = opts.scope || 'global';
-    await load(scope);
+    // 每次挂载都重读：从「设置 > 模型配置」回来时，方案名可能已改过
+    try { await load(scope, true); } catch (_) { await load(scope); }
     const inst = render(host, opts);
     inst.repaint();
     return inst;
@@ -314,7 +365,10 @@
     summary: (scope) => {
       scope = scope || 'global';
       const p = S.byScope[scope] || {};
-      const name = p.model_preset || (S.activePreset ? S.activePreset + '（激活）' : '未选方案');
+      const name = p.model_preset
+        || (scope === 'global'
+          ? (S.presets[0] ? S.presets[0] + '（默认）' : '未选方案')
+          : (S.globalPreset ? S.globalPreset + '（跟随全局）' : '跟随全局'));
       return `${p.width || '?'}×${p.height || '?'} · ${name}`;
     },
   };

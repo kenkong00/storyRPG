@@ -87,6 +87,12 @@ const App = {
             if (!chapter) chapter = chapters[0];
             GameState.currentChapter = chapter;
 
+            // 章节封面展示阶段就开整章语音预载：给后台几秒窗口把前面的台词先合成好，
+            // 玩家点进剧情时首段就大概率命中缓存，不再「对话跟不上画面」。
+            if (typeof TTSManager !== 'undefined') {
+                try { TTSManager.preloadChapter(chapter.id); } catch (e) { /* 忽略 */ }
+            }
+
             // 设置封面背景
             const coverEl = document.querySelector('#chapter-cover');
             const bgEl = document.querySelector('#chapter-cover-bg');
@@ -366,8 +372,17 @@ const App = {
         Utils.hide('#dialogue-box');
         Utils.hide('#choices-container');
 
-        // 敌人、数值、AI 全部由后端按 story_nodes.battle_config 解析；
-        // 节点里没配时后端会按"场景NPC → 节点登场人物 → 说话者"兜底。
+        // 新：卡牌对决接管剧情战斗节点（职业 / 卡组 / 敌人由后端按角色卡组解析）。
+        // 卡牌系统不可用时自动退回旧的回合制战斗，避免剧情卡死。
+        if (window.CardBattleUI && window.CARD_BATTLE_ENABLED !== false) {
+            try {
+                await CardBattleUI.start({ storyNodeId: node.id, node });
+                return;
+            } catch (e) {
+                console.error('卡牌战斗启动失败，回退旧战斗：', e);
+                Utils.toast('卡牌战斗启动失败，已切回旧战斗');
+            }
+        }
         await CombatUI.start({ storyNodeId: node.id, node });
     },
 

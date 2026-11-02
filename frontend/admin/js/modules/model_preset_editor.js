@@ -29,7 +29,7 @@
   const state = {
     presets: [],
     catalog: null,
-    activeName: '',
+    lastPicked: '',   // 紧凑模式记住上次选的方案（「设为当前」已下线，仅作 UI 默认值）
     containers: [],   // 已挂载的宿主容器（refresh 时一起重画）
   };
   let loraState = [];  // 弹窗里正在编辑的 LoRA 列表
@@ -81,13 +81,10 @@
   }
 
   // ---------------- 数据 ----------------
+  // 「设为当前」已下线：方案不再有「激活」概念，各栏目在各自出图参数里选。
   async function loadPresets() {
-    const [list, cfg] = await Promise.all([
-      Admin.get(API + '/model-presets').catch(() => []),
-      Admin.get(API + '/config').catch(() => null),
-    ]);
+    const list = await Admin.get(API + '/model-presets').catch(() => []);
     state.presets = Array.isArray(list) ? list : [];
-    if (cfg && cfg.active_model_preset) state.activeName = cfg.active_model_preset;
   }
 
   async function loadCatalog(force) {
@@ -100,24 +97,27 @@
   }
 
   // ---------------- 列表视图（不是左右分栏）----------------
-  function listHtml() {
+  function listHtml(c) {
     if (!state.presets.length) return '<div class="mpe-empty">还没有模型方案，点「＋ 新建方案」。</div>';
+    // 可选模式（出图参数齿轮弹窗用）：卡片直接点「使用这套」，当前在用的高亮
+    const selectable = !!(c && c._mpeSelectable);
+    const cur = (c && c._mpeCurrent) || '';
     return state.presets.map((p, i) => {
-      const on = p.name === state.activeName;
       const loras = p.loras || [];
       const enabled = loras.filter((l) => l.enabled).length;
       const kind = p.recipe === 'qwen_edit' ? '指令编辑' : (p.load_mode === 'checkpoint' ? 'Checkpoint' : 'UNET');
+      const on = selectable && cur && p.name === cur;
       return `<div class="mpe-card${on ? ' on' : ''}">
-        <div class="mpe-card-title">${esc(p.name)}${on ? '<span class="mpe-badge">使用中</span>' : ''}</div>
+        <div class="mpe-card-title">${esc(p.name)}${on ? '<span class="mpe-using">使用中</span>' : ''}</div>
         <div class="mpe-card-sub">${esc(base(p.diffusion_model) || '（未选模型）')}</div>
         <div class="mpe-card-kv">
           <span>${esc(kind)}</span><span>步数 <b>${esc(p.steps)}</b></span>
           <span>CFG <b>${esc(p.cfg)}</b></span><span>LoRA <b>${enabled}/${loras.length}</b></span>
         </div>
         <div class="mpe-card-ft">
+          ${selectable ? `<button class="btn ${on ? 'btn-primary' : 'btn-outline'} btn-sm" data-act="mpe-use" data-i="${i}">${on ? '✓ 使用中' : '使用这套'}</button>` : ''}
           <button class="btn btn-outline btn-sm" data-act="mpe-edit" data-i="${i}">编辑</button>
           <button class="btn btn-outline btn-sm" data-act="mpe-dup" data-i="${i}">复制</button>
-          ${on ? '' : `<button class="btn btn-primary btn-sm" data-act="mpe-activate" data-i="${i}">设为当前</button>`}
           <button class="btn btn-outline btn-sm" data-act="mpe-del" data-i="${i}">删除</button>
         </div>
       </div>`;
@@ -125,14 +125,18 @@
   }
 
   function pickHtml(sel) {
-    return `<select id="mpe-pick" class="mpe-pick">${
+    // 空值 = 不单独指定，跟随「全局出图参数」里选的方案（「设为当前」已下线，不再有激活概念）
+    const head = `<option value=""${sel ? '' : ' selected'}>（跟随全局）</option>`;
+    return `<select id="mpe-pick" class="mpe-pick">${head}${
       state.presets.map((p) => `<option value="${esc(p.name)}"${p.name === sel ? ' selected' : ''}>${esc(p.name)}</option>`).join('')
     }</select>`;
   }
 
   function renderOne(c) {
     const compact = c._mpeCompact;
-    const cur = c._mpeCurrent || state.activeName || (state.presets[0] && state.presets[0].name) || '';
+    // 宿主明确给了值（含空串 = 跟随全局）就以宿主为准，只有完全没给才用兜底
+    const cur = (c._mpeCurrent != null) ? c._mpeCurrent
+      : (state.lastPicked || (state.presets[0] && state.presets[0].name) || '');
     if (compact) {
       c.innerHTML = `<div class="mpe-pickrow">
         ${pickHtml(cur)}
@@ -148,7 +152,7 @@
             ? `模型 ${catModels().length} · 文本编码 ${catClips().length} · VAE ${catVaes().length} · LoRA ${catLoras().length}`
             : '模型清单未加载'}</span>
         </div>
-        <div class="mpe-grid">${listHtml()}</div>`;
+        <div class="mpe-grid">${listHtml(c)}</div>`;
     }
     bindOne(c);
   }
@@ -290,14 +294,15 @@
   function openForm(preset, isNew, opts) {
     opts = opts || {};
     ensureCss();   // 设置页是直接调 openForm（不走 mount），样式必须自己注入
-    if (opts.activeName) state.activeName = opts.activeName;   // 宿主页面告知当前生效方案（改名后要重新激活）
     const draft = JSON.parse(JSON.stringify(preset || blankPreset()));
     loraState = (draft.loras || []).map((l) => ({
       name: l.name || '', strength: l.strength == null ? 1.0 : Number(l.strength), enabled: !!l.enabled,
     }));
     const origName = isNew ? '' : draft.name;
 
-    Admin.showModal(isNew ? '新建模型配置方案' : '编辑模型配置方案', formBody(draft), async () => {
+    // 用「叠加层弹窗」：这个表单可能是从出图参数的齿轮弹窗里点出来的，
+    // 也可能是在人物编辑弹窗里点出来的 —— 写进 #modal-container 会把底下那层冲掉。
+    const dlg = Admin.showLayerModal(isNew ? '新建模型配置方案' : '编辑模型配置方案', formBody(draft), async () => {
       const g = (id) => document.getElementById(id);
       const n = (id, d) => { const v = parseFloat(g(id).value); return isNaN(v) ? d : v; };
       const name = (g('mp-name').value || '').trim();
@@ -338,12 +343,12 @@
           // 后端 PUT 以路径名为准、不支持改名：走「新建 + 删旧」
           await Admin.post(API + '/model-presets', { preset: out });
           await Admin.del(`${API + '/model-presets'}/${q(origName)}`).catch(() => {});
-          if (state.activeName === origName) await Admin.post(`${API + '/model-presets'}/${q(name)}/activate`).catch(() => {});
         } else {
           await Admin.put(`${API + '/model-presets'}/${q(origName)}`, { preset: out });
         }
         Admin.toast('已保存：' + name, 'success');
-        Admin.closeModal();
+        if (window.Admin && Admin.closeLayerModal) Admin.closeLayerModal();
+        else Admin.closeModal();
         if (typeof opts.onSaved === 'function') opts.onSaved(name);
         else { await loadPresets(); renderAll(); }
       } catch (e) {
@@ -351,7 +356,8 @@
       }
     }, { size: 'xl' });
 
-    const bodyEl = document.querySelector('.modal-body');
+    // 必须锁在这个弹窗内部查：底下可能还有一层弹窗，全局 .modal-body 会挑错
+    const bodyEl = (dlg && dlg.body) || document.querySelector('.modal-body');
     if (bodyEl) {
       upgradeCombos(bodyEl);
       bindLora(bodyEl);
@@ -408,17 +414,18 @@
           if (cur) openForm(cur, false, { onSaved: async () => { await loadPresets(); renderAll(); } });
         }
         else if (act === 'mpe-manage') { openManager(); }
+        else if (act === 'mpe-use') {
+          if (!p) return;
+          c._mpeCurrent = p.name;
+          renderOne(c);
+          if (typeof c._mpeOnSelect === 'function') c._mpeOnSelect(p.name);
+        }
         else if (act === 'mpe-dup') {
           if (!p) return;
           const copy = JSON.parse(JSON.stringify(p));
           copy.name = p.name + '（副本）';
           try { await Admin.post(API + '/model-presets', { preset: copy }); Admin.toast('已复制：' + copy.name, 'success'); await loadPresets(); renderAll(); }
           catch (e) { Admin.toast('复制失败：' + e.message, 'error'); }
-        }
-        else if (act === 'mpe-activate') {
-          if (!p) return;
-          try { await Admin.post(`${API + '/model-presets'}/${q(p.name)}/activate`, {}); state.activeName = p.name; Admin.toast('当前方案：' + p.name, 'success'); renderAll(); }
-          catch (e) { Admin.toast('激活失败：' + e.message, 'error'); }
         }
         else if (act === 'mpe-del') {
           if (!p) return;
@@ -443,11 +450,12 @@
     container._mpeCompact = !!opts.compact;
     container._mpeCurrent = opts.current || '';
     container._mpeOnSelect = opts.onSelect || null;
+    container._mpeSelectable = !!opts.selectable;
     if (!state.containers.includes(container)) state.containers.push(container);
 
     (async () => {
       await Promise.all([loadPresets(), loadCatalog()]);
-      if (opts.current) state.activeName = opts.current;
+      if (opts.current) state.lastPicked = opts.current;
       renderOne(container);
     })();
   }
@@ -459,11 +467,17 @@
 
   function openManager() {
     const hostId = 'mpe-manager-host';
-    Admin.showModal('模型方案管理', `<div id="${hostId}"></div>`, null, { size: 'xl' });
-    const host = document.getElementById(hostId);
-    const sb = document.getElementById('modal-save-btn');
-    if (sb) sb.style.display = 'none';
-    if (host) mount(host, { current: state.activeName || null });
+    // 同样走叠加层：可能是从齿轮弹窗 / 人物编辑弹窗里点出来的
+    const dlg = (window.Admin && Admin.showLayerModal)
+      ? Admin.showLayerModal('模型方案管理', `<div id="${hostId}"></div>`, null, { size: 'xl', okOnly: true })
+      : null;
+    if (!dlg) {
+      Admin.showModal('模型方案管理', `<div id="${hostId}"></div>`, null, { size: 'xl' });
+      const sb = document.getElementById('modal-save-btn');
+      if (sb) sb.style.display = 'none';
+    }
+    const host = (dlg ? dlg.body : document).querySelector('#' + hostId);
+    if (host) mount(host, { current: null });
   }
 
   // ---------------- 样式 ----------------
@@ -474,6 +488,7 @@
   .mpe-card{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--bg-input)}
   .mpe-card.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
   .mpe-card-title{font-size:13px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px}
+  .mpe-using{font-size:10px;line-height:1;padding:3px 6px;border-radius:9px;background:var(--gold);color:#1a160c;font-weight:700}
   .mpe-card-sub{font-size:11px;color:var(--text-muted);margin-top:4px;word-break:break-all}
   .mpe-card-kv{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
   .mpe-card-kv span{font-size:10px;padding:1px 7px;border:1px solid var(--border);border-radius:8px;color:var(--text-muted)}

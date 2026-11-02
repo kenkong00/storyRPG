@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 import json
 from datetime import datetime
@@ -725,3 +726,54 @@ async def save_cropped_image(
 ):
     """保存裁剪后的图片（前端裁剪后上传）"""
     return await upload_image(file, category)
+
+
+# ===== 音频上传（录音 / 剪辑导出后保存） =====
+AUDIO_ALLOWED_EXTENSIONS = {".mp3", ".wav", ".ogg", ".flac", ".m4a", ".webm", ".aac"}
+AUDIO_MAX_SIZE = 50 * 1024 * 1024  # 50MB
+
+# 与图片同级的 frontend/audio/ 目录，前端通过 /audio/* 静态访问
+AUDIO_DIR = os.path.join(_BACKEND_DIR, "..", "frontend", "audio")
+
+
+@router.post("/audio")
+async def upload_audio(
+    file: UploadFile = File(...),
+    name: str = Form(default=""),
+):
+    """上传音频（录音或剪辑导出后保存），保存到 frontend/audio/ 并返回 /audio/ URL。"""
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in AUDIO_ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的音频格式：{ext}。仅支持 {', '.join(sorted(AUDIO_ALLOWED_EXTENSIONS))}",
+        )
+
+    contents = await file.read()
+    if len(contents) > AUDIO_MAX_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"文件过大（最大 50MB），当前 {len(contents) / 1024 / 1024:.1f}MB",
+        )
+
+    _ensure_dir(AUDIO_DIR)
+
+    base = (name.strip() or uuid.uuid4().hex)
+    # 文件名安全化 + 避免覆盖
+    safe_base = re.sub(r"[^\w\u4e00-\u9fa5\-]", "_", base) or uuid.uuid4().hex[:8]
+    fname = f"{safe_base}{ext}"
+    full = os.path.join(AUDIO_DIR, fname)
+    if os.path.exists(full):
+        fname = f"{safe_base}_{uuid.uuid4().hex[:6]}{ext}"
+        full = os.path.join(AUDIO_DIR, fname)
+
+    async with aiofiles.open(full, "wb") as f:
+        await f.write(contents)
+
+    url = f"/audio/{fname}"
+    return {
+        "filename": fname,
+        "url": url,
+        "size": len(contents),
+        "format": ext.lstrip("."),
+    }

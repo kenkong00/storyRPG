@@ -71,6 +71,7 @@ class Voice:
     derived: bool = False              # True 表示这是由基础音色派生出来的声线
     rate: int = 0                      # 派生声线的语速偏移（仅派生声线有意义）
     pitch: int = 0                     # 派生声线的音调偏移（仅派生声线有意义）
+    base_name: str = ""                # 派生声线的基础音色中文名（如「康康」），用于让用户看清它是谁变调的
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

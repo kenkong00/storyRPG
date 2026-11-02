@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from .database import init_db
-from .routers import character, relationship, skill, scene, story, story_arc, battle, event, item, upload, animation, sound, realm, tag, equipment
+from .routers import character, relationship, skill, scene, story, story_arc, battle, event, item, upload, animation, sound, realm, tag, equipment, audio, voice_task, voice_gen
 from .routers import resource_categories
 from .routers import games, users, character_states
 from .routers import admin_user_chars
@@ -15,6 +15,7 @@ from .routers import character_appearance, comfyui, pose_library, jobs_api, gene
 from .routers import assets
 from .routers import scene_gen
 from .routers import comic
+from .routers import cardgame
 from .config import TTS_CACHE_DIR, DATA_DIR
 
 app = FastAPI(title="RPG故事游戏 API", version="0.7.0")
@@ -57,6 +58,22 @@ def on_startup():
             db.close()
     except Exception as exc:  # noqa: BLE001
         print("[WARN] 战斗系统数据初始化失败：", exc)
+
+    # 卡牌对决：职业 / 卡牌 / 情感 / 对话规则 / 角色卡组（幂等，只补不改）
+    try:
+        from .database import SessionLocal
+        from .services.card_seed import seed_card_data
+        db = SessionLocal()
+        try:
+            rpt = seed_card_data(db)
+            print(f"[OK] 卡牌系统就绪：职业 +{rpt['classes']}、卡牌 +{rpt['cards']}、"
+                  f"情感 +{rpt['emotions']}、对话规则 +{rpt['dialogues']}、"
+                  f"设置 +{rpt['settings']}、角色卡组 +{rpt['loadouts']}、"
+                  f"机制校准 {rpt.get('mechanics', 0)} 项")
+        finally:
+            db.close()
+    except Exception as exc:  # noqa: BLE001
+        print("[WARN] 卡牌系统数据初始化失败：", exc)
 
     # 漫画出图队列是进程内内存对象，重启后任务全丢 → 把残留的"渲染中"状态复位
     try:
@@ -105,6 +122,9 @@ app.include_router(item.router)
 app.include_router(upload.router)
 app.include_router(animation.router)
 app.include_router(sound.router)
+app.include_router(audio.router)
+app.include_router(voice_task.router)
+app.include_router(voice_gen.router)
 app.include_router(realm.router)
 app.include_router(tag.router)
 app.include_router(equipment.router)
@@ -127,6 +147,7 @@ app.include_router(assets.router)
 app.include_router(scene_gen.router)
 app.include_router(comic.router)
 app.include_router(comic.public_router)
+app.include_router(cardgame.router)
 
 # 语音缓存静态托管：合成好的 MP3 从这里被 <audio> 直接拉取。
 # 这部分必须设较长缓存——同一句音频内容永远不会变，
@@ -153,6 +174,11 @@ if os.path.exists(frontend_dir):
     images_dir = os.path.join(frontend_dir, "images")
     os.makedirs(images_dir, exist_ok=True)
     app.mount("/images", StaticFiles(directory=images_dir), name="images")
+
+    # 录音 / 剪辑导出的音频文件从这里被 <audio> 直接拉取
+    audio_dir = os.path.join(frontend_dir, "audio")
+    os.makedirs(audio_dir, exist_ok=True)
+    app.mount("/audio", StaticFiles(directory=audio_dir), name="audio")
 
     admin_dir = os.path.join(frontend_dir, "admin")
     os.makedirs(admin_dir, exist_ok=True)

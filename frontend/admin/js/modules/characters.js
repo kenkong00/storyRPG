@@ -65,42 +65,57 @@ Admin.registerPage('characters', async (container) => {
   const VOICE_AGE_LABEL = { child: '童声', adult: '', elder: '老年' };
 
   /**
-   * 把某个引擎的音色渲染成 optgroup。
+   * 把音色渲染成 optgroup。
    *
-   * 分组维度刻意选了「来源」而不是「性别」：26 个音色如果只按男女分两组，
+   * 默认（engineId 为空）把「所有引擎」的音色都铺开，按 引擎·来源 两级分组：
+   * 这样后台一次就能看到全部可选音色（Edge 在线 + 本机离线），不会再出现
+   * 「只显示一个引擎就觉得变少了」的错觉；选了具体引擎才做收窄过滤。
+   * 分组维度刻意选了「来源」而不是「性别」：几十个音色如果只按男女分两组，
    * 每组十几个还是没法选；按来源分（普通话 / 方言 / 地区口音 / 角色声线）
    * 更符合选角时的思路 —— 先想要什么味道，再在这一组里挑男女。
    * 性别和年龄则写进每个选项的文本里，一眼可辨。
    */
   function buildVoiceOptions(groups, engineId, currentValue) {
-    const g = groups.find(x => x.id === engineId);
-    if (!g || !g.voices || !g.voices.length) {
+    const all = (groups || []).filter(g => (g.voices || []).length);
+    const picked = engineId ? all.filter(g => g.id === engineId) : all;
+    if (!picked.length) {
       // 列表还没到也别把已存的值弄丢
       return currentValue ? `<option value="${esc(currentValue)}">${esc(currentValue)}（当前配置）</option>` : '';
     }
     const genderIcon = v => (v.gender === 'male' ? '男' : v.gender === 'female' ? '女' : '?');
     const order = ['standard', 'dialect', 'regional', 'multilingual', 'role'];
-    const rest = [...new Set(g.voices.map(v => v.group || 'standard'))].filter(x => !order.includes(x));
     let html = '';
-    order.concat(rest).forEach(groupKey => {
-      const list = g.voices.filter(v => (v.group || 'standard') === groupKey);
-      if (!list.length) return;
-      html += `<optgroup label="${VOICE_GROUP_LABEL[groupKey] || groupKey}">`;
-      list.forEach(v => {
-        const age = VOICE_AGE_LABEL[v.age] || '';
-        const name = [
-          genderIcon(v),
-          v.name,
-          v.style ? `·${v.style}` : '',
-          age ? `[${age}]` : '',
-        ].filter(Boolean).join(' ');
-        const sel = v.voice_id === currentValue ? ' selected' : '';
-        html += `<option value="${esc(v.voice_id)}"${sel}>${esc(name)}</option>`;
+    picked.forEach(grp => {
+      const vs = grp.voices || [];
+      const multi = picked.length > 1;   // 多引擎时把引擎名也写进分组头
+      const rest = [...new Set(vs.map(v => v.group || 'standard'))].filter(x => !order.includes(x));
+      order.concat(rest).forEach(groupKey => {
+        const list = vs.filter(v => (v.group || 'standard') === groupKey);
+        if (!list.length) return;
+        const head = (multi ? (grp.name || grp.id) + ' · ' : '') + (VOICE_GROUP_LABEL[groupKey] || groupKey);
+        html += `<optgroup label="${esc(head)}">`;
+        list.forEach(v => {
+          const age = VOICE_AGE_LABEL[v.age] || '';
+          // 派生声线是「在基础音色上变语速/音调」出来的，把来源写进选项里，
+          // 免得用户以为又多了新音色，实则是同一个底子（例如「苍老长者=康康降调」）。
+          const origin = v.derived && v.base_name
+            ? ` = ${v.base_name}${v.rate ? ` 语速${v.rate >= 0 ? '+' : ''}${v.rate}%` : ''}${v.pitch ? ` 音调${v.pitch >= 0 ? '+' : ''}${v.pitch}` : ''}`
+            : '';
+          const name = [
+            genderIcon(v),
+            v.name,
+            v.style ? `·${v.style}` : '',
+            age ? `[${age}]` : '',
+            origin,
+          ].filter(Boolean).join(' ');
+          const sel = v.voice_id === currentValue ? ' selected' : '';
+          html += `<option value="${esc(v.voice_id)}" data-engine="${esc(grp.id)}"${sel}>${esc(name)}</option>`;
+        });
+        html += '</optgroup>';
       });
-      html += '</optgroup>';
     });
     // 配了列表里没有的音色（比如换了引擎），也要保留，避免静默丢失
-    if (currentValue && !g.voices.some(v => v.voice_id === currentValue)) {
+    if (currentValue && !picked.some(g => (g.voices || []).some(v => v.voice_id === currentValue))) {
       html = `<option value="${esc(currentValue)}">${esc(currentValue)}（当前配置）</option>` + html;
     }
     return html;
@@ -119,8 +134,12 @@ Admin.registerPage('characters', async (container) => {
       hint.style.color = 'var(--text-muted)';
       return;
     }
-    const g = (_ttsVoiceGroups || []).find(x => x.id === (engineSel && engineSel.value));
-    const v = g && (g.voices || []).find(x => x.voice_id === cur);
+    // 跨所有引擎查找当前音色，避免「全部引擎」视图下 hint 取不到信息
+    let v = null;
+    for (const grp of (_ttsVoiceGroups || [])) {
+      const f = (grp.voices || []).find(x => x.voice_id === cur);
+      if (f) { v = f; break; }
+    }
     if (!v) { hint.textContent = ''; return; }
     const gTxt = v.gender === 'male' ? '男' : v.gender === 'female' ? '女' : '未知';
     const ageTxt = { child: '童声', elder: '老年', adult: '' }[v.age] || '';
@@ -154,7 +173,9 @@ Admin.registerPage('characters', async (container) => {
 
     // 回填已有配置
     genderSel.value = data?.gender || 'unknown';
-    engineSel.value = data?.tts_engine || 'edge';
+    // 新建角色默认「全部引擎」视图，一次就能挑到在线 + 离线所有音色，
+    // 不会再以为列表「变少了」；已存角色则还原到它当时用的引擎。
+    engineSel.value = data?.tts_engine || '';
     rateEl.value = data?.tts_rate ?? 0;
     pitchEl.value = data?.tts_pitch ?? 0;
     rateVal.textContent = rateEl.value;
@@ -172,35 +193,101 @@ Admin.registerPage('characters', async (container) => {
     ensureTtsVoices().then(render).catch(() => {});
     if (_ttsVoiceGroups && _ttsVoiceGroups.length) render();
 
+    // 初次渲染后：若已有预选音色，把引擎下拉同步到该音色所属引擎，
+    // 这样编辑角色时「保存/试听」不会落到「全部引擎」空串上。
+    const presetOpt = voiceSel.selectedOptions && voiceSel.selectedOptions[0];
+    if (presetOpt && presetOpt.dataset && presetOpt.dataset.engine) {
+      engineSel.value = presetOpt.dataset.engine;
+    }
+
     genderSel.addEventListener('change', () => {
       updateVoiceHint(genderSel.value, voiceSel, engineSel, hint);
       // 换了性别就自动挑一个同性别音色，省得用户自己去琢磨哪一个才是男声。
       // 挑的时候避开派生声线（老人/小孩/威严这些是刻意选的口味，不该被自动选中），
       // 只从普通话通用里选一个青壮年音色作为起点。
-      const g = (_ttsVoiceGroups || []).find(x => x.id === engineSel.value);
-      if (g && genderSel.value !== 'unknown') {
-        const pool = (g.voices || []).filter(
+      // 「全部引擎」视图下 engineSel.value 为空，要跨所有引擎合并后再挑。
+      const groups = (_ttsVoiceGroups || []).filter(g => (g.voices || []).length);
+      const scope = engineSel.value
+        ? groups.filter(g => g.id === engineSel.value)
+        : groups;
+      const allVoices = scope.flatMap(g => g.voices || []);
+      if (scope.length && genderSel.value !== 'unknown') {
+        const pool = allVoices.filter(
           v => v.gender === genderSel.value && !v.derived && (v.group || 'standard') === 'standard');
-        const first = pool[0] || (g.voices || []).find(v => v.gender === genderSel.value);
+        const first = pool[0] || allVoices.find(v => v.gender === genderSel.value);
         if (first) voiceSel.value = first.voice_id;
       }
       updateVoiceHint(genderSel.value, voiceSel, engineSel, hint);
     });
 
     engineSel.addEventListener('change', render);
-    voiceSel.addEventListener('change', () => updateVoiceHint(genderSel.value, voiceSel, engineSel, hint));
+    voiceSel.addEventListener('change', () => {
+      // 选了某个音色后，把引擎下拉同步到该音色所属的引擎（写在 option 的 data-engine 上）。
+      // 这样「保存」和「试听」拿到的 engine_id 都是对的，不会因停留在「全部引擎」而写成空串。
+      const opt = voiceSel.selectedOptions && voiceSel.selectedOptions[0];
+      if (opt && opt.dataset && opt.dataset.engine) {
+        engineSel.value = opt.dataset.engine;
+      }
+      updateVoiceHint(genderSel.value, voiceSel, engineSel, hint);
+    });
     rateEl.addEventListener('input', () => { rateVal.textContent = rateEl.value; });
     pitchEl.addEventListener('input', () => { pitchVal.textContent = pitchEl.value; });
 
     // 试听
     const btn = document.getElementById('btn-tts-preview');
+    const stopBtn = document.getElementById('btn-tts-stop');
+    const resetBtn = document.getElementById('btn-tts-reset');
+    const stateEl = document.getElementById('char-tts-state');
+    let previewAudio = null;
+    let previewAbort = null;
+
+    function setPreviewState(text) { if (stateEl) stateEl.textContent = text || ''; }
+
+    function stopPreview() {
+      if (previewAbort) { try { previewAbort.abort(); } catch (_) { } previewAbort = null; }
+      if (previewAudio) {
+        try { previewAudio.pause(); } catch (_) { }
+        previewAudio = null;
+      }
+      if (btn) { btn.textContent = '试听'; btn.disabled = false; }
+      if (stopBtn) stopBtn.disabled = true;
+    }
+
+    function stopBtnBind() { if (stopBtn) stopBtn.addEventListener('click', () => { stopPreview(); setPreviewState('已停止'); }); }
+    stopBtnBind();
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', async () => {
+        resetBtn.disabled = true;
+        try {
+          const r = await Admin.post('/tts/reset', {});
+          const on = (r.engines || []).filter((e) => e.available).map((e) => e.name).join('、');
+          Admin.toast('语音通道已复位', 'success');
+          setPreviewState('可用引擎：' + (on || '无'));
+        } catch (e) {
+          Admin.toast('复位失败：' + e.message, 'error');
+        } finally {
+          resetBtn.disabled = false;
+        }
+      });
+    }
+
     if (btn) {
       btn.addEventListener('click', async () => {
         const text = (document.getElementById('char-tts-preview-text') || {}).value || '';
         if (!text.trim()) { Admin.toast('请输入试听内容', 'error'); return; }
+        if (previewAudio) { try { previewAudio.pause(); } catch (_) { } previewAudio = null; }
         const old = btn.textContent;
-        btn.textContent = '生成中…';
+        btn.textContent = '合成中…';
         btn.disabled = true;
+        if (stopBtn) stopBtn.disabled = false;
+        setPreviewState('');
+        // 关键：给请求本身加超时并能中止。以前这里是不带超时的 await，
+        // 后端一旦卡住，按钮就永远停在「生成中」，只能重启后台。
+        previewAbort = new AbortController();
+        const timer = setTimeout(() => {
+          try { previewAbort.abort(); } catch (_) { }
+        }, 15000);
         try {
           const res = await Admin.post('/tts/synth', {
             text,
@@ -209,17 +296,29 @@ Admin.registerPage('characters', async (container) => {
             rate: Number(rateEl.value) || 0,
             pitch: Number(pitchEl.value) || 0,
             gender: genderSel.value || 'unknown',
-          });
+          }, previewAbort.signal);
           if (!res || !res.url) throw new Error((res && res.error) || '未返回音频');
-          const a = new Audio(res.url);
-          a.volume = 0.95;
-          await a.play().catch(() => {});
+          previewAudio = new Audio(res.url);
+          previewAudio.volume = 0.95;
+          previewAudio.onended = () => { previewAudio = null; if (stopBtn) stopBtn.disabled = true; };
+          await previewAudio.play().catch(() => { });
           Admin.toast('试听中…', 'success');
+          setPreviewState(`引擎：${res.engine || '-'}${res.degraded ? '（已降级）' : ''}`);
         } catch (e) {
-          Admin.toast('试听失败：' + e.message, 'error');
+          const aborted = e && (e.name === 'AbortError' || /abort/i.test(e.message || ''));
+          if (aborted) {
+            Admin.toast('合成超时，已中止', 'error');
+            setPreviewState('合成超时，可点「复位语音」后重试');
+          } else {
+            Admin.toast('试听失败：' + e.message, 'error');
+            setPreviewState('失败：' + e.message);
+          }
         } finally {
+          clearTimeout(timer);
+          previewAbort = null;
           btn.textContent = old;
           btn.disabled = false;
+          if (stopBtn && !previewAudio) stopBtn.disabled = true;
         }
       });
     }
@@ -603,7 +702,6 @@ Admin.registerPage('characters', async (container) => {
         <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="appear" style="border:none;border-radius:0;background:transparent">外观配置</button>
         <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="pose" style="border:none;border-radius:0;background:transparent">动作表情</button>
         <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="gear" style="border:none;border-radius:0;background:transparent">背包与装备</button>
-        <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="voice" style="border:none;border-radius:0;background:transparent">语音</button>
         <button type="button" class="char-tab-btn btn btn-outline btn-sm" data-tab="level" style="border:none;border-radius:0;background:transparent">等级</button>
       </div>
 
@@ -781,57 +879,6 @@ Admin.registerPage('characters', async (container) => {
           <div id="ag-root" class="ag-root">加载中...</div>
         ` : '<div class="table-empty">请先保存人物后再管理背包与装备</div>'}
       </div>
-
-      <!-- 语音选项卡：给这个角色挑一个说话的声音 -->
-      <div id="char-tab-voice" style="display:none">
-        <div class="form-row">
-          <div class="form-group">
-            <label>性别（在「基础属性」里改）</label>
-            <div id="char-gender-hint" style="font-size:12px;color:var(--text-muted);padding:6px 0">
-              决定下拉里优先推荐哪一批音色
-            </div>
-          </div>
-          <div class="form-group">
-            <label>语音引擎</label>
-            <select name="tts_engine" id="char-tts-engine">
-              <option value="edge">Edge TTS（在线 · 推荐）</option>
-              <option value="onecore">本机 Windows 语音（离线）</option>
-            </select>
-            <small style="color:var(--text-muted);font-size:11px">断网时会自动退到本机语音</small>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>语音主播（音色）</label>
-          <select name="tts_voice" id="char-tts-voice">
-            <option value="">加载中…</option>
-          </select>
-          <div id="char-tts-voice-hint" style="margin-top:6px;font-size:11px;color:var(--text-muted)"></div>
-          <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px">
-            下拉分四组：普通话通用 / 方言乡音 / 地区口音 / <b>角色声线（派生）</b>。
-            官方音色里没有老人，想配长者、稚童、帝王、说书人这类声线，请到「角色声线」组里选——
-            它们是用语速和音调在基础音色上派生出来的，不额外增加合成耗时。
-          </small>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>语速 <span id="char-rate-val">0</span>%</label>
-            <input type="range" name="tts_rate" id="char-tts-rate" min="-50" max="50" value="0">
-          </div>
-          <div class="form-group">
-            <label>音调 <span id="char-pitch-val">0</span>%</label>
-            <input type="range" name="tts_pitch" id="char-tts-pitch" min="-30" max="30" value="0">
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-          <input id="char-tts-preview-text" value="前方似有埋伏，公子小心。"
-                 style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-input);color:var(--text-primary)">
-          <button type="button" class="btn btn-outline btn-sm" id="btn-tts-preview">试听</button>
-        </div>
-        <small style="color:var(--text-muted);font-size:11px">试试上面的句子，听感满意再保存。</small>
-      </div>
     `;
 
     let appearanceEditor = null;
@@ -962,7 +1009,7 @@ Admin.registerPage('characters', async (container) => {
         btn.addEventListener('click', () => {
           const tab = btn.dataset.tab;
           // 切换显示
-          ['basic', 'appear', 'level', 'pose', 'gear', 'voice'].forEach(t => {
+          ['basic', 'appear', 'level', 'pose', 'gear'].forEach(t => {
             const el = document.getElementById(`char-tab-${t}`);
             if (el) el.style.display = t === tab ? '' : 'none';
           });
@@ -1338,9 +1385,6 @@ Admin.registerPage('characters', async (container) => {
       };
       if (window.PageFocus) PageFocus.set('characters', window.__charFocusHandler);
 
-      // ===== 语音面板：音色列表 / 性别联动 / 试听 =====
-      initCharacterVoicePanel(data);
-
       // ===== 背包与装备（统一面板：布局与前台人物面板一致；此处为「编辑态」，可增删改） =====
       // 前台 character.js 只是显示，这里是数据源：玩家新建角色时会复制这里的装备 / 背包 / 技能书。
       const GEAR_PARTS = [
@@ -1364,6 +1408,8 @@ Admin.registerPage('characters', async (container) => {
         const b = _parseJson(bonuses);
         return STAT_KEYS.filter(k => b[k]).map(k => `${STAT_LABEL[k]}${b[k] > 0 ? '+' : ''}${b[k]}`).join(' ');
       }
+
+      // ===== 卡牌角色面板已迁移到「卡牌外观拼装」页（自由外观拼装 + 卡面参数） =====
 
       async function loadGearPanel() {
         const root = document.getElementById('ag-root');

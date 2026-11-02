@@ -269,6 +269,30 @@ def resume_all() -> int:
     return n
 
 
+def cancel_all() -> int:
+    """取消并清空所有「未结束」的任务（运行中 / 等待中 / 已暂停）。
+
+    和 pause_all 的区别：
+      · pause_all 只是挂起，任务仍留在队列里，稍后还能被「全部开始」唤醒 ——
+        这就是用户看到的「暂停后还在排队、有时又自己跑起来」。
+      · cancel_all 先置取消旗标让工作线程在最近的卡点退出（ComfyUI 客户端的
+        should_cancel 也会立刻打断当前这张图），随后把记录从队列里删掉，
+        面板上不再残留，也不会被重新唤起。
+    """
+    n = 0
+    with _lock:
+        live = [k for k, v in _jobs.items() if v["status"] not in DEAD]
+    for k in live:
+        if request_cancel(k):
+            n += 1
+    # request_cancel 已同步触发了漫画队列等外部 cancel 回调；
+    # 这里再把记录摘掉，工作线程下一次 gate() 看到 j is None 会抛 JobCanceled 退出。
+    with _lock:
+        for k in live:
+            _jobs.pop(k, None)
+    return n
+
+
 def remove(job_id: str) -> bool:
     """从列表里彻底删掉（活着的话先取消）。"""
     request_cancel(job_id)

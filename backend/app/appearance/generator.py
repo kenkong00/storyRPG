@@ -227,6 +227,17 @@ def opts_of(dim_id, c, mode="default", theme=None, allow_duo=False):
             kept = [o for o in options if o["id"] not in bad]
             if kept:
                 options = kept
+
+    # 职业池：题材之内再按职业收敛（职业 > 题材 > 全量）。
+    # 「中国武侠风 + 刺客」和「欧洲中世纪 + 刺客」名字一样，款式池完全不同。
+    if theme and c.get("classCode"):
+        from . import theme_class
+        cls_ids = theme_class.merged_pools(theme.get("id"), c["classCode"]).get(dim_id)
+        if cls_ids:
+            ids = set(cls_ids)
+            hit = [o for o in options if o["id"] in ids]
+            if hit:
+                options = hit
     return options
 
 
@@ -285,36 +296,106 @@ def apply_nudity(c):
         c.pop(k, None)
 
 
+# 女装识别：常用 id 直列 + 中文关键词兜底（以后新加的款式自动命中，不用改代码）
+_FEM_IDS = {
+    "top": {"blouse", "corsetTop", "ruqun", "qixiong", "beizi", "qipao", "cheongsamMod",
+            "kimono", "mikoTop", "hanbokTop", "sari", "lehenga", "victorian", "rococo",
+            "peasantBlouse", "nurseDress", "maidDress", "dress", "sundress", "gown",
+            "sweaterDress", "cheerUniform", "cropTop", "wuxiaGauzeTop"},
+    "bottom": {"miniSk", "kneeSk", "longSk", "pleatSk", "aSk", "fishSk", "skort",
+               "mamian", "ruqunSkirt", "hotPants"},
+    "shoes": {"heel", "stiletto"},
+    "hairstyle": {"hime", "flyingFairy", "doubleLoop", "twintail", "twinBraid", "spaceBuns"},
+}
+_FEM_CN = ("裙", "旗袍", "胸衣", "蕾丝", "抹胸", "绯袴", "振袖", "披帛", "纱丽",
+           "女式", "女仆", "护士", "比基尼", "公主", "吊带")
+# 例外男装：苏格兰裙 / 袴 / 托蒂 / 裹腰布 名字里带「裙、袴」但是男装
+_MENS_WEAR = {"kilt", "hakama", "dhoti", "loincloth"}
+
+# 儿童/少年不适配的发型（长披发、莫西干一类）
+_KID_HAIR_BAN = ("bunSamurai", "mohawk", "afro", "dreads", "longStr", "longWave",
+                 "longCurl", "flyingFairy", "hime", "wetslick")
+
+# 上装自带外套的款式 → 不能再叠同类外套（否则拼出「羽织外罩羽织」）
+_OUTER_CONFLICT = {
+    "samuraiRobe": ("haoriCoat", "haori", "jinbaori"),
+    "jinbaori": ("haoriCoat", "haori"),
+    "haori": ("haoriCoat",),
+    "kariginu": ("haoriCoat",),
+}
+
+
+def is_fem_only(dim_id, opt_id):
+    """这个款式是不是「女性专属」——判断男性能不能穿/梳。"""
+    if not opt_id or opt_id in _MENS_WEAR:
+        return False
+    if opt_id in _FEM_IDS.get(dim_id, ()):
+        return True
+    if dim_id not in ("top", "bottom"):
+        return False
+    o = defs.option_of(dim_id, opt_id) or {}
+    text = (o.get("cn") or "") + (o.get("name") or "")
+    return any(h in text for h in _FEM_CN)
+
+
+def _pool_swap(dim_id, c, reject, theme, mode):
+    """在「同题材」范围内换一个能过关的款式；换不出来返回 None（保持原值）。
+
+    这里是四题材款式串味的最后一道关：以前直接硬塞 jeans / leatherS / shirt，
+    结果日本武士穿直筒牛仔裤、欧洲中世纪穿细跟高跟鞋。
+    现在依次退让：当前「题材+职业」池 → 该题材全职业池 → 不动。
+    """
+    opts = [o["id"] for o in opts_of(dim_id, c, mode, theme) if not reject(o["id"])]
+    if not opts and theme:
+        from . import theme_class
+        wide = (theme_class.all_pools(theme.get("id")) or {}).get(dim_id) or []
+        opts = [i for i in wide if not reject(i)]
+    return pick(opts) if opts else None
+
+
 def post_fix(c):
     gender = c.get("gender")
     band = defs.age_band(c.get("age"))
+    mode = c.get("mode", "default")
+    theme = defs.theme_by_id(c.get("theme")) if c.get("theme") else None
 
-    # 男性不穿裙 / 高跟
+    # 男性不穿女装 / 高跟 / 女式发型：换成同题材内可穿的款式
     if gender == "male":
-        bottom = c.get("bottom")
-        if bottom in ("miniSk", "kneeSk", "longSk", "pleatSk", "aSk", "fishSk",
-                      "mamian", "ruqunSkirt", "lehengas", "lehenga", "hakama", "skort", "kilt"):
-            c["bottom"] = "jeans"
-        if c.get("shoes") in ("heel", "stiletto"):
-            c["shoes"] = "leatherS"
-        if c.get("top") in ("sari", "lehenga", "dress", "gown", "sundress", "cheerUniform",
-                            "maidDress", "nurseDress", "sweaterDress"):
-            c["top"] = "shirt"
+        for dim_id in ("top", "bottom", "shoes", "hairstyle"):  # top 先修，下装要看上装是不是甲胄
+            if is_fem_only(dim_id, c.get(dim_id)):
+                new = _pool_swap(dim_id, c, lambda oid: is_fem_only(dim_id, oid), theme, mode)
+                if new:
+                    c[dim_id] = new
 
-    # 儿童：发型收敛 + 鞋子收敛
+    # 儿童：发型收敛 + 鞋子收敛（同样只在题材池内换，不塞通用款）
     if band in ("toddler", "child"):
-        if c.get("hairstyle") in ("bunSamurai", "mohawk", "afro", "dreads", "longStr",
-                                  "longWave", "longCurl", "flyingFairy", "hime", "wetslick"):
-            c["hairstyle"] = pick(["buzz", "crop", "bowl", "twintail", "buns", "bob"])
+        if c.get("hairstyle") in _KID_HAIR_BAN:
+            new = _pool_swap("hairstyle", c, lambda oid: oid in _KID_HAIR_BAN, theme, mode)
+            if new:
+                c["hairstyle"] = new
         if c.get("shoes") in ("heel", "stiletto", "longBoot"):
-            c["shoes"] = "sneaker"
+            new = _pool_swap("shoes", c,
+                             lambda oid: oid in ("heel", "stiletto", "longBoot"), theme, mode)
+            if new:
+                c["shoes"] = new
         c.pop("facialHair", None)
         c.pop("bodyHair", None)
 
-    # 老人：白发概率提高
-    if band in ("elder", "senior"):
-        if chance(0.55):
-            c["hairColor"] = pick(["silverH", "saltPep", "snowWhite", "platinum"])
+    # 老人：白发概率提高（只在题材允许的发色里挑）
+    if band in ("elder", "senior") and chance(0.55):
+        pool = [o["id"] for o in opts_of("hairColor", c, mode, theme)]
+        grey = [x for x in ("silverH", "saltPep", "snowWhite", "platinum") if x in pool]
+        if grey:
+            c["hairColor"] = pick(grey)
+
+    # 上装自带外套时，不再叠同类外套
+    conflict = _OUTER_CONFLICT.get(c.get("top"))
+    if conflict and c.get("outer") in conflict:
+        new = _pool_swap("outer", c, lambda oid: oid in conflict, theme, mode)
+        if new:
+            c["outer"] = new
+        else:
+            c.pop("outer", None)
 
     # 裸露态与上下装的互斥（兜底）
     apply_nudity(c)
@@ -405,8 +486,11 @@ def pick_role(age, style=None, theme=None):
 # ===================== 主生成 =====================
 def random_appearance(gender=None, age=None, style=None, theme=None, mode="default",
                       seed=None, include_sensitive=True, nationality=None,
-                      pose_category=None):
-    """生成一份完整且风格一致的人物外观。"""
+                      pose_category=None, cls_code=None):
+    """生成一份完整且风格一致的人物外观。
+
+    theme + cls_code 一起用：题材定文化池，职业在题材内再瘦一层（见 theme_class.py）。
+    """
     if seed is not None:
         random.seed(seed)
 
@@ -419,6 +503,8 @@ def random_appearance(gender=None, age=None, style=None, theme=None, mode="defau
     c["mode"] = mode
     if theme_obj:
         c["theme"] = theme_obj["id"]
+    if cls_code:
+        c["classCode"] = cls_code
 
     # ---- 性别 ----
     c["gender"] = gender or pick(["male", "female"])
@@ -510,8 +596,12 @@ def random_appearance(gender=None, age=None, style=None, theme=None, mode="defau
             continue
 
         chosen = None
-        # 1) 题材/风格 tag 匹配
-        if use_tag and (tags or c.get("style")):
+        # 题材 / 职业池已经把这个维度收敛过了 → 池内就是目标款式。
+        # 此时再做标签偏爱，只会反复抽中那几个带旧标签的款
+        # （曾出现「羽织」占武士道上装 84% 的情况），所以池生效时按池内均匀抽。
+        pooled = len(opts) < len(d.get("options") or [])
+        # 1) 题材/风格 tag 匹配（仅当维度没被题材/职业池收敛）
+        if use_tag and not pooled and (tags or c.get("style")):
             wanted = set(tags)
             if c.get("style"):
                 wanted.add(c["style"])
@@ -628,12 +718,20 @@ def _nationality_text(opt_id):
     return feat or name
 
 
-def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None):
+def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None,
+                        include_pose=True, include_scene=True):
     """拼装中文提示词：posCn（正向，用于出图）+ negCn（负面，参考用）。
 
-    framing: full（默认，全身立绘）/ half（半身立绘，只画到腰部以上）。
-    半身像不描写下半身穿着 —— 画面上根本看不到裙/裤/鞋袜，
+    framing: full（默认，全身立绘）/ half（半身立绘，只画到腰部以上）/ head（头部特写，
+    只保留面部特征与肤色，身体与穿着一律不写）。
+    半身像不描写下半身穿着 —— 画面上根本看不到裙/裤/鞋袜/腰带，
     写进去反而会把模型往「全身」上带，导致构图变成缩小版全身。
+
+    include_pose / include_scene：
+      · 外观配置的提示词只应包含「人物外观拼装」里的维度（人物/风格/体型/头部/身体/穿着）。
+        「动作表情」属于动作表情模块、「画面/取景」属于渲染指令，都不是外观参数，
+        所以外观配置面板（预览 / 立绘出图）调用时传 False，输出纯外观提示词。
+      · 动作表情批量出图仍需要 pose 与画面构图，调用时保持默认 True。
     """
     name = (c.get("name") or "").strip()
     mode = c.get("mode", "default")
@@ -642,7 +740,8 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
     # 后端路由大多直接传 appearance 而不单独传 free_text，所以这里兜底读取。
     if free_text is None:
         free_text = c.get("free_text")
-    is_half = framing == "half"
+    is_half = framing in ("half", "head")
+    is_head = framing == "head"
     mode_obj = next((m for m in defs.MODES if m["id"] == mode), None)
     nudity = c.get("nudity") or "none"
 
@@ -650,8 +749,9 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
 
     # 动作表情本身就带表情描述，若再叠一个独立的「表情」维度，
     # 会拼出「张大嘴笑，眉头紧锁、面带愠怒」这种自相矛盾的脸，所以有动作时表情让位。
-    pose_txt = _opt_cn("pose", c.get("pose"))
-    expr_txt = "" if pose_txt else _opt_cn("expression", c.get("expression"))
+    # include_pose=False（外观配置）时，pose / expression 都不属于外观，一律不写。
+    pose_txt = _opt_cn("pose", c.get("pose")) if include_pose else ""
+    expr_txt = "" if (pose_txt or not include_pose) else _opt_cn("expression", c.get("expression"))
 
     # ---- 人物概述 ----
     # 这些维度允许「无 / 默认」：没选就不写，避免出现「女性 22 岁」这种噪声。
@@ -682,18 +782,24 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
         lines.append("【风格】" + style_line)
 
     # ---- 体型 ----
-    body_shape = [
-        _opt_cn("height", c.get("height")),
-        _opt_cn("build", c.get("build")),
-        _opt_cn("shoulder", c.get("shoulder")),
-    ]
-    if not is_half:
-        body_shape.append(_opt_cn("legLen", c.get("legLen")))
-    body_shape += [
-        _opt_cn("skin", c.get("skin")),
-        _opt_cn("posture", c.get("posture")),
-    ]
-    lines.append("【体型】" + _join(body_shape))
+    if is_head:
+        # 头部特写：体型只保留肤色（画面上看得到的只有皮肤），其余一律不写。
+        skin_txt = _opt_cn("skin", c.get("skin"))
+        if skin_txt:
+            lines.append("【肤色】" + skin_txt)
+    else:
+        body_shape = [
+            _opt_cn("height", c.get("height")),
+            _opt_cn("build", c.get("build")),
+            _opt_cn("shoulder", c.get("shoulder")),
+        ]
+        if not is_half:
+            body_shape.append(_opt_cn("legLen", c.get("legLen")))
+        body_shape += [
+            _opt_cn("skin", c.get("skin")),
+            _opt_cn("posture", c.get("posture")),
+        ]
+        lines.append("【体型】" + _join(body_shape))
 
     # ---- 头部 ----
     hair = ""
@@ -722,18 +828,19 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
     ]))
 
     # ---- 身体特征 ----
-    body = [_opt_cn("marks", c.get("marks")), _opt_cn("bodyMark", c.get("bodyMark"))]
-    if include_sensitive:
-        if c.get("gender") == "female":
-            body += [_opt_cn("bust", c.get("bust")), _opt_cn("bustShape", c.get("bustShape")),
-                     _opt_cn("bustCleavage", c.get("bustCleavage"))]
-        else:
-            body += [_opt_cn("chestMuscle", c.get("chestMuscle"))]
-        if nudity in ("full", "lower"):
-            body.append(_opt_cn("penis", c.get("penis")))
-        body.append(_opt_cn("bodyHair", c.get("bodyHair")))
-    body.append(_opt_cn("tattoo", c.get("tattoo")))
-    lines.append("【身体】" + _join(body))
+    if not is_head:
+        body = [_opt_cn("marks", c.get("marks")), _opt_cn("bodyMark", c.get("bodyMark"))]
+        if include_sensitive:
+            if c.get("gender") == "female":
+                body += [_opt_cn("bust", c.get("bust")), _opt_cn("bustShape", c.get("bustShape")),
+                         _opt_cn("bustCleavage", c.get("bustCleavage"))]
+            else:
+                body += [_opt_cn("chestMuscle", c.get("chestMuscle"))]
+            if nudity in ("full", "lower"):
+                body.append(_opt_cn("penis", c.get("penis")))
+            body.append(_opt_cn("bodyHair", c.get("bodyHair")))
+        body.append(_opt_cn("tattoo", c.get("tattoo")))
+        lines.append("【身体】" + _join(body))
 
     # ---- 穿着 ----
     # 很多衣物描述本身已含袖型（「宽袖道袍」「广袖仙袍」），再叠一个袖长会自相矛盾，
@@ -755,19 +862,24 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
     shoes_txt = shoes_raw if _has_no_color(shoes_raw) else _with_color(shoes_raw, c.get("shoeColor"))
 
     cloth = []
-    if nudity == "full":
-        cloth.append("半身赤裸，未着任何衣物" if is_half else "全身赤裸，未着任何衣物")
+    if is_head:
+        cloth = None      # 头部特写：穿着整段不写
+    elif nudity == "full":
+        # 明确选了「全裸」就必须写出来：以前半身构图时被改写成「半身赤裸」，
+        # 卡牌这类固定半身构图里选全裸-> 提示词几乎没有变化，看起来像控件坏了。
+        cloth.append("全身赤裸，未着任何衣物")
     elif nudity == "upper":
         cloth.append("上半身赤裸")
         cloth += ["" if is_half else bottom_txt,
                   "" if is_half else shoes_txt,
                   "" if is_half else _opt_cn("socks", c.get("socks")),
-                  _opt_cn("belt", c.get("belt")),
+                  "" if is_half else _opt_cn("belt", c.get("belt")),
                   _opt_cn("gloves", c.get("gloves")),
                   _opt_cn("backpack", c.get("backpack"))]
     elif nudity == "lower":
-        if not is_half:
-            cloth.append("下半身赤裸")
+        # 同上：半身构图本来就看不到下半身衣物，但「下半裸」这件事必须写进提示词，
+        # 否则选了等于没选（卡牌/半身立绘都会踩这个坑）。
+        cloth.append("下半身赤裸")
         cloth += [top_txt, outer_txt,
                   ("" if is_half else shoes_txt),
                   _opt_cn("neckwear", c.get("neckwear")),
@@ -777,28 +889,35 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
         cloth += [top_txt, outer_txt]
         if not is_half:
             cloth += [bottom_txt, shoes_txt, _opt_cn("socks", c.get("socks"))]
-        cloth += [_opt_cn("belt", c.get("belt")),
+        cloth += ["" if is_half else _opt_cn("belt", c.get("belt")),
                   _opt_cn("neckwear", c.get("neckwear")), _opt_cn("gloves", c.get("gloves")),
                   _opt_cn("backpack", c.get("backpack"))]
-    if nudity != "full":
-        cloth.append(_opt_cn("prop", c.get("prop")))
-    lines.append("【穿着】" + _join(cloth))
+    if cloth is not None:
+        if nudity != "full":
+            cloth.append(_opt_cn("prop", c.get("prop")))
+        lines.append("【穿着】" + _join(cloth))
 
-    # ---- 动作表情（仅当外观里真的带了 pose 维度时才出现；外观拼装不生成它） ----
-    if pose_txt:
+    # ---- 动作表情（动作表情批量出图时才写；外观配置不生成它） ----
+    if include_pose and pose_txt and not is_head:
         lines.append("【动作表情】" + pose_txt)
 
-    # ---- 画面（人物一律纯色底、无背景） ----
-    # 这一段是「出图渲染指令」，只有在外观真的有内容时才附带；
-    # 全部维度都没选（全默认）时整段都不给，提示词就是空的。
+    # ---- 画面（渲染指令，不是外观参数） ----
+    # 外观配置的面板提示词不附带这一段（include_scene=False）；
+    # 动作表情批量等真正出图的场景保留，保证构图稳定。
     scene_lines = []
-    if is_half:
-        scene_lines.append("【画面】" + "、".join([
-            "半身像", "腰部以上", "上半身构图", "画面下缘止于腰部",
-        ] + [t for t in defs.SCENE_TAGS_CN if t not in ("全身像",)]))
-        scene_lines.append("【取景】只表现腰部以上的上半身，不画裙摆、裤腿与鞋袜")
-    else:
-        scene_lines.append("【画面】" + "、".join(defs.SCENE_TAGS_CN))
+    if include_scene:
+        if is_head:
+            scene_lines.append("【画面】" + "、".join([
+                "头部特写", "面部特写", "肩部以上构图", "聚焦面部",
+            ] + [t for t in defs.SCENE_TAGS_CN if t not in ("全身像",)]))
+            scene_lines.append("【取景】只画头部与肩颈的面部特写，不画身体、四肢与衣物")
+        elif is_half:
+            scene_lines.append("【画面】" + "、".join([
+                "半身像", "腰部以上", "上半身构图", "画面下缘止于腰部",
+            ] + [t for t in defs.SCENE_TAGS_CN if t not in ("全身像",)]))
+            scene_lines.append("【取景】只表现腰部以上的上半身，不画裙摆、裤腿与鞋袜")
+        else:
+            scene_lines.append("【画面】" + "、".join(defs.SCENE_TAGS_CN))
 
     # 全默认：没有任何外观维度被选中 → 提示词为空（不再冒出「女性 22 岁」/「纯色背景」等噪声）
     content_lines = [x for x in lines if x and not x.endswith("】")]
@@ -817,6 +936,8 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
                  "脸部扭曲", "文字", "水印", "签名", "复杂背景", "场景背景", "英文文字"]
     if is_half:
         neg_parts += ["全身照", "腿部", "脚", "鞋子", "裙摆", "裤腿", "远景全身"]
+    if is_head:
+        neg_parts += ["半身照", "全身照", "身体", "四肢", "手", "衣物", "服饰", "躯干"]
     if mode_obj and mode_obj.get("neg"):
         neg_parts.append(mode_obj["neg"])
     seen, neg_uniq = set(), []
@@ -836,13 +957,17 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None)
     }
 
 
-def to_prompt(appearance, include_sensitive=True, framing=None, free_text=None):
-    b = build_prompt_blocks(appearance, include_sensitive, framing=framing, free_text=free_text)
+def to_prompt(appearance, include_sensitive=True, framing=None, free_text=None,
+              include_pose=True, include_scene=True):
+    b = build_prompt_blocks(appearance, include_sensitive, framing=framing, free_text=free_text,
+                            include_pose=include_pose, include_scene=include_scene)
     return b["posCn"]
 
 
-def to_prompt_parts(appearance, include_sensitive=True, framing=None, free_text=None):
-    b = build_prompt_blocks(appearance, include_sensitive, framing=framing, free_text=free_text)
+def to_prompt_parts(appearance, include_sensitive=True, framing=None, free_text=None,
+                    include_pose=True, include_scene=True):
+    b = build_prompt_blocks(appearance, include_sensitive, framing=framing, free_text=free_text,
+                            include_pose=include_pose, include_scene=include_scene)
     return {
         "cn": b["posCn"], "en": "",
         "posCn": b["posCn"], "negCn": b["negCn"],
@@ -1165,11 +1290,22 @@ def get_defs(include_sensitive=True):
         groups_out.append({"id": g["id"], "name": g["name"],
                            "icon": g.get("icon", ""), "dims": group_dims})
 
+    from . import theme_class
+    themes_out = []
+    for t in defs.themes():
+        item = {"id": t["id"], "name": t["name"], "desc": t.get("desc", ""),
+                "nationality": t.get("nationality", ""), "cn": t.get("cn", ""),
+                "pools": t.get("pools") or {},
+                "colors": t.get("colors") or []}
+        # 前端要靠这张表把下拉收敛到「这个题材 + 这个职业」的款式
+        if t["id"] in theme_class.THEME_IDS:
+            item["poolsByClass"] = theme_class.class_pools(t["id"])
+        themes_out.append(item)
+
     return {
         "groups": groups_out,
-        "themes": [{"id": t["id"], "name": t["name"], "desc": t.get("desc", ""),
-                    "nationality": t.get("nationality", ""),
-                    "cn": t.get("cn", "")} for t in defs.themes()],
+        "themes": themes_out,
+        "classes": [dict(c) for c in theme_class.CLASSES],
         "poseCategories": [{"id": c["id"], "name": c["name"], "desc": c.get("desc", "")}
                            for c in defs.pose_categories()],
         "modes": [{"id": m["id"], "name": m["name"]} for m in defs.MODES],

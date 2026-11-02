@@ -78,11 +78,16 @@ const CategoryBar = {
     }
 
     function countFor(path) {
-      if (!path) return opts.totalCount || 0;
+      // 有 getCount 就一律交给宿主算（「未分类」也要算），
+      // 以前空路径固定返回 totalCount，各页都传 0 → 未分类永远显示 (0)，
+      // 明明有数据却写着 0，看着就像「东西丢了」。
       if (typeof opts.getCount === 'function') {
-        try { return opts.getCount(path) || 0; } catch (_) { return 0; }
+        try {
+          const n = opts.getCount(path);
+          if (n != null) return n;
+        } catch (_) { /* 落到兜底 */ }
       }
-      return 0;
+      return path ? 0 : (opts.totalCount || 0);
     }
 
     // 渲染分类节点（仅渲染当前层级，不递归显示子分类）

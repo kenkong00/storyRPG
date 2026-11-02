@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """把分散的种子模块组装成一份完整的定义字典。"""
 
-from . import seed_core, seed_cloth, seed_poses, seed_themes
+from . import seed_core, seed_cloth, seed_poses, seed_themes, theme_class
 
 
 # ===================== 出图模式（风格基调） =====================
@@ -41,6 +41,7 @@ def build():
         "version": 5,
         "groups": [dict(g) for g in seed_core.GROUPS],
         "dims": dims,
-        "themes": seed_themes.apply_rules([dict(t) for t in seed_themes.THEMES]),
+        # 题材只有 4 个，且只做参数约束（不带提示词）—— 见 theme_class.py
+        "themes": theme_class.theme_seed(),
         "poseCategories": [dict(c) for c in seed_poses.POSE_CATEGORIES],
     }

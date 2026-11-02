@@ -335,6 +335,21 @@ def _run_migrations():
                 conn.commit()
                 print("[OK] compose_configs 表已添加 layout_json 列")
 
+        # ===== 卡牌外观拼装：职业英雄 / 卡牌角色 各加一份完整外观（appearance_json） =====
+        # 与「人物外观拼装」共用同一套维度定义，可自由增删改参数。
+        if "card_classes" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("card_classes")}
+            if "appearance_json" not in cols:
+                conn.execute(text("ALTER TABLE card_classes ADD COLUMN appearance_json TEXT"))
+                conn.commit()
+                print("[OK] card_classes 表已添加 appearance_json 列")
+        if "card_character_profiles" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("card_character_profiles")}
+            if "appearance_json" not in cols:
+                conn.execute(text("ALTER TABLE card_character_profiles ADD COLUMN appearance_json TEXT"))
+                conn.commit()
+                print("[OK] card_character_profiles 表已添加 appearance_json 列")
+
 
 def _backfill_appearance_presets():
     """老数据升级：
@@ -461,6 +476,125 @@ def _backfill_scene_appearances():
         db.close()
 
 
+def _migrate_card_art_sets():
+    """卡面套装：给老的 card_arts 补 set_code，并保证一定有一套「默认套装」。
+
+    老数据里同一张卡可能已经被覆盖过好几轮（is_active 只有一版算数），
+    这里把现存的所有版本一律归进 default 套，激活哪套就写回哪套的图，
+    没写到的卡保留现状 —— 升级后画面一帧都不变。
+    """
+    insp = inspect(engine)
+    if "card_arts" not in insp.get_table_names():
+        return
+    with engine.connect() as conn:
+        cols = {c["name"] for c in insp.get_columns("card_arts")}
+        if "set_code" not in cols:
+            conn.execute(text(
+                "ALTER TABLE card_arts ADD COLUMN set_code VARCHAR(48) DEFAULT 'default'"))
+            conn.execute(text(
+                "UPDATE card_arts SET set_code = 'default' "
+                "WHERE set_code IS NULL OR set_code = ''"))
+            conn.commit()
+
+    from .models.cardgame import CardArtSet
+    db = SessionLocal()
+    try:
+        if db.query(CardArtSet).count() == 0:
+            db.add(CardArtSet(code="default", name="默认套装", note="升级时自动创建，装已有卡面",
+                              is_active=1, sort=0, enabled=1))
+            db.commit()
+            print("[OK] 已创建「默认套装」，并把已有卡面归入其中")
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        print("[WARN] 默认卡面套装创建失败：", exc)
+    finally:
+        db.close()
+
+
+def _migrate_card_art_templates():
+    """卡牌拼装迁移：出厂占位符模板（花括号那套）→ 清空，改走「外观维度」自由拼装。
+
+    只清出厂默认的两份原文；用户手写过别的模板一律保留（compose 里仍按模板拼）。
+    """
+    legacy = [
+        ("{style}\n【人物】{name}，{gender}{age}{head}\n【服装】{outfit}\n"
+         "【动作】{action}\n【表情】{expression}\n\n"),
+        ("{style}\n【人物】{name}，{gender}{age}{head}\n【服装】{outfit}\n"
+         "【动作】{action}\n【表情】{expression}\n"
+         "【构图】半身像，竖版 2:3，人物居中，头部位于画面上三分之一，"
+         "深色渐变背景，边缘金色描边辉光，卡牌插画规格\n"
+         "【画质】厚涂笔触，电影级侧逆光，材质与金属高光清晰，"
+         "细节锐利，无文字，无水印，无边框"),
+    ]
+    insp = inspect(engine)
+    if "card_settings" not in insp.get_table_names():
+        return
+    with engine.connect() as conn:
+        for tpl in legacy:
+            conn.execute(
+                text("UPDATE card_settings SET value='' "
+                     "WHERE key='art_template' AND value = :tpl"),
+                {"tpl": tpl})
+        conn.commit()
+    print("[OK] 卡牌出厂占位符模板已迁移为「外观维度自由拼装」")
+
+
+def _migrate_card_emotion_prompts():
+    """角色情感表现：补「前缀拼接 / 后缀拼接 / 外观配置」三列。
+
+    老数据没有这三列，存的是「只能填动作+神情」的旧结构；
+    补成空串/0 后，提示词拼装与原来等价，不会改变任何已生成的图。
+    """
+    insp = inspect(engine)
+    if "card_character_emotions" not in insp.get_table_names():
+        return
+    with engine.connect() as conn:
+        cols = {c["name"] for c in insp.get_columns("card_character_emotions")}
+        adds = []
+        if "prefix_prompt" not in cols:
+            adds.append("ALTER TABLE card_character_emotions ADD COLUMN prefix_prompt TEXT DEFAULT ''")
+        if "suffix_prompt" not in cols:
+            adds.append("ALTER TABLE card_character_emotions ADD COLUMN suffix_prompt TEXT DEFAULT ''")
+        if "appearance_id" not in cols:
+            adds.append("ALTER TABLE card_character_emotions ADD COLUMN appearance_id INTEGER DEFAULT 0")
+        if "prompt_text" not in cols:
+            # 情感与表现页的独立提示词（不走卡牌模板）。老数据补空串 = 继续用原来的拼装。
+            adds.append("ALTER TABLE card_character_emotions ADD COLUMN prompt_text TEXT DEFAULT ''")
+        if adds:
+            for sql in adds:
+                conn.execute(text(sql))
+            conn.commit()
+
+
+def _migrate_card_voice():
+    """卡牌语音：情感台词语音列 + 卡牌角色音色绑定列。"""
+    insp = inspect(engine)
+    if "card_character_emotions" not in insp.get_table_names():
+        return
+    with engine.connect() as conn:
+        cols = {c["name"] for c in insp.get_columns("card_character_emotions")}
+        if "voice_url" not in cols:
+            conn.execute(text(
+                "ALTER TABLE card_character_emotions "
+                "ADD COLUMN voice_url VARCHAR(500) DEFAULT ''"))
+        conn.commit()
+    if "card_character_profiles" not in insp.get_table_names():
+        return
+    with engine.connect() as conn:
+        cols = {c["name"] for c in insp.get_columns("card_character_profiles")}
+        for col, ddl in (
+            ("tts_engine", "VARCHAR(30) DEFAULT ''"),
+            ("tts_voice_id", "VARCHAR(100) DEFAULT ''"),
+            ("tts_rate", "VARCHAR(10) DEFAULT ''"),
+            ("tts_pitch", "VARCHAR(10) DEFAULT ''"),
+            ("tts_volume", "VARCHAR(10) DEFAULT ''"),
+        ):
+            if col not in cols:
+                conn.execute(text(
+                    f"ALTER TABLE card_character_profiles ADD COLUMN {col} {ddl}"))
+        conn.commit()
+
+
 def init_db():
     """创建所有表"""
     from . import models  # noqa: F401  —— 让新模型（外观配置 / 场景图）注册进 metadata
@@ -468,3 +602,7 @@ def init_db():
     _run_migrations()
     _backfill_appearance_presets()
     _backfill_scene_appearances()
+    _migrate_card_art_sets()
+    _migrate_card_art_templates()
+    _migrate_card_emotion_prompts()
+    _migrate_card_voice()

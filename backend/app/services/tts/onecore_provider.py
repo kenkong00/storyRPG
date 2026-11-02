@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import base64
 import os
+import queue
 import subprocess
 import sys
 import tempfile
@@ -51,18 +52,59 @@ class OneCoreTTSProvider(TTSProvider):
 
     def __init__(self):
         self._proc: subprocess.Popen | None = None
-        self._buf = ""
-        self._lock = threading.Lock()      # OneCore 一次只能串行合成
+        # 读线程把 stdout 按行推进队列，主线程只从队列里带超时地取。
+        # 绝不能在主线程直接 read —— 管道没有输出时 read 会永久阻塞，
+        # 超时形同虚设，线程卡死后再占着 _lock，整个语音子系统就一起停摆。
+        self._q: queue.Queue[str | None] | None = None
+        self._reader: threading.Thread | None = None
+        self._lock = threading.RLock()     # OneCore 一次只能串行合成；可重入，防自我死锁
         self._ready = False
         self._last_error = ""
         self._voices: list[Voice] | None = None
         self._supported = sys.platform == "win32"
+        self._backend = ""                 # winrt / sapi / com / none
+        self._probed_at = 0.0
+        self._probe_lock = threading.Lock()
         self._tmpdir = tempfile.mkdtemp(prefix="rpg_onecore_")
         self._seq = 0
 
     # ---------- 基类要求 ----------
     def is_available(self) -> bool:
-        return self._supported
+        """本机语音是否真的能用。
+
+        只判断「是不是 Windows」是不够的：Win10 精简镜像里 WinRT 语音类型
+        可能整个不存在，SAPI 也可能因权限拿不到音色。以前这里恒返回 True，
+        结果每一句都先白等一次失败、再走降级 —— 玩家体感就是「卡一下才出声」。
+        现在起一次 daemon 问清后端，问不到就老实说不可用。
+        """
+        if not self._supported:
+            return False
+        return self.probe_backend() in ("winrt", "sapi", "com")
+
+    def probe_backend(self) -> str:
+        """返回 winrt / sapi / com / none。结果缓存，失败后 5 分钟内不重试。"""
+        with self._probe_lock:
+            if self._backend and time.time() - self._probed_at < 300:
+                return self._backend
+            try:
+                self._ensure_started()
+                self._send("::BACKEND::")
+                deadline = time.time() + 5
+                backend = "none"
+                while time.time() < deadline:
+                    line = self._readline(timeout=1.0)
+                    if line is None:
+                        if self._q is None:
+                            break
+                        continue
+                    if line.startswith("::BACKEND::"):
+                        backend = line[11:].strip() or "none"
+                        break
+                self._backend = backend
+            except Exception:  # noqa: BLE001
+                self._backend = "none"
+            self._probed_at = time.time()
+            return self._backend
 
     def describe(self) -> dict:
         d = {
@@ -70,6 +112,7 @@ class OneCoreTTSProvider(TTSProvider):
             "name": self.display_name,
             "requires_network": self.requires_network,
             "available": self.is_available(),
+            "backend": self._backend or "unknown",
             "daemon_running": self._proc is not None and self._proc.poll() is None,
         }
         if self._last_error:
@@ -158,19 +201,27 @@ class OneCoreTTSProvider(TTSProvider):
         这样设计是因为本机引擎没有 ffmpeg 之外的转码手段，
         与其让每个 Provider 自己处理格式，不如统一在上层做。
         """
+        self.validate(req)
+        # 音色解析要读音色表，而音色表本身也要拿锁 —— 之前解析写在锁里面，
+        # 这把锁又不是可重入的，于是「持锁 → 要锁」自己等自己，永远不返回。
+        # 所以把解析和启动都挪到加锁之前。
+        voice, rate_val, pitch_val = self._resolve_local(req)
+        self._ensure_started()
+
         # 必须整段加锁：daemon 走的是 stdin/stdout 单行协议，
         # 两个线程同时发命令会让响应错位，谁也拿不到自己那句音频。
         with self._lock:
-            self.validate(req)
-            voice, rate_val, pitch_val = self._resolve_local(req)
-            self._ensure_started()
             txt = self._write_text(req.text)
             out = req.out_path
             parent = os.path.dirname(out)
             if parent:
                 os.makedirs(parent, exist_ok=True)
-            # 原子写：先写 .part，完成后 rename，避免半截文件被当成有效缓存
-            part = out + ".part"
+            # 原子写：先写 .part，完成后 rename，避免半截文件被当成有效缓存。
+            # 注意：临时文件必须保留原来的扩展名（xxx.part.wav 而不是 xxx.wav.part）——
+            # SAPI 的 SpFileStream 是按扩展名选输出格式的，认不出 .part 就只写一个
+            # 46 字节的空 WAV 头，表现就是「本机语音未产出有效音频」。
+            root, ext = os.path.splitext(out)
+            part = root + ".part" + (ext or ".wav")
             try:
                 # pitch 是第 5 段，老版脚本只认 4 段也能跑（pitch 视为 0）
                 self._send(
@@ -204,18 +255,32 @@ class OneCoreTTSProvider(TTSProvider):
                 ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", DAEMON],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                # stderr 必须被消费掉。单独开一个 PIPE 而不读，PowerShell 报错一多
+                # 就会把管道写满并阻塞在写操作上 —— 表现同样整句合成卡死。
+                # 合并进 stdout 由读线程统一收走，不认识的行会被忽略。
+                stderr=subprocess.STDOUT,
                 text=True,
                 encoding="utf-8",
+                errors="replace",
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
         except Exception as exc:  # noqa: BLE001
             self._last_error = f"无法启动本机语音进程：{exc}"
             raise TTSException(self._last_error, self.engine_id)
+
+        self._q = queue.Queue()
+        self._reader = threading.Thread(
+            target=self._pump, args=(self._proc, self._q),
+            name="onecore-reader", daemon=True,
+        )
+        self._reader.start()
+
         deadline = time.time() + STARTUP_TIMEOUT
         while time.time() < deadline:
             line = self._readline(timeout=1.0)
             if line is None:
+                if self._q is None:
+                    break
                 continue
             if line == "::READY::":
                 self._ready = True
@@ -228,10 +293,33 @@ class OneCoreTTSProvider(TTSProvider):
         self._last_error = "本机语音进程启动超时（可能未安装中文语音）"
         raise TTSException(self._last_error, self.engine_id)
 
+    def _pump(self, proc: subprocess.Popen, q: "queue.Queue[str | None]") -> None:
+        """专职读线程：阻塞读整行，读到就入队；进程结束放一个 None 收尾。
+
+        真正的阻塞只发生在这一条线程里，且它不等任何人 —— 主线程永远是
+        「带超时地从队列取」，因此不会再出现「读管道卡死」。
+        """
+        try:
+            stdout = proc.stdout
+            if stdout is None:
+                return
+            for raw in stdout:
+                if raw is None:
+                    break
+                line = str(raw).strip()
+                if line:
+                    q.put(line)
+        except Exception:  # noqa: BLE001
+            pass
+        finally:
+            q.put(None)
+
     def _kill(self) -> None:
         p = self._proc
         self._proc = None
         self._ready = False
+        q, self._q = self._q, None
+        self._reader = None
         if p is None:
             return
         try:
@@ -249,26 +337,27 @@ class OneCoreTTSProvider(TTSProvider):
                 p.kill()
         except Exception:  # noqa: BLE001
             pass
+        # 管道关了，读线程会自己退出；这里顺手把残留行清掉，免得下一次
+        # 启动读到上一轮的 ::SYNTHED:: 而错配。
+        if q is not None:
+            while True:
+                try:
+                    q.get_nowait()
+                except queue.Empty:
+                    break
 
     def _readline(self, timeout: float = 5.0) -> str | None:
-        """按行读 stdout。
-
-        这里必须自己做缓冲：不能直接用 Python 的 readline，因为进程可能长时间没有
-        输出却没退出，那样会一直阻塞到超时，无法做「超时后杀进程重启」的保护。
-        """
-        if self._proc is None or self._proc.stdout is None:
+        """带真超时地读一行。超时返回 None，绝不阻塞调用方。"""
+        q = self._q
+        if q is None:
             return None
-        deadline = time.time() + timeout
-        while "\n" not in self._buf:
-            if time.time() > deadline:
-                return None
-            ch = self._proc.stdout.read(1)
-            if not ch:
-                return None
-            self._buf += ch
-        idx = self._buf.index("\n")
-        line = self._buf[:idx].strip()
-        self._buf = self._buf[idx + 1:]
+        try:
+            line = q.get(timeout=max(0.05, timeout))
+        except queue.Empty:
+            return None
+        if line is None:          # 进程已结束
+            self._q = None
+            return None
         return line
 
     def _send(self, cmd: str) -> None:
@@ -285,6 +374,8 @@ class OneCoreTTSProvider(TTSProvider):
         while time.time() < deadline:
             line = self._readline(timeout=1.0)
             if line is None:
+                if self._q is None:      # 读线程已收尾 = 进程没了，不必空转到超时
+                    break
                 continue
             if line.startswith("::SYNTHED::"):
                 parts = line[11:].split("::")
@@ -302,6 +393,8 @@ class OneCoreTTSProvider(TTSProvider):
             while time.time() < deadline:
                 line = self._readline(timeout=1.0)
                 if line is None:
+                    if self._q is None:
+                        break
                     continue
                 if line.startswith("V|"):
                     parts = line[2:].split("|")

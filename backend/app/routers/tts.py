@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,8 +17,15 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models.character import Character
-from ..models.story import StoryNode, StoryNodeDialogue
+from ..models.story import StoryChapter, StoryNode, StoryNodeDialogue
 from ..services.tts import service as tts
+from ..services.tts.base import SynthRequest
+from .. import jobs
+
+# 整章预载的并发数与句子数上限：别和玩家正在听的实时合成抢带宽，
+# 也别在极端情况下把整章预载拖成几个小时的任务。
+TTS_CHAPTER_WORKERS = 2
+TTS_CHAPTER_PRELOAD_CAP = 2000
 
 router = APIRouter(prefix="/api/tts", tags=["人物语音"])
 
@@ -75,6 +83,39 @@ def _apply_character(cfg: dict[str, Any], ch: Character | None) -> dict[str, Any
         cfg["pitch"] = ch.tts_pitch
     if not cfg.get("volume") and ch.tts_volume:
         cfg["volume"] = ch.tts_volume
+    return cfg
+
+
+def _apply_card_voice(db: Session, cfg: dict[str, Any], ch_id: int | None) -> dict[str, Any]:
+    """卡牌系统里给「这个角色当卡牌角色时」单独绑的音色，优先级高于人物默认配置。
+
+    后台「卡牌系统 → 战斗情感 → 情感与表现 → 绑定音色」存的是
+    CardCharacterProfile.tts_*，而 /tts/synth 以前只读 Character.tts_*，
+    两边各存各的 —— 于是不管在卡牌页给角色挑了多好的嗓子，
+    战斗里永远还是同一个默认音（玩家口中的「老旧喇叭音」）。
+    """
+    if not ch_id:
+        return cfg
+    try:
+        from ..models.cardgame import CardCharacterProfile
+        prof = db.query(CardCharacterProfile).filter(
+            CardCharacterProfile.character_id == int(ch_id)).first()
+    except Exception:  # noqa: BLE001  卡牌模块缺席时不影响剧情语音
+        return cfg
+    if not prof:
+        return cfg
+    if (prof.tts_engine or "").strip():
+        cfg["engine_id"] = prof.tts_engine.strip()
+    if (prof.tts_voice_id or "").strip():
+        cfg["voice_id"] = prof.tts_voice_id.strip()
+    for key, col in (("rate", prof.tts_rate), ("pitch", prof.tts_pitch),
+                     ("volume", prof.tts_volume)):
+        v = str(col or "").strip()
+        if v:
+            try:
+                cfg[key] = int(v)
+            except ValueError:
+                pass
     return cfg
 
 
@@ -179,6 +220,7 @@ async def synth_one(body: SynthIn, db: Session = Depends(get_db)):
         "rate": body.rate, "pitch": body.pitch, "volume": body.volume,
         "gender": body.gender,
     }, ch)
+    cfg = _apply_card_voice(db, cfg, body.character_id)
 
     from ..services.tts.base import SynthRequest
     req = SynthRequest(text=body.text, voice_id=cfg["voice_id"],
@@ -266,7 +308,20 @@ def status(db: Session = Depends(get_db)):
         "default_engine": tts.registry.default_engine(),
         "ffmpeg": tts.ffmpeg_available(),
         "cache": tts.cache_info(),
+        "breaker": tts.breaker_state(),
     }
+
+
+@router.post("/reset")
+def reset(db: Session = Depends(get_db)):
+    """一键复位语音子系统。
+
+    什么时候用：语音卡住过、或者换了音色/引擎之后还是不生效。
+    做的事：清熔断 → 重建线程池与信号量 → 重启本机语音子进程。
+    不会影响正在播放的音频，也不会中断剧情。
+    """
+    info = tts.reset()
+    return {**info, "engines": tts.list_engines(), "breaker": tts.breaker_state()}
 
 
 @router.post("/warmup")
@@ -295,3 +350,92 @@ def reload_config(db: Session = Depends(get_db)):
     """重新读取 data/tts_config.json —— 新增语音大模型引擎后不必重启后端。"""
     added = tts.reload_http_config()
     return {"ok": True, "engines": added, "all": tts.list_engines()}
+
+
+# ---------------------------------------------------------------- 整章预载
+@router.post("/chapter/{chapter_id}")
+def preload_chapter(chapter_id: int, db: Session = Depends(get_db)):
+    """整章语音预载 —— 「进入章节就事前装载」方案的核心。
+
+    把整章所有对话句子（含旧式单句节点）后台合成进磁盘缓存。
+    玩家游玩时按节点取用即缓存命中（0ms 合成），不再每翻一节点就现场合成 1~3 秒。
+    接口本身不阻塞：立即返回总数与任务号，合成在后台线程跑。
+
+    缓存键与 /tts/synth、/tts/nodes 完全一致（engine+voice+rate+pitch+volume+text），
+    所以预载写进去的文件，后面节点播放时直接命中，前端甚至不需要改播放逻辑。
+    """
+    chapter = db.query(StoryChapter).filter(StoryChapter.id == chapter_id).first()
+    if not chapter:
+        raise HTTPException(404, "章节不存在")
+
+    nodes = (db.query(StoryNode)
+             .filter(StoryNode.chapter_id == chapter_id)
+             .order_by(StoryNode.order_index, StoryNode.id)
+             .all())
+    node_ids = [n.id for n in nodes]
+    if not node_ids:
+        return {"ok": True, "total": 0, "job_id": None, "message": "该章节没有节点"}
+
+    prepared = _build_node_items(db, node_ids, include_single=True)
+    # 手工指定过音频的句子直接命中，不需要合成
+    todo = [p for p in prepared if not p.get("manual_voice")]
+    total = len(todo)
+    if not total:
+        return {"ok": True, "total": 0, "job_id": None,
+                "message": "该章节没有需要合成的台词"}
+
+    capped = False
+    if total > TTS_CHAPTER_PRELOAD_CAP:
+        todo = todo[:TTS_CHAPTER_PRELOAD_CAP]
+        total = len(todo)
+        capped = True
+
+    job = jobs.create("tts_chapter", f"整章语音预载 · {chapter.title}",
+                      page="story", total=total,
+                      message="后台合成中，完成后按节点取用即秒出")
+    jobs.spawn(jobs.guard, job["id"], _run_chapter_preload, job["id"], todo,
+               chapter.title + ("（已封顶）" if capped else ""))
+    return {"ok": True, "total": total, "job_id": job["id"],
+            "chapter_title": chapter.title, "capped": capped}
+
+
+def _run_chapter_preload(job_id: str, items: list[dict[str, Any]], _title: str) -> None:
+    """后台线程：逐句合成进缓存。已缓存的句子 synth_sync 会直接跳过（0 成本）。"""
+    done = 0
+    try:
+        with ThreadPoolExecutor(max_workers=TTS_CHAPTER_WORKERS,
+                                thread_name_prefix="tts-ch") as pool:
+            futs = [pool.submit(_preload_one, it) for it in items]
+            for f in as_completed(futs):
+                try:
+                    f.result()
+                except Exception:  # noqa: BLE001
+                    pass
+                done += 1
+                if done % 10 == 0 or done == len(items):
+                    jobs.update(job_id, done=done,
+                                message=f"整章语音预载 {done}/{len(items)} 句")
+        jobs.finish(job_id, message="整章语音预载完成")
+    except Exception as exc:  # noqa: BLE001
+        jobs.fail(job_id, f"预载中断：{exc}"[:200])
+
+
+def _preload_one(it: dict[str, Any]) -> None:
+    """合成单句进缓存。任何异常都吞掉——单句失败不影响整章，前端会静默跳过。"""
+    try:
+        text = (it.get("text") or "").strip()
+        if not text:
+            return
+        req = SynthRequest(
+            text=text,
+            voice_id=it.get("voice_id") or "",
+            rate=int(it.get("rate") or 0),
+            pitch=int(it.get("pitch") or 0),
+            volume=int(it.get("volume") or 0),
+            out_format="mp3",
+        )
+        # synth_sync 自带缓存命中判断：命中即跳过，未命中才真正合成
+        tts.synth_sync(req, it.get("engine_id") or None,
+                       allow_degrade=True, gender=it.get("gender") or "unknown")
+    except Exception:  # noqa: BLE001
+        pass

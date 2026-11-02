@@ -354,14 +354,26 @@ def build_role_voices(engine: str = "edge",
     out: list[Voice] = []
     for key, meta in ROLE_VOICES.items():
         base = str(meta.get("base") or "")
+        base_name = ""
         if base_by_gender is not None:
             remapped = base_by_gender.get(str(meta.get("gender", "")))
             if not remapped:
                 continue      # 本引擎没有这个性别的音色，派生不出
             base = remapped
+            # Windows 实际返回的长名（如 "Microsoft Huihui Desktop - Chinese (Simplified)"）
+            # 与目录里的短键（"Microsoft Huihui"）是前缀关系，取中文名时做一次前缀回退。
+            meta_one = ONECORE_VOICES.get(remapped)
+            if meta_one is None:
+                for k, m in ONECORE_VOICES.items():
+                    if str(k) and str(remapped).lower().startswith(str(k).lower()):
+                        meta_one = m
+                        break
+            base_name = str((meta_one or {}).get("name", remapped))
         elif base_voices is not None and base and base not in base_voices:
             continue          # 该引擎没有这个基础音色，就不展示这条派生声线
         known = base_voices.get(base) if base_voices else None
+        if base_name == "" and known is not None:
+            base_name = known.name or base
         out.append(Voice(
             voice_id=make_derived_id(base, key),
             name=str(meta.get("name", key)),
@@ -375,6 +387,7 @@ def build_role_voices(engine: str = "edge",
             derived=True,
             rate=int(meta.get("rate") or 0),
             pitch=int(meta.get("pitch") or 0),
+            base_name=base_name,
         ))
     return out
 

@@ -178,17 +178,19 @@ def compile_layout(layout, width=None, height=None, base_prompt=None):
         return {"prompt": "", "layout_json": "", "width": w, "height": h, "count": 0,
                 "skipped": skipped, "error": "还没有可用的画框：至少给一个框填上描述"}
 
-    # 整体描述（summary.caption）：场景级 base_prompt 优先，再补上各人物描述，
-    # 与 items 里每段描述各出现一次（MOSS 官方样例就是 summary 里一遍、items 里又一遍）。
-    char_caps = [it["caption"] for it in items if it["label"] == "character"]
-    parts = []
-    if base_prompt and str(base_prompt).strip():
-        parts.append(str(base_prompt).strip())
-    if char_caps:
-        parts.append("；".join(char_caps))
-    summary_caption = "；".join(parts) if parts else "画面由以下区域组成（各区域按画框定位）"
+    # 整体描述（summary.caption）只写「场景级」信息，绝不再复述各画框的描述。
+    #
+    # 历史坑：以前这里会把每个人物的 caption 拼进 summary（想对齐 MOSS 官方样例），
+    # 结果提示词里出现「A的提示词 + B的提示词」在最前面，items 里又各来一遍 A、B ——
+    # 同一段描述被模型读两遍，既浪费 token，又容易把同一个人物画成两个。
+    # 现在规则很硬：**任何一个画框的描述，在整个提示词里只出现一次**（就在 items 里）。
+    summary_caption = ""
     if summary:
-        summary_caption = summary
+        summary_caption = summary.strip()          # 用户在布局里手写的整体描述
+    elif base_prompt and str(base_prompt).strip():
+        summary_caption = str(base_prompt).strip()  # 场景名 + 场景补充
+    if not summary_caption:
+        summary_caption = "画面由以下区域组成（各区域按画框定位）"
 
     # 输出带 bbox 坐标的 MOSS 布局 JSON（abs_centralized / yxyx），与官方 compile_prompt 口径一致。
     # prompt 给编辑框/送 ComfyUI 看；layout_json 为紧凑版供节点消费。

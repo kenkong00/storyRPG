@@ -29,6 +29,16 @@ MAX_CONCURRENCY = 4
 _executor = ThreadPoolExecutor(max_workers=MAX_CONCURRENCY, thread_name_prefix="tts")
 _sem = asyncio.Semaphore(MAX_CONCURRENCY)
 
+# ---- 三道保险，专治「一个引擎抽风拖垮整站」 ----
+# 1) 单句硬超时：引擎再怎么没响应，请求也必须按时返回（转成 error，前端静默跳过）。
+SYNTH_DEADLINE = 25.0
+# 2) 排队超时：4 个槽位都被占住时，宁可直接告诉前端「忙」，也不让它无限等下去。
+QUEUE_DEADLINE = 8.0
+# 3) 熔断：某引擎连续失败 N 次，就冷却一段时间，不再让每句话都白等一个超时。
+BREAKER_THRESHOLD = 3
+BREAKER_COOLDOWN = 90.0
+_breaker: dict[str, dict[str, float]] = {}
+
 _FFMPEG = shutil.which("ffmpeg")
 
 
@@ -41,6 +51,63 @@ def set_ffmpeg(path: str | None) -> None:
 
 def ffmpeg_available() -> bool:
     return bool(_FFMPEG)
+
+
+def ffmpeg_path() -> str | None:
+    """把探测到的 ffmpeg 路径暴露出去 —— 录音转码、静音裁剪这些也用同一个。"""
+    _detect_ffmpeg_once()
+    return _FFMPEG
+
+
+def _breaker_open(engine_id: str) -> bool:
+    """该引擎是否处于熔断冷却期。"""
+    b = _breaker.get(engine_id)
+    return bool(b and b.get("until", 0) > time.time())
+
+
+def _breaker_fail(engine_id: str) -> None:
+    b = _breaker.setdefault(engine_id, {"fails": 0, "until": 0})
+    b["fails"] = b.get("fails", 0) + 1
+    if b["fails"] >= BREAKER_THRESHOLD:
+        b["until"] = time.time() + BREAKER_COOLDOWN
+
+
+def _breaker_ok(engine_id: str) -> None:
+    _breaker.pop(engine_id, None)
+
+
+def breaker_state() -> dict:
+    now = time.time()
+    return {
+        k: {"fails": int(v.get("fails", 0)),
+            "cooldown_left": max(0, int(v.get("until", 0) - now))}
+        for k, v in _breaker.items()
+    }
+
+
+def reset(state: dict | None = None) -> dict:
+    """紧急复位：清掉熔断、重建线程池与信号量。
+
+    线程池里若有病态任务卡住（引擎 bug），重建一个池子比等它超时更快复原；
+    旧池子的线程设为 daemon 不能强制回收，但不会再影响新请求。
+    """
+    global _executor, _sem
+    _breaker.clear()
+    old = _executor
+    _executor = ThreadPoolExecutor(max_workers=MAX_CONCURRENCY, thread_name_prefix="tts")
+    _sem = asyncio.Semaphore(MAX_CONCURRENCY)
+    try:
+        old.shutdown(wait=False)
+    except Exception:  # noqa: BLE001
+        pass
+    # 顺手把本机语音子进程也重启一次，卡死的 daemon 一律换掉
+    try:
+        p = registry.get("onecore")
+        if p is not None and hasattr(p, "shutdown"):
+            p.shutdown()  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001
+        pass
+    return {"ok": True, **(state or {})}
 
 
 def set_ffmpeg_search(paths: Iterable[str]) -> None:
@@ -140,9 +207,9 @@ def synth_sync(req: SynthRequest, engine_id: str | None = None,
 
     engine_id = engine_id or registry.default_engine()
     provider = registry.get(engine_id)
-    if provider is None or not provider.is_available():
-        # 首选引擎不可用时也别急着报错，先看看降级链
-        cands = registry.fallback_candidates()
+    if provider is None or not provider.is_available() or _breaker_open(engine_id):
+        # 首选引擎不可用（或正在熔断冷却）时也别急着报错，先看看降级链
+        cands = [p for p in registry.fallback_candidates() if not _breaker_open(p.engine_id)]
         provider = cands[0] if cands else None
         if provider is None:
             return AudioResult(error=f"没有可用的语音引擎（{engine_id} 不可用且无备选）")
@@ -173,11 +240,15 @@ def synth_sync(req: SynthRequest, engine_id: str | None = None,
                              error=f"{exc}"[:300])
 
     if result.bytes:
+        _breaker_ok(engine_id)
         return result
+    _breaker_fail(engine_id)
 
     # ---- 降级链：主引擎失败，换备用引擎再试一次 ----
     if allow_degrade:
         for alt in registry.fallback_candidates(exclude={engine_id}):
+            if _breaker_open(alt.engine_id):
+                continue
             alt_path = tts_cache.cache_path(tts_cache.cache_key(req, alt.engine_id), "mp3")
             # 降级时照原样把音色传下去，不要换成备用引擎的默认值。
             # Provider 自己会把不认识的 ID 映射到本引擎能用的音色（并保留声线的
@@ -190,10 +261,13 @@ def synth_sync(req: SynthRequest, engine_id: str | None = None,
             try:
                 alt_result = _produce(alt, alt_req, alt_path, alt.engine_id, alt_voice)
             except Exception:  # noqa: BLE001, S110
+                _breaker_fail(alt.engine_id)
                 continue
             if alt_result.bytes:
+                _breaker_ok(alt.engine_id)
                 alt_result.degraded = True
                 return alt_result
+            _breaker_fail(alt.engine_id)
     # 全部失败：返回空 URL，前端会静默跳过，剧情继续走
     return result if result.error else AudioResult(error="语音合成失败且降级未成功")
 
@@ -344,11 +418,33 @@ def _pick_default_voice(provider, gender: str = "unknown") -> str:
 # ---------------------------------------------------------------- 异步包装
 async def synth_async(req: SynthRequest, engine_id: str | None = None,
                       allow_degrade: bool = True, gender: str = "unknown") -> AudioResult:
-    """异步合成：把阻塞的合成放进线程池，避免拖死 uvicorn 的事件循环。"""
+    """异步合成：把阻塞的合成放进线程池，避免拖死 uvicorn 的事件循环。
+
+    两道超时必须都在：
+      * 排队超时 —— 槽位被占满时立刻返回「忙」，不让请求无限堆积；
+      * 执行超时 —— 引擎真的没响应时按时收工，前端拿到 error 静默跳过。
+    少了任何一道，一次引擎抽风就会变成「整个后台点不动」。
+    """
     loop = asyncio.get_running_loop()
-    async with _sem:
-        return await loop.run_in_executor(
+    try:
+        await asyncio.wait_for(_sem.acquire(), timeout=QUEUE_DEADLINE)
+    except asyncio.TimeoutError:
+        return AudioResult(error="语音合成排队超时（引擎繁忙），本句跳过")
+    try:
+        fut = loop.run_in_executor(
             _executor, lambda: synth_sync(req, engine_id, allow_degrade, gender))
+        try:
+            return await asyncio.wait_for(fut, timeout=SYNTH_DEADLINE)
+        except asyncio.TimeoutError:
+            # 线程还在跑（无法安全强杀），但请求必须马上返回。
+            # 该引擎记一次失败，连续几次后熔断，避免下一句又白等 25 秒。
+            if engine_id:
+                _breaker_fail(engine_id)
+            return AudioResult(
+                engine=engine_id or "", voice_id=req.voice_id or "",
+                error=f"语音合成超时（>{int(SYNTH_DEADLINE)}s），本句跳过")
+    finally:
+        _sem.release()
 
 
 async def synth_batch(items: list[dict[str, Any]]) -> list[dict[str, Any]]:

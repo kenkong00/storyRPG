@@ -1,14 +1,14 @@
 // ========== 人物 × 场景 合成（边界框拼图版） ==========
-// 数据模型：一条「合成图配置」包含若干「元素」（人物 / 景物 / 文字）。
+// 数据模型：一条「合成图配置」包含若干「元素」（人物 / 物体 / 文字）。
 // 每个元素既是一段提示词来源，也是画布上的一个框——单一数据源，不再出现
 // 「人物行」和「角色框」两套数据各自往提示词里灌导致的重复。
 //   · 元素框（中栏）里增删改元素 → 左侧画布实时增删改框 → 右侧提示词实时重编译
 //   · 点画布上的框 或 点元素框里的子元素，二者双向高亮联动
-//   · 类型在创建时就固定（人物框不能变成景物框），避免误改
+//   · 类型在创建时就固定（人物框不能变成物体框），避免误改
 //   · 出图：有元素就按布局编译；勾选若干条 → 顶部「生成勾选的合成图」逐条排队
 Admin.registerPage('compose', async (container) => {
   const state = {
-    chars: [], scenes: [], poses: [], poseCats: {},
+    chars: [], scenes: [],
     presetsByChar: {},          // charId -> [外观配置]
     configs: [],                // 已保存的合成配置
     checked: new Set(),         // 勾选要生成的配置 id
@@ -28,7 +28,8 @@ Admin.registerPage('compose', async (container) => {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const TYPE_MAP = { player: '玩家', npc: 'NPC', enemy: '敌人', ally: '盟友' };
-  const BB_TXT = { character: '人物', object: '景物', text: '文字', scene: '场景' };
+  // 「景物」统一改叫「物体」：它不只是背景陈设，道具 / 建筑 / 载具都算
+  const BB_TXT = { character: '人物', object: '物体', text: '文字', scene: '场景' };
   const STATUS_TXT = {
     queued: '排队中', running: '生成中', paused: '已暂停', done: '已完成',
     partial: '部分完成', error: '失败', canceled: '已取消', expired: '任务已过期',
@@ -80,9 +81,9 @@ Admin.registerPage('compose', async (container) => {
           <div class="cmp-h"><span>元素框</span>
             <span class="cmp-h-ico">
               <button class="cmp-ico" id="cmp-add-char" title="添加人物元素">👤 人物</button>
-              <button class="cmp-ico" id="cmp-add-obj" title="添加景物元素">🌄 景物</button>
+              <button class="cmp-ico" id="cmp-add-obj" title="添加物体元素">🌄 物体</button>
               <button class="cmp-ico" id="cmp-add-text" title="添加文字元素">🅣 文字</button>
-              <button class="cmp-ico" id="cmp-add-scene" title="添加场景元素（下拉选场景、显示场景提示词）">🌐 场景</button>
+              <button class="cmp-ico" id="cmp-add-scene" title="添加场景元素（可插入图片，提示词一起带进来）">🌐 场景</button>
               <button class="cmp-ico ghost" id="cmp-elem-clear" title="清空所有元素">✕ 清空</button>
             </span>
           </div>
@@ -96,7 +97,7 @@ Admin.registerPage('compose', async (container) => {
             </span>
           </div>
           <textarea class="cmp-prompt" id="cmp-prompt" spellcheck="false"
-            placeholder="在「元素框」里加人物 / 景物 / 文字，这里会实时编译出布局提示词"></textarea>
+            placeholder="在「元素框」里加人物 / 物体 / 文字，这里会实时编译出布局提示词"></textarea>
         </section>
       </div>
 
@@ -111,15 +112,13 @@ Admin.registerPage('compose', async (container) => {
 
   // ==================== 数据加载 ====================
   async function loadBase() {
-    const [chars, scenes, lib] = await Promise.all([
+    // 动作库已不再需要（人物元素里没有「动作」了）；场景表只为老配置的缩略图兜底
+    const [chars, scenes] = await Promise.all([
       Admin.get('/characters').catch(() => []),
       Admin.get('/scenes/').catch(() => []),
-      Admin.get('/poses/library').catch(() => ({ poses: [], categories: [] })),
     ]);
     state.chars = chars || [];
     state.scenes = scenes || [];
-    state.poses = lib.poses || [];
-    (lib.categories || []).forEach(c => { state.poseCats[c.id] = c.name; });
   }
 
   async function loadConfigs() {
@@ -171,43 +170,26 @@ Admin.registerPage('compose', async (container) => {
   function objectElements() { return layoutItems().filter(b => b.type === 'object'); }
   function noteSuffix(note) { return (note && String(note).trim()) ? '，' + String(note).trim() : ''; }
 
-  /** 动作下拉：按分类分 optgroup，当前选中项高亮；空值 = 无动作 */
-  function poseOptions(cur) {
-    const opts = ['<option value="">— 无动作 —</option>'];
-    const byCat = {};
-    (state.poses || []).forEach(p => {
-      const cat = p.cat || '';
-      (byCat[cat] = byCat[cat] || []).push(p);
-    });
-    Object.keys(byCat).forEach(cat => {
-      const catName = cat ? (state.poseCats[cat] || cat) : '其他动作';
-      if (cat) opts.push(`<optgroup label="${esc(catName)}">`);
-      byCat[cat].forEach(p => {
-        const sel = (p.id === cur) ? ' selected' : '';
-        opts.push(`<option value="${esc(p.id)}"${sel}>${esc(p.name || p.id)}</option>`);
-      });
-      if (cat) opts.push('</optgroup>');
-    });
-    return opts.join('');
-  }
-
   // ==================== 配置列表 ====================
   function renderList() {
     $('cmp-cfg-count').textContent = state.configs.length;
     const host = $('cmp-cfg-list');
     if (!state.configs.length) {
-      host.innerHTML = '<div class="cmp-empty">还没有合成配置。<br>点右上「＋ 新建」建一条，在「元素框」里加人物/景物，勾上就能出图。</div>';
+      host.innerHTML = '<div class="cmp-empty">还没有合成配置。<br>点右上「＋ 新建」建一条，在「元素框」里加人物/物体，勾上就能出图。</div>';
       return;
     }
     host.innerHTML = state.configs.map(c => {
       const scene = sceneOf(c.scene_id);
-      const sceneImg = (scene && scene.background_image) ? esc(scene.background_image) : '';
+      const sceneItem = ((c.layout && c.layout.items) || []).find(it => it.type === 'scene' && it.image);
+      const sceneImg = esc((sceneItem && sceneItem.image) || (scene && scene.background_image) || '');
       const firstChar = (c.characters || [])[0];
       const ch = firstChar ? charOf(firstChar.character_id) : null;
+      const imgChars = ((c.layout && c.layout.items) || [])
+        .filter(it => it.type === 'character' && it.image && !it.character_id).length;
       const who = (c.characters || []).map(x => {
         const cc = charOf(x.character_id);
         return cc ? cc.name : ('#' + x.character_id);
-      }).join('、') || '未选人物';
+      }).join('、') || (imgChars ? `${imgChars} 个图片人物` : '未选人物');
       const boxN = (c.layout && c.layout.items && c.layout.items.length) || 0;
       const desc = `${who} · ${esc(scene ? scene.name : '未选场景')}${boxN ? ' · ' + boxN + ' 元素' : ''}`;
       return `
@@ -267,7 +249,8 @@ Admin.registerPage('compose', async (container) => {
           type, x, y, w, h,
           character_id: b.character_id ? Number(b.character_id) : null,
           appearance_id: b.appearance_id ? Number(b.appearance_id) : null,
-          pose_id: b.pose_id || '',
+          // 动作已从合成页移除：老配置里的 pose_id 一律清掉，避免提示词里还在写动作
+          pose_id: '',
           note: b.note || '',
           character_name: b.character_name || '',
           scene_id: b.scene_id ? Number(b.scene_id) : null,
@@ -359,6 +342,52 @@ Admin.registerPage('compose', async (container) => {
       : '<div class="ph">选场景后显示缩略图</div>';
   }
 
+  // ==================== 插入图片（人物 / 物体 / 场景共用一套） ====================
+  // 语义：插进来的图片就是这一格的内容 —— 画框里显示它，提示词直接取它的 prompt，
+  // 手改过就不再被自动生成覆盖（auto=false）。人物的「选人物」随之失效。
+  async function insertImageFor(i) {
+    const el = layoutItems()[i];
+    if (!el) return;
+    if (!window.AssetPicker) { Admin.toast('素材选择器未加载', 'error'); return; }
+    const titles = { scene: '插入场景图（定位到素材库 › 场景）', character: '插入人物图', object: '插入物体图' };
+    const a = await AssetPicker.open({
+      kind: el.type === 'scene' ? 'scene' : 'all',
+      currentUrl: el.image || '',
+      title: titles[el.type] || '插入图片',
+    });
+    if (!a || !a.url) return;
+    el.image = a.url;
+    const txt = (a.prompt || '').trim();
+    el.caption = txt;
+    el.base = txt;
+    el.auto = false;
+    if (el.type === 'character') {
+      el.character_id = null;
+      el.appearance_id = null;
+      el.character_name = '';
+    }
+    if (el.type === 'scene') {
+      // 场景改成「纯图片驱动」：配置级场景一起清掉，免得旧场景的描述还混进提示词
+      el.scene_id = null;
+      if (state.edit) { state.edit.scene_id = null; state.edit.scene_appearance = null; }
+    }
+    state.dirty = true;
+    renderElements(); renderCanvas(); schedulePreview();
+    Admin.toast(txt ? '已插入图片，提示词取自这张图（可再手改）' : '已插入图片（这张图没带提示词，请手动补一句）', 'success');
+  }
+
+  function clearImageFor(i) {
+    const el = layoutItems()[i];
+    if (!el) return;
+    el.image = '';
+    el.caption = '';
+    el.base = '';
+    el.auto = (el.type === 'character');   // 人物回到自动生成；物体/场景留空由用户写
+    state.dirty = true;
+    renderElements(); renderCanvas(); schedulePreview();
+    if (el.type === 'character' && el.character_id) refreshCharCaptions();
+  }
+
   /** 一个场景的「拼装外观 + 该场景提示词 + 封面图」——场景元素的唯一数据来源 */
   async function sceneBundle(sceneId) {
     const sid = Number(sceneId) || 0;
@@ -389,23 +418,6 @@ Admin.registerPage('compose', async (container) => {
       image: (sc && sc.background_image) ? sc.background_image : '',
       name: (sc && sc.name) || '',
     };
-  }
-
-  async function onSceneChange(sid) {
-    const e = state.edit;
-    e.scene_id = sid ? Number(sid) : null;
-    e.scene_appearance = null;
-    let sceneCaption = '';
-    if (e.scene_id) {
-      const b = await sceneBundle(e.scene_id);
-      e.scene_appearance = Object.keys(b.app || {}).length ? b.app : null;
-      sceneCaption = b.caption;
-    }
-    state.dirty = true;
-    refreshSceneThumb();
-    schedulePreview();
-    await applySceneToBoxes();
-    return sceneCaption;
   }
 
   /** 加载配置后，把场景元素的缩略图与提示词回填（场景元素只存 scene_id，图/提示词现拉） */
@@ -442,73 +454,36 @@ Admin.registerPage('compose', async (container) => {
     renderElements(); renderCanvas(); schedulePreview();
   }
 
-  // ---- 场景选择浮层（点小图切场景，跟「对话列表」的动作表情选择同一套交互）----
-  let scenePopOutside = null;
-  function closeScenePicker() {
-    const old = document.getElementById('cmp-scene-pop');
-    if (old) old.remove();
-    if (scenePopOutside) { document.removeEventListener('mousedown', scenePopOutside, true); scenePopOutside = null; }
-  }
-  function openScenePicker(i, anchor) {
-    closeScenePicker();
-    const el = layoutItems()[i];
-    if (!el) return;
-    const pop = document.createElement('div');
-    pop.className = 'cmp-scene-pop';
-    pop.id = 'cmp-scene-pop';
-    const cells = (state.scenes || []).map(s => {
-      const img = s.background_image
-        ? `<img src="${esc(s.background_image)}" alt="">`
-        : '<div class="noimg">无封面</div>';
-      return `<div class="cmp-scene-cell${Number(el.scene_id) === s.id ? ' on' : ''}" data-sid="${s.id}" title="${esc(s.name)}">
-        ${img}<span class="nm">${esc(s.name)}</span></div>`;
-    }).join('');
-    pop.innerHTML = `
-      <div class="cmp-scene-pop-h">
-        <span>选择场景 <span class="sub">点图片即切换，提示词跟着换</span></span>
-        <button type="button" class="x" title="关闭">×</button>
-      </div>
-      <div class="cmp-scene-grid">${cells || '<div class="empty">还没有场景，先去「场景管理」建一个</div>'}</div>`;
-    document.body.appendChild(pop);
-
-    const r = anchor.getBoundingClientRect();
-    const W = pop.offsetWidth || 520;
-    const H = pop.offsetHeight || 360;
-    let left = Math.max(8, Math.min(r.left, window.innerWidth - W - 12));
-    let top = r.bottom + 6;
-    if (top + H > window.innerHeight - 8) top = Math.max(8, r.top - H - 6);
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
-
-    pop.querySelector('.x').addEventListener('click', closeScenePicker);
-    pop.querySelectorAll('.cmp-scene-cell').forEach(cell => {
-      cell.addEventListener('click', async () => {
-        const sid = Number(cell.dataset.sid);
-        closeScenePicker();
-        await applySceneToElement(i, sid);
-        Admin.toast('已切换到场景「' + (sceneOf(sid) ? sceneOf(sid).name : '') + '」', 'success');
-      });
-    });
-    scenePopOutside = (ev) => {
-      const p = document.getElementById('cmp-scene-pop');
-      if (p && !p.contains(ev.target) && !ev.target.closest('[data-bact="pick-scene"]')) closeScenePicker();
-    };
-    setTimeout(() => document.addEventListener('mousedown', scenePopOutside, true), 0);
-  }
-
   // ==================== 元素框（中栏） ====================
   function renderElements() {
     const host = $('cmp-elem-list');
     if (!host) return;
     const items = layoutItems();
     if (!items.length) {
-      host.innerHTML = '<div class="cmp-elem-empty">还没有元素。<br>点上方「👤人物 / 🌄景物 / 🅣文字」添加，元素会同时出现在左侧画布上。</div>';
+      host.innerHTML = '<div class="cmp-elem-empty">还没有元素。<br>点上方「👤人物 / 🌄物体 / 🅣文字」添加，元素会同时出现在左侧画布上。</div>';
       return;
     }
     host.innerHTML = items.map((b, i) => {
       const sel = i === bbSel ? ' sel' : '';
       const collapsed = !!b._collapsed;
-      const capHint = b.type === 'scene' ? '（未生成场景提示词）' : '（参数变动后自动生成）';
+      const hasImg = !!b.image;
+      const insBar = (kind) => `
+        <div class="cmp-el-row">
+          <button class="cmp-ico" data-bact="insert-image" data-ei="${i}"
+            title="从素材库插一张图，这张图自己的提示词会一起带进来">🖼 ${hasImg ? '换一张图片' : '插入图片'}</button>
+          ${hasImg ? `<button class="cmp-ico ghost" data-bact="clear-image" data-ei="${i}" title="移除插入的图片">✕ 移除图片</button>` : ''}
+        </div>`;
+      const insBox = (title) => (hasImg ? `
+        <div class="cmp-el-ins">
+          <img src="${esc(b.image)}" alt="">
+          <div class="ins-t">${esc(title)}<span>提示词取自这张图片，可直接改</span></div>
+        </div>` : '');
+      const capBox = (ph) => `
+        <div class="cmp-el-cap">
+          <span class="cap-t">当前提示词 <span class="cap-hint">可直接编辑</span></span>
+          <textarea class="cmp-ta cmp-cap-ta" data-ef="caption" data-ei="${i}"
+            placeholder="${esc(ph)}">${esc(b.caption || '')}</textarea>
+        </div>`;
       let body = '';
       if (b.type === 'character') {
         const presets = state.presetsByChar[Number(b.character_id)] || [];
@@ -516,45 +491,48 @@ Admin.registerPage('compose', async (container) => {
           ? presets.map(a => `<option value="${a.id}" ${Number(b.appearance_id) === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')
           : '<option value="">（默认外观）</option>';
         body = `
+          ${insBox('已插入图片')}
+          ${hasImg ? '' : `
           <label class="cmp-el-f"><span>人物</span>
             <select class="cmp-sel" data-ef="character_id" data-ei="${i}">${state.chars.map(c => `<option value="${c.id}" ${Number(b.character_id) === c.id ? 'selected' : ''}>${esc(c.name)} · ${esc(TYPE_MAP[c.character_type] || c.character_type)}</option>`).join('')}</select></label>
           <label class="cmp-el-f"><span>外观配置</span>
-            <select class="cmp-sel" data-ef="appearance_id" data-ei="${i}">${appOpts}</select></label>
-          <label class="cmp-el-f"><span>动作</span>
-            <select class="cmp-sel" data-ef="pose_id" data-ei="${i}">${poseOptions(b.pose_id)}</select></label>
-          <label class="cmp-el-f full"><span>可添加内容（拼进该人物提示词）</span>
-            <input class="cmp-inp" data-ef="note" data-ei="${i}" value="${esc(b.note || '')}" placeholder="例如：右手握着断剑"></label>
-          <div class="cmp-el-cap"><span class="cap-t">当前提示词</span><span class="cap-x">${esc(b.caption || capHint)}</span></div>`;
+            <select class="cmp-sel" data-ef="appearance_id" data-ei="${i}">${appOpts}</select></label>`}
+          ${insBar()}
+          ${hasImg ? '' : `<label class="cmp-el-f full"><span>可添加内容（拼进该人物提示词）</span>
+            <input class="cmp-inp" data-ef="note" data-ei="${i}" value="${esc(b.note || '')}" placeholder="例如：右手握着断剑"></label>`}
+          ${capBox('这里就是这个人物的提示词，可直接改')}`;
       } else if (b.type === 'object') {
         body = `
-          <label class="cmp-el-f full"><span>景物描述（编译进布局提示词）</span>
-            <textarea class="cmp-ta" data-ef="caption" data-ei="${i}" style="min-height:48px" placeholder="例如：雨夜中的石拱桥，桥下流水泛着月光">${esc(b.caption || '')}</textarea></label>`;
+          ${insBox('已插入图片')}
+          <label class="cmp-el-f full"><span>物体描述（编译进布局提示词）</span>
+            <textarea class="cmp-ta" data-ef="caption" data-ei="${i}" style="min-height:48px" placeholder="例如：雨夜中的石拱桥，桥下流水泛着月光">${esc(b.caption || '')}</textarea></label>
+          ${insBar()}`;
       } else if (b.type === 'scene') {
         const sc = b.scene_id ? sceneOf(b.scene_id) : null;
         body = `
-          <div class="cmp-el-f full"><span>场景（点下面这张图，从场景列表里挑）</span>
-            <button type="button" class="cmp-scene-big" data-bact="pick-scene" data-ei="${i}" title="点这里从场景列表里换场景">
-              ${b.image ? `<img src="${esc(b.image)}" alt="">` : '<span class="ph">点这里选场景</span>'}
-              <span class="ov"><span class="nm">${esc(sc ? sc.name : '未选场景')}</span><span class="tip">切换场景 ▸</span></span>
+          <div class="cmp-el-f full"><span>场景图（从素材库的「场景」里挑一张）</span>
+            <button type="button" class="cmp-scene-big" data-bact="insert-image" data-ei="${i}" title="插入一张场景图，图片的提示词会一起带进来">
+              ${b.image ? `<img src="${esc(b.image)}" alt="">` : '<span class="ph">点这里插入图片</span>'}
+              <span class="ov"><span class="nm">${esc(sc ? sc.name : (b.image ? '已插入图片' : '未选图'))}</span><span class="tip">插入图片 ▸</span></span>
             </button>
           </div>
           <label class="cmp-el-f full"><span>场景补充提示词（可空）</span>
             <input class="cmp-inp" data-ef="scene_prompt" data-ei="${i}" value="${esc(b.scene_prompt || '')}" placeholder="例如：远处有一座亮着灯的塔"></label>
-          <div class="cmp-el-cap"><span class="cap-t">场景提示词</span><span class="cap-x">${esc(b.caption || capHint)}</span></div>`;
+          ${capBox('场景提示词，可直接改')}`;
       } else {
         body = `
           <label class="cmp-el-f full"><span>画面文字内容</span>
             <input class="cmp-inp" data-ef="text" data-ei="${i}" value="${esc(b.text || '')}" placeholder="例如：第三章 · 暗影纪元"></label>`;
       }
       const title = b.type === 'character'
-        ? (b.character_name || '未选人物')
+        ? (b.character_name || (b.image ? '插入的图片' : '未选人物'))
         : (b.type === 'scene'
-          ? (b.scene_id ? (sceneOf(b.scene_id) ? sceneOf(b.scene_id).name : '未选场景') : '未选场景')
-          : (b.type === 'text' ? ('文字：' + (b.text || '未填')) : '景物'));
+          ? (b.scene_id ? (sceneOf(b.scene_id) ? sceneOf(b.scene_id).name : '未选场景') : (b.image ? '插入的图片' : '未选场景'))
+          : (b.type === 'text' ? ('文字：' + (b.text || '未填')) : '物体'));
       return `
         <div class="cmp-el t-${esc(b.type)}${sel}${collapsed ? ' collapsed' : ''}" data-ei="${i}">
           <div class="cmp-el-h">
-            <span class="cmp-el-badge t-${esc(b.type)}">${BB_TXT[b.type] || '景物'}</span>
+            <span class="cmp-el-badge t-${esc(b.type)}">${BB_TXT[b.type] || '物体'}</span>
             <span class="cmp-el-title">${esc(title)}</span>
             ${b.type === 'scene' ? `<button class="cmp-el-mini lock${b.locked ? ' on' : ''}" data-bact="lock" data-ei="${i}"
               title="${b.locked ? '已锁定：画框点不中、拖不动，点此解锁' : '锁定这个画框（防止误拖动）'}">${b.locked ? '🔒' : '🔓'}</button>` : ''}
@@ -572,9 +550,12 @@ Admin.registerPage('compose', async (container) => {
   function syncElementCaption(i) {
     const el = layoutItems()[i];
     if (!el) return;
-    const node = document.querySelector(`.cmp-el[data-ei="${i}"] .cap-x`);
+    const node = document.querySelector(`.cmp-el[data-ei="${i}"] .cap-x, .cmp-el[data-ei="${i}"] textarea[data-ef="caption"]`);
     if (!node) return;
-    node.textContent = el.caption || (el.type === 'scene' ? '（未生成场景提示词）' : '（参数变动后自动生成）');
+    // 正在这个框里打字时别回写，否则光标会被顶到末尾
+    if (node === document.activeElement) return;
+    if (node.tagName === 'TEXTAREA') node.value = el.caption || '';
+    else node.textContent = el.caption || '';
   }
 
   /** 文字元素的标题就是内容，改字时同步标题（同样不重建 DOM） */
@@ -664,14 +645,9 @@ Admin.registerPage('compose', async (container) => {
     renderElements();
     if (type === 'character') {
       await refreshCharCaptions();
-    } else if (type === 'object') {
-      // 景物框默认带上当前场景描述（原来的「填场景」按钮，现在自动化）
-      if (!el.caption && state.edit.scene_id) {
-        const b = await sceneBundle(state.edit.scene_id);
-        if (b.caption) { el.caption = b.caption; el.auto = true; renderElements(); renderCanvas(); }
-      }
-      schedulePreview();
     } else {
+      // 物体 / 文字新建就是空的：以前物体框会自动带上当前场景描述，
+      // 看起来像「刚新建就有提示词」，说不清是自己写的还是系统塞的。
       schedulePreview();
     }
     scrollElemIntoView();
@@ -708,6 +684,8 @@ Admin.registerPage('compose', async (container) => {
     if (field === 'character_id') {
       el.character_id = Number(value) || null;
       el.appearance_id = null;
+      el.image = '';            // 重新选了人物 → 之前插入的图片作废
+      el.auto = true;           // 提示词回到「按人物自动生成」
       if (el.character_id) {
         await ensurePresets(el.character_id);
         const cc = charOf(el.character_id);
@@ -719,10 +697,7 @@ Admin.registerPage('compose', async (container) => {
       await refreshCharCaptions();
     } else if (field === 'appearance_id') {
       el.appearance_id = Number(value) || null;
-      state.dirty = true; renderElements(); renderCanvas();
-      await refreshCharCaptions();
-    } else if (field === 'pose_id') {
-      el.pose_id = value;
+      el.auto = true;
       state.dirty = true; renderElements(); renderCanvas();
       await refreshCharCaptions();
     } else if (field === 'scene_id') {
@@ -737,8 +712,9 @@ Admin.registerPage('compose', async (container) => {
       el.caption = (el.base || '') + noteSuffix(el.note);
       state.dirty = true; syncElementCaption(i); renderCanvas(); schedulePreview();
     } else if (field === 'caption') {
-      el.caption = value; el.auto = false;
-      state.dirty = true; syncElementCaption(i); renderCanvas(); schedulePreview();
+      // 手改过就固定下来（auto=false），之后换人物/换场景也不会把它冲掉
+      el.caption = value; el.auto = false; el.base = value;
+      state.dirty = true; renderCanvas(); schedulePreview();
     } else if (field === 'text') {
       el.text = value;
       state.dirty = true; syncElementTitle(i); renderCanvas(); schedulePreview();
@@ -770,9 +746,10 @@ Admin.registerPage('compose', async (container) => {
     });
   }
 
-  /** 人物元素：按（人物+外观+动作）重新拉一句话描述，note 拼在后面；参数一动就实时刷新 */
+  /** 人物元素：按（人物+外观）重新拉一句话描述，note 拼在后面；参数一动就实时刷新 */
   async function refreshCharCaptions() {
-    const els = charElements().filter(e => e.character_id);
+    // 手改过的（auto=false）和「插入图片」的都不要再回填，否则用户写的提示词会被冲掉
+    const els = charElements().filter(e => e.character_id && e.auto !== false);
     if (!els.length) { renderCanvas(); schedulePreview(); return; }
     try {
       const r = await fetchCaptions(els);
@@ -804,7 +781,7 @@ Admin.registerPage('compose', async (container) => {
 
   // ==================== 边界框画布（左栏） ====================
   function gpSize() {
-    const gp = window.GenParams ? GenParams.get('scenes') : {};
+    const gp = window.GenParams ? GenParams.get('scene_compose') : {};
     return { w: parseInt(gp.width) || 1344, h: parseInt(gp.height) || 768 };
   }
 
@@ -817,7 +794,7 @@ Admin.registerPage('compose', async (container) => {
     host.style.aspectRatio = `${w} / ${h}`;
     const items = layoutItems();
     if (!items.length) {
-      host.innerHTML = '<div class="cmp-bb-empty">还没有元素。<br>点「元素框」里的 👤人物 / 🌄景物 / 🅣文字 / 🌐场景 开始布局，框会显示在这里；拖动移动、四角改大小。</div>';
+      host.innerHTML = '<div class="cmp-bb-empty">还没有元素。<br>点「元素框」里的 👤人物 / 🌄物体 / 🅣文字 / 🌐场景 开始布局，框会显示在这里；拖动移动、四角改大小。</div>';
       return;
     }
     host.innerHTML = items.map((b, i) => {
@@ -826,13 +803,14 @@ Admin.registerPage('compose', async (container) => {
         : (b.type === 'character'
             ? (b.character_name ? b.character_name + '：' : '') + (b.caption || '（未填描述）')
             : (b.type === 'scene'
-                ? (b.caption || '（未生成场景提示词）')
+                ? (b.caption || '（未填场景提示词）')
                 : (b.caption || '（未填描述）')));
       const scName = (b.type === 'scene' && b.scene_id && sceneOf(b.scene_id)) ? '·' + esc(sceneOf(b.scene_id).name) : '';
       return `
         <div class="cmp-bb-box t-${esc(b.type)}${i === bbSel ? ' sel' : ''}${b.locked ? ' locked' : ''}" data-bi="${i}"
           style="left:${(b.x * 100).toFixed(2)}%;top:${(b.y * 100).toFixed(2)}%;width:${(b.w * 100).toFixed(2)}%;height:${(b.h * 100).toFixed(2)}%">
-          <div class="cmp-bb-tag">${b.locked ? '🔒' : ''}${esc(BB_TXT[b.type] || '景物')}${b.type === 'character' && b.character_name ? '·' + esc(b.character_name) : ''}${scName}</div>
+          ${b.image ? `<img class="cmp-bb-img" src="${esc(b.image)}" alt="">` : ''}
+          <div class="cmp-bb-tag">${b.locked ? '🔒' : ''}${esc(BB_TXT[b.type] || '物体')}${b.type === 'character' && b.character_name ? '·' + esc(b.character_name) : ''}${scName}</div>
           <div class="cmp-bb-cap">${esc(inner)}</div>
           <div class="cmp-bb-rs rs-tl" data-rs="${i}" data-corner="tl" title="拖动改大小"></div>
           <div class="cmp-bb-rs rs-tr" data-rs="${i}" data-corner="tr" title="拖动改大小"></div>
@@ -929,7 +907,7 @@ Admin.registerPage('compose', async (container) => {
 
   function composeBody() {
     const e = state.edit;
-    const gp = window.GenParams ? GenParams.get('scenes') : {};
+    const gp = window.GenParams ? GenParams.get('scene_compose') : {};
     const chars = charElements().filter(c => c.character_id).map(c => ({
       character_id: Number(c.character_id),
       appearance_id: c.appearance_id ? Number(c.appearance_id) : null,
@@ -958,12 +936,12 @@ Admin.registerPage('compose', async (container) => {
     if (!e) { ta.value = ''; state.promptMemo[k] = null; return; }
     const items = layoutItems();
     const hasContent = items.some(it =>
-      (it.type === 'character' && it.character_id)
+      (it.type === 'character' && (it.character_id || (it.caption || '').trim()))
       || (it.type === 'object' && (it.caption || '').trim())
-      || (it.type === 'scene' && (it.scene_id || (it.caption || '').trim()))
+      || (it.type === 'scene' && (it.scene_id || it.image || (it.caption || '').trim()))
       || (it.type === 'text' && (it.text || '').trim()));
     if (hasContent) {
-      const gp = window.GenParams ? GenParams.get('scenes') : {};
+      const gp = window.GenParams ? GenParams.get('scene_compose') : {};
       const scene = e.scene_id ? sceneOf(e.scene_id) : null;
       const base = (scene ? scene.name : '') + (e.scene_prompt ? ('：' + e.scene_prompt) : '');
       try {
@@ -1001,7 +979,7 @@ Admin.registerPage('compose', async (container) => {
   // ==================== 保存 / 复制 / 删除 ====================
   function configBody() {
     const e = state.edit;
-    const gp = window.GenParams ? GenParams.get('scenes') : {};
+    const gp = window.GenParams ? GenParams.get('scene_compose') : {};
     const characters = charElements().filter(c => c.character_id).map(c => ({
       character_id: Number(c.character_id),
       appearance_id: c.appearance_id ? Number(c.appearance_id) : null,
@@ -1036,8 +1014,10 @@ Admin.registerPage('compose', async (container) => {
     if (!e) return null;
     const chars = charElements().filter(c => c.character_id);
     const boxes = (e.layout.items || []).filter(b =>
-      (b.type === 'character' && b.character_id) || (b.type === 'object' && (b.caption || '').trim())
-      || (b.type === 'scene' && (b.scene_id || (b.caption || '').trim())) || (b.type === 'text' && (b.text || '').trim()));
+      (b.type === 'character' && (b.character_id || (b.caption || '').trim()))
+      || (b.type === 'object' && (b.caption || '').trim())
+      || (b.type === 'scene' && (b.scene_id || b.image || (b.caption || '').trim()))
+      || (b.type === 'text' && (b.text || '').trim()));
     if (!chars.length && !boxes.length) {
       if (!silent) Admin.toast('先在「元素框」里加至少一个人物的画框', 'error');
       return null;
@@ -1171,7 +1151,7 @@ Admin.registerPage('compose', async (container) => {
     }
     const ids = [...state.checked];
     if (!ids.length) { Admin.toast('先勾选要生成的合成配置', 'error'); return; }
-    const gp = window.GenParams ? GenParams.get('scenes') : {};
+    const gp = window.GenParams ? GenParams.get('scene_compose') : {};
     const prompts = {};
     ids.forEach((id) => { if (isPromptEdited(id)) prompts[id] = state.promptMemo[String(id)].text; });
     try {
@@ -1436,7 +1416,7 @@ Admin.registerPage('compose', async (container) => {
       if (!el) return;
       const what = el.type === 'character'
         ? ('人物「' + (el.character_name || '未选') + '」')
-        : (el.type === 'scene' ? '场景' : (el.type === 'text' ? '文字' : '景物'));
+        : (el.type === 'scene' ? '场景' : (el.type === 'text' ? '文字' : '物体'));
       // 删除必须确认：这很容易误点
       if (!await Admin.confirm('删除这个' + what + '元素？画框和它的提示词会一起移除')) return;
       layoutItems().splice(i, 1);
@@ -1446,10 +1426,16 @@ Admin.registerPage('compose', async (container) => {
       renderCanvas(); renderElements(); schedulePreview();
       return;
     }
-    const pick = e.target.closest('[data-bact="pick-scene"]');
+    const pick = e.target.closest('[data-bact="insert-image"]');
     if (pick) {
       e.stopPropagation();
-      openScenePicker(Number(pick.dataset.ei), pick);
+      await insertImageFor(Number(pick.dataset.ei));
+      return;
+    }
+    const clearImg = e.target.closest('[data-bact="clear-image"]');
+    if (clearImg) {
+      e.stopPropagation();
+      clearImageFor(Number(clearImg.dataset.ei));
       return;
     }
     const lock = e.target.closest('[data-bact="lock"]');
@@ -1544,11 +1530,11 @@ Admin.registerPage('compose', async (container) => {
   });
 
   if (window.GenParams) {
-    try { await GenParams.init($('cmp-gen-params'), { scope: 'scenes' }); }
+    try { await GenParams.init($('cmp-gen-params'), { scope: 'scene_compose' }); }
     catch (e) { $('cmp-gen-params').innerHTML = `<div class="cmp-tip">参数加载失败：${esc(e.message)}</div>`; }
   }
   bindCanvas();
-  if (window.GenParams) GenParams.onChange(() => renderCanvas(), 'scenes');
+  if (window.GenParams) GenParams.onChange(() => renderCanvas(), 'scene_compose');
 
   // ==================== 初始化 ====================
   try {

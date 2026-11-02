@@ -150,12 +150,16 @@ class GenerateReq(BaseModel):
 # ===================== 全局出图参数 =====================
 # 所有需要「调 ComfyUI 出图」的地方都读这一份：动作表情批量、立绘生成、以后可能
 # 加的场景图 / 剧情插图。前端用同一个面板组件渲染，改一处写回服务端，别处自动同步。
+# 基础宽高预设（用户指定的一组）。前端「反转宽高」按钮会基于当前宽高对调，
+# 选预设后仍可手改数字；改数字会自动切到「自定义」。
 SIZE_PRESET_LIST = [
-    {"id": "portrait", "name": "竖版 2:3", "width": 832, "height": 1216},
-    {"id": "portrait_2k", "name": "竖版高清", "width": 1024, "height": 1536},
-    {"id": "square", "name": "方图 1:1", "width": 1024, "height": 1024},
-    {"id": "landscape", "name": "横版 3:2", "width": 1216, "height": 832},
-    {"id": "story", "name": "剧情 16:9", "width": 1280, "height": 720},
+    {"id": "s512", "name": "512 × 512 方图", "width": 512, "height": 512},
+    {"id": "s512x768", "name": "512 × 768 竖版", "width": 512, "height": 768},
+    {"id": "s768", "name": "768 × 768 方图", "width": 768, "height": 768},
+    {"id": "s768x1024", "name": "768 × 1024 竖版", "width": 768, "height": 1024},
+    {"id": "s720x1280", "name": "720 × 1280 竖屏 9:16", "width": 720, "height": 1280},
+    {"id": "s1024x1536", "name": "1024 × 1536 竖版 2:3", "width": 1024, "height": 1536},
+    {"id": "s1080p", "name": "1080P（1920 × 1080）", "width": 1920, "height": 1080},
     {"id": "custom", "name": "自定义", "width": 0, "height": 0},
 ]
 
@@ -258,13 +262,9 @@ def delete_model_preset(name: str):
     return {"ok": True}
 
 
-@router.post("/model-presets/{name}/activate")
-def activate_model_preset(name: str):
-    store = _store()
-    if not store.get_model_preset_by_name(name):
-        raise HTTPException(status_code=404, detail="模型方案不存在")
-    store.set_active_model_preset(name)
-    return {"ok": True}
+# 「设为当前模型方案」接口已下线（用户要求去掉这个功能）：
+# 现在各栏目在各自的「出图参数」里选方案，没选就跟全局出图参数，
+# 后端未指定时按 get_active_model_preset() 的自动回退链取（全局方案 → 第一套）。
 
 
 # ===================== ComfyUI 工作流方案 =====================

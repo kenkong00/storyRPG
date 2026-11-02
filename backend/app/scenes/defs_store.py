@@ -9,7 +9,8 @@ import threading
 from ..config import DATA_DIR
 
 DEFS_PATH = os.path.join(DATA_DIR, "scene_defs.json")
-VERSION = 1
+# v3：元素包微调（自然元素去掉强地貌项、新增园林元素包给庄园/花园）。
+VERSION = 3
 
 _lock = threading.RLock()
 _cache = None
@@ -119,6 +120,20 @@ def _migrate(data):
         have_tids.add(t["id"])
         done_t.add(t["id"])
         changed = True
+
+    # 4) 地点类型的「元素包映射」是结构字段，跟着种子走。
+    #    用户可能改选项名，但改不了某个地点该用哪些元素包，所以这里直接同步。
+    seed_scene = next((d for d in seed["dims"] if d["id"] == "sceneType"), None)
+    if seed_scene:
+        src_packs = {o["id"]: (o.get("packs") or []) for o in seed_scene["options"]}
+        for d in data.get("dims") or []:
+            if d.get("id") != "sceneType":
+                continue
+            for o in d.get("options") or []:
+                p = src_packs.get(o["id"])
+                if p is not None and (o.get("packs") or []) != p:
+                    o["packs"] = p
+                    changed = True
 
     # 记下「已经补过」的清单：既包含这次补进去的，也包含本来就有的，
     # 这样下次启动时用户删掉的维度 / 题材不会被当成"缺失"又补回来。

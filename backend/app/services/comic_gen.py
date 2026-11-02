@@ -227,11 +227,11 @@ def assemble_version_prompt(db, project, version, include_sensitive: bool | None
 
 
 def resolve_params(db, project, cell) -> dict:
-    """格子参数优先，其次工程默认，最后 ComfyUI 全局。"""
+    """格子参数优先，其次工程默认，再其次「漫画」栏目参数（没调过就继承全局）。"""
     store = ComfyUIConfigStore()
     gp = {}
     try:
-        gp = store.get_gen_params()
+        gp = store.get_gen_params("comic")
     except Exception:  # noqa: BLE001
         gp = {}
 

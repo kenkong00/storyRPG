@@ -295,7 +295,7 @@ DEFAULT_CONFIG = {
         "width": 832,
         "height": 1216,
         "size_preset": "portrait",   # portrait / landscape / square / custom
-        "model_preset": "",           # 空 = 用激活方案
+        "model_preset": "",           # 空 = 跟随后端自动回退（全局方案 → 第一套）
         "steps": 0,
         "cfg": 0.0,
         "seed": -1,
@@ -309,6 +309,15 @@ DEFAULT_CONFIG = {
 
 #: 尺寸预设 → (宽, 高)，前后端共用这一套定义
 SIZE_PRESETS = {
+    # 用户指定的基础宽高预设
+    "s512": (512, 512),
+    "s512x768": (512, 768),
+    "s768": (768, 768),
+    "s768x1024": (768, 1024),
+    "s720x1280": (720, 1280),
+    "s1024x1536": (1024, 1536),
+    "s1080p": (1920, 1080),
+    # 旧预设保留，避免历史配置读不到
     "portrait": (832, 1216),
     "landscape": (1216, 832),
     "square": (1024, 1024),
@@ -488,10 +497,23 @@ class ComfyUIConfigStore:
         self.save()
 
     def get_active_model_preset(self):
-        name = self._data["active_model_preset"]
+        """未显式指定方案时用的那套（「设为当前」已下线，这里改成纯自动回退链）：
+            ① 设置 > 全局出图参数里选的方案
+            ② 方案列表里的第一套
+        各栏目自己选的方案由页面参数面板显式传给后端，不经过这里。
+        """
+        name = self._data.get("active_model_preset") or ""
         if name:
-            return self.get_model_preset_by_name(name)
-        return None
+            p = self.get_model_preset_by_name(name)
+            if p:
+                return p
+        gp_name = str((self._data.get("gen_params") or {}).get("model_preset") or "").strip()
+        if gp_name:
+            p = self.get_model_preset_by_name(gp_name)
+            if p:
+                return p
+        presets = self._data.get("model_presets") or []
+        return presets[0] if presets else None
 
     # ---------- ComfyUI 工作流方案（param_presets） ----------
     def get_workflow_presets(self):
@@ -612,10 +634,27 @@ class ComfyUIConfigStore:
         self.save()
 
     # ---------- 全局出图参数（按作用域隔离） ----------
-    # 作用域取值：global / scenes / characters。
+    # 作用域 = 一个「出图入口」。每个栏目各占一格，互相不串：
+    #   global               —— 设置 > 全局出图参数（所有栏目的起点）
+    #   characters           —— 人物管理 / 人物动作表情
+    #   character_appearance —— 人物外观拼装
+    #   scenes               —— 场景管理
+    #   scene_compose        —— 人物场景合成
+    #   comic                —— 漫画制作（格子参数）
+    #   cards                —— 卡牌系统
+    #   cards_appearance     —— 卡牌外观拼装
     # global 复用顶层 gen_params（向后兼容历史数据）；其余作用域各自独立存放在
-    # gen_params_by_scope 下，互不继承 live 全局，避免「在场景改了配置串到人物」。
-    VALID_SCOPES = ("global", "scenes", "characters")
+    # gen_params_by_scope 下。
+    VALID_SCOPES = (
+        "global",
+        "characters",
+        "character_appearance",
+        "scenes",
+        "scene_compose",
+        "comic",
+        "cards",
+        "cards_appearance",
+    )
 
     def _scope_slot(self, scope):
         """返回 (当前存储字典, 写入目标容器, 写入键)。"""
@@ -627,7 +666,13 @@ class ComfyUIConfigStore:
     def get_gen_params(self, scope: str = "global") -> dict:
         base, _, _ = self._scope_slot(scope)
         gp = dict(DEFAULT_CONFIG["gen_params"])
-        gp.update(base)
+        if scope in self.VALID_SCOPES and scope != "global" and not base:
+            # 该栏目还没单独存过 → 以「设置 > 全局出图参数」为起点。
+            # 不这么做的话每个栏目第一次打开都是硬编码的 832×1216，用户会觉得设置白设了。
+            # 只要在本栏目改过一次就会写进自己的格子，从此与别处彻底隔离。
+            gp.update(self._data.get("gen_params") or {})
+        else:
+            gp.update(base)
         # 尺寸预设与宽高保持自洽：选了预设但宽高没手改过时，按预设回填
         preset = gp.get("size_preset") or "custom"
         if preset in SIZE_PRESETS and preset != "custom":
@@ -660,10 +705,10 @@ class ComfyUIConfigStore:
     # ---------- 整体 ----------
     def get_all(self):
         self._data["gen_params"] = self.get_gen_params("global")
-        # 刷新各作用域缓存，确保配置面板拿到最新的全部分域参数
-        by_scope = self._data.setdefault("gen_params_by_scope", {})
-        for sc in self.VALID_SCOPES:
-            if sc == "global":
-                continue
-            by_scope[sc] = self.get_gen_params(sc)
+        # 只刷新「已经存过」的作用域：没存过的格子保持为空，
+        # 这样它继续跟随 global，而不是被一次读配置就固化成一份副本。
+        by_scope = self._data.get("gen_params_by_scope") or {}
+        for sc in list(by_scope.keys()):
+            if sc in self.VALID_SCOPES and sc != "global":
+                by_scope[sc] = self.get_gen_params(sc)
         return self._data

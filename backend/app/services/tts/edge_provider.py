@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import os
 import time
+import urllib.request
 
 from .base import (
     TTSException,
@@ -57,6 +58,49 @@ try:  # 依赖缺失时不能让整个应用崩，降级由 registry 处理
 except Exception:  # noqa: BLE001
     edge_tts = None
     EDGE_AVAILABLE = False
+
+
+# 上次校时的时间戳（秒）。0 表示还没校过。
+_skew_synced_at = 0.0
+_skew_last_delta = 0.0
+
+
+def sync_clock_skew(force: bool = False) -> float:
+    """把 edge_tts 的令牌时钟对齐到真实时间，返回本次调整的秒数。
+
+    为什么必须有这一步：微软的 Sec-MS-GEC 令牌按 **5 分钟窗口** 校验，
+    本机时钟只要慢/快过这个窗口，握手就一律 403 —— 报错长得像「接口挂了」，
+    实际只是时钟偏了几分钟。这里用任意公共站点的 Date 头量出偏差，
+    喂给 edge_tts 自带的 DRM.clock_skew_seconds（它本来就有这个机制，
+    只是对 WebSocket 握手阶段的 403 不会自动触发）。
+    """
+    global _skew_synced_at, _skew_last_delta
+    now = time.time()
+    if not force and _skew_synced_at and now - _skew_synced_at < 1800:
+        return _skew_last_delta
+    try:
+        from edge_tts.drm import DRM
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+    _skew_synced_at = now
+    for url in ("https://www.bing.com", "https://www.baidu.com", "https://www.qq.com"):
+        try:
+            req = urllib.request.Request(url, method="HEAD",
+                                         headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                server_date = resp.headers.get("Date")
+            ts = DRM.parse_rfc2616_date(server_date) if server_date else None
+            if not ts:
+                continue
+            delta = float(ts) - float(DRM.get_unix_timestamp())
+            _skew_last_delta = delta
+            if abs(delta) >= 20:      # 偏差小于 20 秒没意义，别乱动
+                DRM.adj_clock_skew_seconds(delta)
+            return delta
+        except Exception:  # noqa: BLE001
+            continue
+    return 0.0
 
 
 class EdgeTTSProvider(TTSProvider):
@@ -167,13 +211,31 @@ class EdgeTTSProvider(TTSProvider):
         rate = _signed_percent(rate_val)
         pitch = _signed_hz(pitch_val)
         volume = _signed_percent(req.volume)
+        sync_clock_skew()             # 令牌按 5 分钟窗口校验，先校时
         try:
-            comm = edge_tts.Communicate(req.text, voice, rate=rate, pitch=pitch, volume=volume)
+            self._edge_save(req, voice, rate, pitch, volume)
+        except Exception as exc:  # noqa: BLE001
+            msg = str(exc)
+            # 403 有两种可能：时钟又漂了，或服务端一次性抽风。
+            # 强制重新校时再试一次，仍失败才当作真失败往上抛。
+            if "403" in msg:
+                sync_clock_skew(force=True)
+                try:
+                    self._edge_save(req, voice, rate, pitch, volume)
+                except Exception as exc2:  # noqa: BLE001
+                    raise TTSException(
+                        "Edge 拒绝连接（403）：多半是本机时间与标准时间偏差过大，"
+                        f"请校准系统时间。原始信息：{str(exc2)[:180]}", self.engine_id)
+            else:
+                raise TTSException(msg[:300], self.engine_id)
+
+    def _edge_save(self, req: SynthRequest, voice: str,
+                   rate: str, pitch: str, volume: str) -> None:
+        comm = edge_tts.Communicate(req.text, voice, rate=rate, pitch=pitch, volume=volume)
+        try:
             self._run_async(asyncio.wait_for(comm.save(req.out_path), timeout=self.timeout_sec))
         except asyncio.TimeoutError:
             raise TTSException(f"Edge TTS 合成超时（>{self.timeout_sec}s）", self.engine_id)
-        except Exception as exc:  # noqa: BLE001
-            raise TTSException(str(exc)[:300], self.engine_id)
 
     # ---------- 内部工具 ----------
     @staticmethod

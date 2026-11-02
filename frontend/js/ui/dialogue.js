@@ -73,6 +73,12 @@ const DialogueUI = {
 
         const node = full.node;
         this.currentNodeId = node.id;
+
+        // 兜底触发整章预载：哪怕不是从章节封面进来的（跨章节跳转 / 调试入口），
+        // 只要碰到新章节就补跑一次。每章只跑一次由 TTSManager 去重。
+        if (typeof TTSManager !== 'undefined' && node.chapter_id) {
+            try { TTSManager.preloadChapter(node.chapter_id); } catch (e) { /* 忽略 */ }
+        }
         this.currentNodeData = node;
         this._nodeChoices = full.choices || [];
 
@@ -174,6 +180,15 @@ const DialogueUI = {
             };
         }
 
+        // ===== 第一优先：后台已经生成好的语音（故事节点对话列表 🎙 产出的 voice）=====
+        // 进入节点就把整节点的成品音频预下载进浏览器缓存，
+        // 轮到每句时直接播本地文件，零等待、音画同步。
+        (this._lines || []).forEach(line => {
+            if (line.voice && !String(line.voice).startsWith('ERR:')) {
+                TTSManager.preloadUrl(line.voice, TTSManager.keyFor(line.id, nodeId));
+            }
+        });
+
         this._voicePrepareSeq = (this._voicePrepareSeq || 0) + 1;
         const seq = this._voicePrepareSeq;
         TTSManager.prepareNodes([nodeId], (done, total) => {
@@ -250,6 +265,22 @@ const DialogueUI = {
         this._speechTypingSpeed = 50;      // 默认
         this._currentLineKey = null;
         if (typeof TTSManager === 'undefined' || !TTSManager.enabled) return;
+
+        // ===== 第一优先：后台已经生成好的语音 =====
+        // 故事节点对话列表里 🎙 批量/单句生成出的 voice 直接是成品 wav，
+        // 进节点时已预下载。用它播放 = 音画同步（打字速度对齐音频真实时长）。
+        const v = line.voice ? String(line.voice) : '';
+        if (v && !v.startsWith('ERR:') && /^https?:|^\//.test(v)) {
+            const key = TTSManager.keyFor(line.id, this.currentNodeId);
+            const res = await TTSManager.playUrl(v, key);
+            if (res.ok) {
+                this._currentLineKey = key;
+                const text = line.content || '';
+                this._speechTypingSpeed =
+                    TTSManager.typingSpeedFor(res.duration_ms, text.length) || 50;
+                return;
+            }
+        }
 
         const key = TTSManager.keyFor(line.id, this.currentNodeId);
         this._currentLineKey = key;

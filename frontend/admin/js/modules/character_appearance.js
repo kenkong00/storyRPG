@@ -226,7 +226,7 @@ Admin.registerPage('character_appearance', async (container) => {
     box.style.display = open ? '' : 'none';
     if (open && !genPanelMounted && window.GenParams) {
       genPanelMounted = true;
-      try { await GenParams.init($('ap-gen-params'), { scope: 'characters' }); } catch (e) {
+      try { await GenParams.init($('ap-gen-params'), { scope: 'character_appearance' }); } catch (e) {
         $('ap-gen-params').innerHTML = `<div class="ap-hint">参数加载失败：${esc(e.message)}</div>`;
       }
     }
@@ -236,7 +236,7 @@ Admin.registerPage('character_appearance', async (container) => {
     const btn = e.currentTarget;
     if (!state.editor) { Admin.toast('外观还没加载完', 'error'); return; }
     const app = state.editor.getAppearance();
-    const gp = window.GenParams ? GenParams.get('characters') : {};
+    const gp = window.GenParams ? GenParams.get('character_appearance') : {};
     const name = state.chars.find(c => c.id === state.charId)?.name || '';
     btn.disabled = true;
     $('ap-render-status').textContent = '已提交到 ComfyUI，后台生成中（顶栏可看进度）…';
@@ -279,7 +279,7 @@ Admin.registerPage('character_appearance', async (container) => {
             url: it.url, title: `立绘 · ${name || '预览'}`,
             prompt: it.prompt || '', width: it.width, height: it.height,
             meta: { '人物': name || '未归属', '尺寸': it.width ? `${it.width}×${it.height}` : '',
-                    '方案': it.prompt ? (gp.model_preset || '激活方案') : '' },
+                    '方案': it.prompt ? (gp.model_preset || '跟随全局') : '' },
           }], 0);
         }
       }, 2000);

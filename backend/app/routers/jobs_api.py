@@ -77,6 +77,12 @@ def resume_all():
     return {"ok": True, "n": jobs.resume_all()}
 
 
+@router.post("/jobs/cancel-all")
+def cancel_all():
+    """全部取消：停止并清空所有运行中 / 等待中 / 已暂停的任务。"""
+    return {"ok": True, "n": jobs.cancel_all()}
+
+
 @router.post("/jobs/{job_id}/pause")
 def pause_job(job_id: str):
     if not jobs.get(job_id):
@@ -111,21 +117,43 @@ def delete_job(job_id: str):
 # ===================== 按外观出立绘 =====================
 def _run_render(job_id: str, appearance: dict, req: RenderAppearanceReq):
     from . import comfyui as comfyui_router
+    from ..appearance import generator as appearance_generator
     jobs.gate(job_id)
+    # 立绘出图与「外观配置」面板保持所见即所得：提示词只取纯外观维度，
+    # 不掺入【动作表情】与【画面/取景】（那两段属于动作表情模块与渲染指令）。
+    positive = (req.positive or "").strip()
+    if not positive and appearance:
+        positive = appearance_generator.to_prompt(
+            appearance, include_sensitive=req.include_sensitive,
+            framing=appearance.get("framing"), include_pose=False, include_scene=False)
+    # 全局出图参数（步数 / CFG / 种子 / 随机 / 批量张数）同样作用于立绘 / 场景出图，
+    # 让「设置页改一处、所有出图入口同步生效」。
+    try:
+        from ..comfyui.config_store import ComfyUIConfigStore
+        ggp = ComfyUIConfigStore().get_gen_params("global")
+    except Exception:  # noqa: BLE001
+        ggp = {}
+    _seed_mode = (ggp.get("seed_mode") or "random")
+    _random = _seed_mode != "fixed"
+    _seed = None if _random else int(ggp.get("seed") if ggp.get("seed") is not None else 0)
     payload = comfyui_router.GenerateReq(
         appearance=appearance,
-        positive=(req.positive or None),
+        positive=(positive or None),
         negative=req.negative or None,
         mode="t2i",
         include_sensitive=req.include_sensitive,
         prompt_lang="cn",
         width=req.width,
         height=req.height,
-        batch_size=1,
+        steps=int(ggp.get("steps") or 0) or None,
+        cfg=float(ggp.get("cfg") or 0) or None,
+        seed=_seed,
+        seed_mode=_seed_mode,
+        batch_size=max(1, int(ggp.get("count") or 1)),
         filename_prefix=req.filename_prefix or "render",
         model_preset=req.model_preset,
         use_active_model_preset=not req.model_preset,
-        random_seed=True,
+        random_seed=_random,
         ctx={"source": "appearance_render", "character_id": req.character_id,
              "character_name": req.character_name, "job_id": job_id},
     )

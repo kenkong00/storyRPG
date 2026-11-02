@@ -19,7 +19,13 @@ import threading
 from ..config import DATA_DIR
 
 DEFS_PATH = os.path.join(DATA_DIR, "appearance_defs.json")
-DEFS_VERSION = 5
+DEFS_VERSION = 8
+
+# v7：4 个题材各补了一批专属款式（明光铠 / 畳甲 / 鳞甲 / 板钉甲 等），
+#     每个职业的上装 5~6 款、下装 3~4 款；THEME_REV 3 会带着新池重装。
+
+# v6：题材从 20 套自由题材收敛成 4 个（中国武侠风 / 日本武士道 / 魔兽世界 / 欧洲中世纪），
+#     题材只做「参数池约束」，不再往提示词里加风格描述；职业池定义在 theme_class.py。
 
 # v5：美国这个国籍要带足外貌参数（旧版只有「多元混合面孔」一句，信息量不够）
 _US_FEATURES = "多元族裔混合面孔，肤色从象牙白到深棕不等，眼窝较深，鼻梁高挺，骨架偏大，发色多为棕金或深棕"
@@ -76,21 +82,29 @@ def _migrate(data):
                 o["tags"] = list(_US_TAGS)
                 changed = True
 
-    # 3) 题材：补齐新增的「美式都市」，并清掉指向已删维度的 style 候选池
-    themes = data.get("themes") or []
-    have = {t.get("id") for t in themes}
-    if "usa_modern" not in have:
-        from . import seed_themes
-        new_t = next((dict(t) for t in seed_themes.THEMES if t.get("id") == "usa_modern"), None)
-        if new_t:
-            themes.append(new_t)
-            data["themes"] = themes
-            changed = True
-    for t in themes:
-        pools = t.get("pools") or {}
-        if "style" in pools:
-            pools.pop("style", None)
-            changed = True
+    # 3) 题材：只留 4 个。旧题材（含其参数池 / 提示词）整体删除，
+    #    换成 theme_class.py 里的 4 套；这些题材不带 cn 描述，只带 pools。
+    from . import theme_class
+    new_themes = theme_class.theme_seed()
+    old_ids = [t.get("id") for t in (data.get("themes") or [])]
+    old_rev = [t.get("rev") for t in (data.get("themes") or [])]
+    if old_ids != [t["id"] for t in new_themes] or \
+            any(r != theme_class.THEME_REV for r in old_rev):
+        data["themes"] = new_themes
+        changed = True
+
+    # 4) 四个题材的专属款式补进对应维度（只加不删；已有同 id 的绝不覆盖）
+    new_opts = theme_class.new_options_by_dim()
+    for d in dims:
+        add = new_opts.get(d.get("id"))
+        if not add:
+            continue
+        opts = d.setdefault("options", [])
+        have = {o.get("id") for o in opts}
+        for o in add:
+            if o["id"] not in have:
+                opts.append(dict(o))
+                changed = True
 
     if changed:
         data["version"] = DEFS_VERSION

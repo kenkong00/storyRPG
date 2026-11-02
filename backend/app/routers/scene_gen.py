@@ -36,6 +36,8 @@ class RandomReq(BaseModel):
     theme: Optional[str] = None
     seed: Optional[int] = None
     base: Optional[dict] = None
+    # None = 不传 base 时补限定项默认值；False = 限定项一律不动（只随机细节元素）
+    fill_limits: Optional[bool] = None
 
 
 class PromptReq(BaseModel):
@@ -118,8 +120,10 @@ def get_themes():
 
 @router.post("/random")
 def random_scene(req: RandomReq):
-    scene = sgen.random_scene(theme=req.theme, seed=req.seed, base=req.base)
-    return {"scene": scene, "prompt": sgen.to_prompt_parts(scene)}
+    scene = sgen.random_scene(theme=req.theme, seed=req.seed, base=req.base,
+                              fill_limits=req.fill_limits)
+    return {"scene": scene, "prompt": sgen.to_prompt_parts(scene),
+            "elements": [d["id"] for d in sgen.element_dims(scene.get("sceneType"))]}
 
 
 @router.post("/reroll")

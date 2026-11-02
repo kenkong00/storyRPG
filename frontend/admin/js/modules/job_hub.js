@@ -145,6 +145,7 @@
         <div class="td-head-btns">
           <button class="td-hbtn" data-act="resume-all" title="开始全部">▶ 全部开始</button>
           <button class="td-hbtn" data-act="pause-all" title="暂停全部">⏸ 全部暂停</button>
+          <button class="td-hbtn td-hbtn-danger" data-act="cancel-all" title="停止并清空所有运行中 / 等待中 / 已暂停的任务">⛔ 全部取消</button>
           <button class="td-hbtn" data-act="clear" title="清空已结束的任务">清空已完成</button>
           <button class="td-hbtn td-close" data-act="close" title="关闭">✕</button>
         </div>
@@ -187,6 +188,15 @@
         const r = await Admin.post('/jobs/resume-all', {});
         Admin.toast(r.n ? `已继续 ${r.n} 个任务` : '没有暂停中的任务', r.n ? 'success' : 'error');
       } catch (e) { Admin.toast('继续失败：' + e.message, 'error'); }
+      refresh();
+    });
+    d.querySelector('[data-act="cancel-all"]').addEventListener('click', async () => {
+      // 全部取消是破坏性操作：确认一次，避免误点把正在跑的批量图全停了
+      if (!window.confirm('确定要停止并清空所有任务吗？运行中 / 等待中 / 已暂停的任务都会被取消。')) return;
+      try {
+        const r = await Admin.post('/jobs/cancel-all', {});
+        Admin.toast(r.n ? `已取消并清空 ${r.n} 个任务` : '没有进行中的任务', r.n ? 'success' : 'error');
+      } catch (e) { Admin.toast('取消失败：' + e.message, 'error'); }
       refresh();
     });
 

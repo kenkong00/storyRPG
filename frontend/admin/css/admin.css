@@ -172,6 +172,25 @@ body.sb-collapsed .sb-toggle { transform: rotate(180deg); }
 /* 顶栏快捷图标：设置 / 提示词管理 / 图片管理（放在任务中心之前） */
 .tb-quick { color: var(--text-secondary); }
 .tb-quick.active { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,.12); }
+/* 「对战演示」是唯一一个「点一下就开打」的入口，给它一套红金色，
+   和其他灰底图标分开——找的时候不用在一排圆点里数。 */
+.tb-quick.tb-demo {
+  color: #ff8a4c;
+  border-color: rgba(255,138,76,.55);
+  background: linear-gradient(160deg, rgba(214,63,53,.30), rgba(255,150,60,.16));
+  box-shadow: 0 0 0 1px rgba(255,110,60,.12) inset, 0 0 10px rgba(214,63,53,.18);
+}
+.tb-quick.tb-demo:hover {
+  color: #ffd0a0;
+  border-color: #ff8a4c;
+  background: linear-gradient(160deg, rgba(230,74,58,.46), rgba(255,160,70,.24));
+  box-shadow: 0 0 0 1px rgba(255,140,80,.22) inset, 0 0 14px rgba(232,88,52,.34);
+}
+.tb-quick.tb-demo.active {
+  color: #fff2e0;
+  border-color: #ffab5e;
+  background: linear-gradient(160deg, rgba(238,88,64,.60), rgba(255,172,94,.34));
+}
 /* 快捷图标组与右侧「任务中心 / 最新图片 / 前台」之间分隔一下 */
 .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex: 0 0 auto; }
 
@@ -326,9 +345,17 @@ table tr:last-child td { border-bottom: none; }
 /* 顶栏抬到遮罩之上：弹窗开着也能点任务中心 / 最新图片 */
 .topbar { position: relative; z-index: 9400; }
 
+/* ===== 叠加层弹窗（在已有弹窗之上再开一层）=====
+   场景：人物编辑弹窗里点出图参数的齿轮、齿轮弹窗里再点「编辑方案」。
+   这些都不能往 #modal-container 里写 —— 一写就把底下正在填的表单冲掉了。 */
+#layer-container { position: fixed; inset: 0; z-index: 9600; pointer-events: none; }
+#layer-container:empty { display: none; }
+#layer-container .modal-overlay { pointer-events: auto; }
+
 /* ===== 独立弹窗层（确认 / 输入 / 提示）=====
-   以前它们直接写进 #modal-container，会把底下正在编辑的弹窗整个冲掉。 */
-#dialog-container { position: fixed; inset: 0; z-index: 9500; pointer-events: none; }
+   以前它们直接写进 #modal-container，会把底下正在编辑的弹窗整个冲掉。
+   层级必须高于 #layer-container：确认框可能是从叠加层弹窗里点出来的。 */
+#dialog-container { position: fixed; inset: 0; z-index: 9700; pointer-events: none; }
 #dialog-container:empty { display: none; }
 #dialog-container .modal-overlay { pointer-events: auto; }
 .dlg-modal { max-width: 420px; }
@@ -1009,6 +1036,52 @@ table tr:last-child td { border-bottom: none; }
   box-shadow: 0 12px 40px rgba(0, 0, 0, .65);
   overflow: hidden;
 }
+/* 对话行语音生成面板（与参数面板同款） */
+.dlg-voice-pop {
+  position: fixed;
+  z-index: 3000;
+  width: 440px;
+  max-width: calc(100vw - 24px);
+  background: var(--bg-card);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .65);
+  overflow: hidden;
+}
+.dv-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.dv-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.dv-row > label { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: var(--text-muted); flex: 1; min-width: 140px; }
+.dv-row select,
+.dv-row input[type=range] { width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 5px; color: var(--text-primary); font-size: 12px; }
+.dv-row input[type=range] { padding: 0; }
+.dv-current { display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: rgba(47, 156, 84, .08); border: 1px solid rgba(47, 156, 84, .35); border-radius: 6px; flex-wrap: wrap; }
+.dv-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; word-break: break-all; }
+.dv-actions { display: flex; align-items: center; gap: 8px; }
+.dv-state { font-size: 11.5px; color: var(--gold); min-height: 16px; margin-top: 2px; }
+/* 行上语音按钮：有语音时金色高亮 */
+.dlg-voice-btn { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); cursor: pointer; line-height: 1; padding: 3px 5px; font-size: 12px; }
+.dlg-voice-btn.has { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 6px rgba(212, 175, 55, .35); }
+.dlg-voice-btn.err { border-color: #e5534b; color: #e5534b; box-shadow: 0 0 6px rgba(229, 83, 75, .35); }
+/* 声音管理页选项卡 */
+.sm-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.sm-tab { background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); padding: 8px 18px; font-size: 13px; cursor: pointer; border-radius: 0; }
+.sm-tab.on { border-bottom: 2px solid var(--accent); color: var(--accent); }
+.sm-pane-head { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.8; }
+/* 语音包卡片（声音管理 / 语音任务页共用） */
+.vt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.vt-card { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); padding: 14px 16px; cursor: pointer; position: relative; transition: border-color .15s, box-shadow .15s; }
+.vt-card:hover { border-color: var(--gold); box-shadow: 0 2px 10px rgba(0, 0, 0, .25); }
+.vt-card h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.vt-card .vt-meta { font-size: 11.5px; color: var(--text-muted); line-height: 1.8; }
+.vt-prog { height: 7px; border-radius: 4px; background: rgba(255, 255, 255, .07); overflow: hidden; margin: 9px 0 7px; }
+.vt-prog i { display: block; height: 100%; background: linear-gradient(90deg, #2f9c54, #c9a84c); transition: width .3s; }
+.vt-st { font-size: 11px; padding: 1px 8px; border-radius: 10px; white-space: nowrap; }
+.vt-st.pending, .vt-st.idle { background: rgba(255, 255, 255, .07); color: var(--text-muted); }
+.vt-st.running { background: rgba(201, 168, 76, .18); color: var(--gold); }
+.vt-st.done { background: rgba(47, 156, 84, .18); color: #6ddc94; }
+.vt-st.error { background: rgba(224, 92, 92, .16); color: #ff9b9b; }
+.vt-st.stopped { background: rgba(255, 255, 255, .08); color: #d0d0d0; }
+.vt-empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px; }
 .dlg-cfg-head {
   display: flex;
   align-items: center;
@@ -1185,9 +1258,11 @@ table tr:last-child td { border-bottom: none; }
 }
 .stage-preview-hint {
   position: absolute;
-  bottom: 6px;
-  left: 6px;
+  /* 预览底部现在画着对话框，提示放右上角，别压在上面 */
+  top: 6px;
   right: 6px;
+  left: auto;
+  max-width: 60%;
   font-size: 10px;
   color: var(--text-muted);
   background: rgba(0, 0, 0, .55);
@@ -1375,6 +1450,11 @@ table tr:last-child td { border-bottom: none; }
 .td-hbtn:hover:not(:disabled) { color: var(--gold); border-color: var(--gold); }
 .td-hbtn:disabled { opacity: .38; cursor: not-allowed; }
 .td-hbtn.td-close { margin-left: auto; width: 27px; padding: 0; }
+/* 全部取消：破坏性操作，用暗红描边和金色/红色 hover 区分于普通按钮 */
+.td-hbtn.td-hbtn-danger { color: #d98a7a; border-color: rgba(224, 108, 86, .45); }
+.td-hbtn.td-hbtn-danger:hover:not(:disabled) {
+  color: #fff; background: #b6513f; border-color: #b6513f;
+}
 
 .td-filters { display: flex; gap: 6px; padding: 9px 14px; border-bottom: 1px solid var(--border); }
 .td-sel {
@@ -1784,10 +1864,24 @@ body[data-page="character_appearance"] .ap-side-head { font-size: 14px; }
   color:var(--gold);font-size:13.5px;font-weight:600}
 .sc-panel-h .sp{margin-left:auto;display:flex;gap:6px}
 .sc-assembly{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:14px;align-items:start}
-.sc-assembly .sc-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.sc-assembly .sc-groups{display:block}
 .sc-group{border:1px solid var(--border);border-radius:6px;background:var(--bg-input);overflow:hidden}
 .sc-group-h{display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(255,255,255,.03);
   font-size:13px;color:var(--text-muted);font-weight:600}
+/* 场景拼装 · 限定选项（手选，不随机） */
+.sc-limit .sc-group-h,.sc-element .sc-group-h{background:rgba(201,168,76,.08);color:var(--gold)}
+.sc-hint-inline{font-size:11.5px;color:var(--text-muted);font-weight:400;margin-left:8px}
+.sc-el-title{color:var(--gold);font-weight:600}
+.sc-limit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:7px 16px;padding:9px 11px 11px}
+/* 题材预设并进限定选项：占两列，和手选项排在一起（一键套用，套完还能改） */
+.sc-lim-theme{grid-column:span 2}
+.sc-lim-theme select{border-color:rgba(201,168,76,.55);color:var(--gold)}
+.sc-lim-item{display:flex;align-items:center;gap:7px;min-width:0}
+.sc-lim-item>span{width:72px;flex:0 0 72px;font-size:13px;color:var(--text-secondary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-lim-item select{flex:1;min-width:0;height:30px;font-size:13px;background:var(--bg-card);
+  border:1px solid var(--border);border-radius:4px;color:var(--text-primary);padding:0 6px}
+.sc-el-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 16px}
 .sc-group .body{padding:6px 9px 9px}
 .sc-row{display:flex;align-items:center;gap:6px;padding:3px 0}
 .sc-row label{width:108px;flex:0 0 108px;font-size:13px;color:var(--text-secondary);
@@ -1810,8 +1904,19 @@ textarea.sc-prompt:focus{background:rgba(201,168,76,.06)}
 .sc-result img{width:100%;height:100%;object-fit:contain;display:block}
 .sc-result .ph{color:var(--text-muted);font-size:13px;text-align:center;line-height:1.7;padding:20px}
 .sc-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.sc-shot{position:relative;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--bg-input)}
+.sc-shot{position:relative;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--bg-input);cursor:pointer}
 .sc-shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.sc-shot:hover{border-color:rgba(201,168,76,.55)}
+.sc-shot.sel{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(201,168,76,.45)}
+/* 图库标题行（场景拼装页底部） */
+.sc-h{display:flex;align-items:center;gap:8px;margin-top:16px;padding:8px 12px;
+  border:1px solid var(--border);border-radius:8px;background:rgba(201,168,76,.09);
+  color:var(--gold);font-size:14px;font-weight:600}
+.sc-h b{font-weight:700;margin-left:2px}
+.sc-h .sp{flex:1 1 auto}
+.sc-h-sel{font-weight:400;font-size:12px;color:var(--text-muted)}
+.sc-h-tip{font-weight:400;font-size:12px;color:var(--text-muted)}
+.sc-gallery{margin-top:10px}
 .sc-shot .m{display:flex;justify-content:space-between;align-items:center;padding:4px 7px;font-size:11.5px;color:var(--text-muted)}
 .sc-shot .x{cursor:pointer}
 .sc-shot .x:hover{color:var(--red)}
@@ -1975,6 +2080,20 @@ textarea.cmp-prompt:focus{background:rgba(201,168,76,.06)}
   max-height:200px;overflow:auto}
 .cmp-el-cap .cap-t{display:block;font-size:10.5px;color:var(--text-muted);margin-bottom:2px;letter-spacing:.5px}
 .cmp-el-cap .cap-x{display:block;white-space:pre-wrap;word-break:break-word}
+/* 提示词可手改：cap 区里换成 textarea（2026-11-02） */
+.cmp-el-cap .cap-hint{color:var(--gold);opacity:.85;margin-left:4px}
+.cmp-el-cap .cmp-cap-ta{width:100%;box-sizing:border-box;min-height:56px;max-height:168px;resize:vertical;
+  background:transparent;border:none;outline:none;color:var(--text-primary);font-size:12px;line-height:1.65;
+  padding:0;font-family:inherit}
+.cmp-el-cap .cmp-cap-ta:focus{background:rgba(201,168,76,.06)}
+/* 元素内：插入的图片预览 + 按钮行 */
+.cmp-el-ins{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;
+  border:1px solid var(--border);border-radius:6px;padding:5px 7px;background:rgba(0,0,0,.2)}
+.cmp-el-ins img{width:64px;height:48px;object-fit:cover;border-radius:4px;flex:0 0 auto;
+  background:repeating-conic-gradient(#2a2c36 0% 25%, #23252d 0% 50%) 50%/12px 12px}
+.cmp-el-ins .ins-t{font-size:11.5px;color:var(--text-primary);font-weight:600;line-height:1.5}
+.cmp-el-ins .ins-t span{display:block;font-weight:400;color:var(--text-muted);font-size:10.5px}
+.cmp-el-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;width:100%}
 /* 场景元素：整张大图就是「选择场景」的入口（跟对话列表里点立绘选表情同一套交互） */
 .cmp-scene-big{position:relative;display:block;width:100%;box-sizing:border-box;height:136px;padding:0;
   border:1px solid var(--border);border-radius:7px;overflow:hidden;cursor:pointer;
@@ -2048,7 +2167,7 @@ textarea.cmp-prompt:focus{background:rgba(201,168,76,.06)}
 .cmp-badge.canceled{border-color:var(--border);color:var(--text-muted)}
 .cmp-result{cursor:default}
 
-/* ---------- 边界框画布（人物/景物/文字 定位布局） ---------- */
+/* ---------- 边界框画布（人物/物体/文字/场景 定位布局） ---------- */
 .cmp-bb-stage{margin-top:10px}
 .cmp-bb-canvas{position:relative;width:100%;aspect-ratio:1344/768;
   background:repeating-conic-gradient(rgba(255,255,255,.05) 0% 25%,transparent 0% 50%) 50%/36px 36px,rgba(0,0,0,.30);
@@ -2064,6 +2183,12 @@ textarea.cmp-prompt:focus{background:rgba(201,168,76,.06)}
 .cmp-bb-box.t-text{border-color:#6aa5d4;background:rgba(106,165,212,.13)}
 .cmp-bb-box.t-scene{border-color:#4f9d8b;background:rgba(79,157,139,.14)}
 .cmp-bb-box.sel{box-shadow:0 0 0 2px rgba(201,168,76,.60);z-index:2}
+/* 插入的图片直接画在画框里（人物 / 物体 / 场景都一样），一眼能看出这格用的是哪张图 */
+.cmp-bb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  border-radius:3px;opacity:.66;pointer-events:none}
+.cmp-bb-box .cmp-bb-tag{position:absolute;z-index:2}
+.cmp-bb-box .cmp-bb-cap{position:relative;z-index:1;text-shadow:0 1px 3px rgba(0,0,0,.92)}
+.cmp-bb-box .cmp-bb-rs{z-index:3}
 .cmp-bb-tag{position:absolute;top:-1px;left:-1px;font-size:11px;line-height:1;
   padding:3px 6px;border-radius:4px 0 4px 0;background:#c9a84c;color:#1a1712;white-space:nowrap;pointer-events:none}
 .cmp-bb-box.t-character .cmp-bb-tag{background:#d4695c;color:#fff}
@@ -2236,3 +2361,65 @@ textarea.cmp-prompt:focus{background:rgba(201,168,76,.06)}
 .sc-mpane#sc-modal-assembly { padding: 0; }
 #sc-modal-assembly .sc-assembly { margin: 0; }
 .sc-btn.busy { opacity: .85; }
+
+/* ---------- 战斗配置：结局分支下拉 ---------- */
+.bt-outcome {
+  margin-top: 10px; padding: 10px 12px;
+  border: 1px solid rgba(201,168,76,.35);
+  border-radius: 6px;
+  background: rgba(201,168,76,.06);
+}
+.bt-outcome-t { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+.bt-outcome-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.bt-outcome-grid label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.bt-outcome-grid select {
+  width: 100%; padding: 6px 8px; font-size: 12.5px;
+  background: var(--bg-input); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 4px;
+}
+.bt-outcome-tip { margin-top: 8px; font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
+
+/* ==========================================================================
+   卡牌角色（人物编辑 > 卡牌角色 选项卡）
+   一行 = 一个人物的卡面专用覆盖；左列填参数，右列看最终提示词。
+   ========================================================================== */
+.cp-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 10px;
+}
+@media (max-width: 1080px) { .cp-wrap { grid-template-columns: 1fr; } }
+.cp-left, .cp-right { min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.cp-right { position: sticky; top: 8px; }
+@media (max-width: 1080px) { .cp-right { position: static; } }
+.cp-sec {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: #e8d9b0; letter-spacing: .4px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.06);
+  margin-top: 4px;
+}
+.cp-sec > span { font-size: 11px; color: var(--text-muted); letter-spacing: 0; }
+.cp-f { display: flex; flex-direction: column; gap: 4px; }
+.cp-f > span { font-size: 12px; color: var(--text-muted); }
+.cp-f .cp-in { width: 100%; box-sizing: border-box; }
+.cp-in {
+  font-size: 12.5px; height: 32px; padding: 0 9px;
+  background: var(--bg-input); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 5px;
+}
+.cp-in:focus { outline: none; border-color: var(--gold); }
+.cp-ta { height: auto; padding: 7px 9px; line-height: 1.6; resize: vertical; }
+.cp-acts { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.cp-out {
+  font-size: 11.5px; line-height: 1.75; color: var(--text-secondary);
+  white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; min-height: 260px; max-height: 60vh; overflow: auto;
+}

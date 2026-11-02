@@ -72,11 +72,14 @@
       .ae-prompt-head{display:flex;align-items:center;gap:8px;padding:6px 9px;background:rgba(255,255,255,.03);
         font-size:12px;color:var(--text-muted)}
       .ae-prompt-head .sp{margin-left:auto}
-      .ae-prompt pre,.ae-prompt textarea{margin:0;padding:9px;font-size:12.5px;line-height:1.65;white-space:pre-wrap;
+      .ae-prompt pre{margin:0;padding:9px;font-size:12.5px;line-height:1.65;white-space:pre-wrap;
         color:var(--text-primary);max-height:230px;overflow:auto;
         font-family:ui-monospace,Menlo,Consolas,monospace}
+      .ae-prompt textarea{margin:0;padding:9px;font-size:12.5px;line-height:1.65;white-space:pre-wrap;
+        color:var(--text-primary);overflow:auto;
+        font-family:ui-monospace,Menlo,Consolas,monospace}
       /* 提示词框可直接改；改完能立刻复制 / 出图就用这段 */
-      .ae-prompt textarea{display:block;width:100%;box-sizing:border-box;height:200px;min-height:120px;
+      .ae-prompt textarea{display:block;width:100%;box-sizing:border-box;height:420px;min-height:160px;
         border:none;outline:none;resize:vertical;background:transparent;tab-size:2}
       .ae-prompt textarea:focus{background:rgba(201,168,76,.06)}
       .ae-prompt.edited .ae-prompt-head{color:var(--gold)}
@@ -88,8 +91,8 @@
       .ae-split .ae-groups{column-width:264px}
       .ae-split .ae-side{position:sticky;top:0}
       .ae-split .ae-prompt{margin-top:0}
-      .ae-split .ae-prompt pre{max-height:min(52vh,520px)}
-      .ae-split .ae-prompt textarea{height:min(52vh,520px)}
+      .ae-split .ae-prompt pre{max-height:min(86vh,960px)}
+      .ae-split .ae-prompt textarea{height:min(86vh,960px);max-height:none}
       .ae-live{font-size:11px;color:var(--gold);opacity:.9;margin-top:6px;line-height:1.6}
     `;
     document.head.appendChild(s);
@@ -140,8 +143,36 @@
     return 'senior';
   }
 
-  function optionSel(dim, value, attrs) {
-    const opts = [{ id: '', name: '（默认）' }].concat(dim.options || []);
+  // noDefault=true：不放「（默认）」这一项。
+  // 只给语义明确、没有「不指定」含义的全局维度用（外观状态 / 立绘取景）——
+  // 那两个一旦可选「默认」，选完看起来什么都没发生，反而让人以为控件坏了。
+  // ---------- 题材 × 职业 → 候选池 ----------
+  // 题材只做「参数约束」：选中题材（+职业）后，各维度只留下该文化/该职业的款式。
+  // 池子来自后端 theme_class.py，前端只按 id 过滤，不参与拼提示词。
+  function poolOf(defs, app, dimId) {
+    const th = (defs.themes || []).find(t => t.id === (app.theme || ''));
+    if (!th) return null;
+    const cls = app.classCode || '';
+    let ids = null;
+    if (cls) {
+      const byCls = (th.poolsByClass || {})[cls] || {};
+      ids = byCls[dimId] || null;
+    }
+    if (!ids) ids = (th.pools || {})[dimId] || null;
+    return (ids && ids.length) ? new Set(ids) : null;
+  }
+
+  function allowedOptions(defs, app, dim) {
+    const set = poolOf(defs, app, dim.id);
+    const all = dim.options || [];
+    if (!set) return all;
+    const hit = all.filter(o => set.has(o.id));
+    return hit.length ? hit : all;
+  }
+
+  function optionSel(dim, value, attrs, noDefault) {
+    const list = dim.__opts || dim.options || [];
+    const opts = (noDefault ? [] : [{ id: '', name: '（默认）' }]).concat(list);
     return `<select class="ae-sel" ${attrs}>` + opts.map(o =>
       `<option value="${esc(o.id)}"${o.id === value ? ' selected' : ''}>${esc(o.name)}</option>`
     ).join('') + '</select>';
@@ -157,6 +188,7 @@
       changed: false,
     };
     if (!state.app.mode) state.app.mode = 'default';
+    if (!state.app.classCode) state.app.classCode = '';
     if (!state.app.nudity) state.app.nudity = 'none';
     if (!state.app.framing) state.app.framing = 'full';
 
@@ -165,10 +197,16 @@
       <div class="ae-root${split ? ' ae-split' : ''}">
         <div class="ae-toolbar">
           <button class="ae-btn" id="ae-reset" title="把所有参数归为默认（无）；不影响自定义文字框">🔄 重置</button>
-          <label class="ae-field"><span>题材（定向随机）</span>
+          <label class="ae-field"><span>题材</span>
             <select class="ae-sel" id="ae-theme">
               <option value="">全部 / 不限定</option>
-              ${(defs.themes || []).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}
+              ${(defs.themes || []).map(t => `<option value="${esc(t.id)}"${t.id === state.app.theme ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="ae-field"><span>职业</span>
+            <select class="ae-sel" id="ae-class">
+              <option value="">全部 / 不限定</option>
+              ${(defs.classes || []).map(c => `<option value="${esc(c.code)}"${c.code === state.app.classCode ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
             </select>
           </label>
           <label class="ae-field"><span>姓名</span>
@@ -179,14 +217,15 @@
               ${optionSel(dims[id], state.app[id] || '', `id="ae-g-${id}"`)}
             </label>`).join('')}
           ${dims.nudity ? `<label class="ae-field"><span>${esc(dims.nudity.name)}</span>
-            ${optionSel(dims.nudity, state.app.nudity || 'none', 'id="ae-g-nudity"')}
+            ${optionSel(dims.nudity, state.app.nudity || 'none', 'id="ae-g-nudity"', true)}
           </label>` : ''}
           ${dims.framing ? `<label class="ae-field"><span>${esc(dims.framing.name)}</span>
-            ${optionSel(dims.framing, state.app.framing || 'full', 'id="ae-g-framing"')}
+            ${optionSel(dims.framing, state.app.framing || 'full', 'id="ae-g-framing"', true)}
           </label>` : `<label class="ae-field"><span>立绘取景</span>
             <select class="ae-sel" id="ae-g-framing">
-              <option value="full"${state.app.framing !== 'half' ? ' selected' : ''}>全身</option>
+              <option value="full"${state.app.framing !== 'half' && state.app.framing !== 'head' ? ' selected' : ''}>全身</option>
               <option value="half"${state.app.framing === 'half' ? ' selected' : ''}>半身</option>
+              <option value="head"${state.app.framing === 'head' ? ' selected' : ''}>头部特写</option>
             </select>
           </label>`}
           <div class="ae-actions">
@@ -234,6 +273,8 @@
     groupsHost.innerHTML = groups.map(g => {
       const list = g.dims.filter(d => !EXCLUDE.has(d.id));
       if (!list.length) return '';
+      // 题材 × 职业 收敛：每个维度只保留这个题材/职业下的款式
+      list.forEach(d => { d.__opts = allowedOptions(defs, state.app, d); });
       return `<section class="ae-group" data-group="${esc(g.id)}">
         <div class="ae-group-head"><span>${esc(g.icon || '')}</span><span>${esc(g.name)}</span>
           <span class="n">${list.length}</span></div>
@@ -280,6 +321,26 @@
       hideOnNude.forEach(id => {
         const row = groupsHost.querySelector(`.ae-row[data-dim="${id}"]`);
         if (row) row.classList.add('hide');
+      });
+      // 立绘取景收窄时把用不上的行也藏起来：
+      //   半身 → 下装 / 下装颜色 / 鞋子 / 鞋色 / 袜子 / 腰带（画面上看不到，写了反而带偏构图）
+      //   头部特写 → 身体、穿着整组都藏（提示词里也整段不写）
+      const framing = state.app.framing || 'full';
+      const hideOnFraming = {
+        half: ['bottom', 'bottomColor', 'shoes', 'shoeColor', 'socks', 'belt'],
+        head: ['top', 'topColor', 'topPattern', 'sleeve', 'outer', 'outerColor', 'bottom', 'bottomColor',
+          'shoes', 'shoeColor', 'socks', 'belt', 'neckwear', 'gloves', 'backpack', 'prop',
+          'height', 'build', 'shoulder', 'legLen', 'posture', 'marks', 'bodyMark', 'tattoo',
+          'bust', 'bustShape', 'bustCleavage', 'chestMuscle', 'penis', 'bodyHair'],
+      }[framing] || [];
+      hideOnFraming.forEach(id => {
+        const row = groupsHost.querySelector(`.ae-row[data-dim="${id}"]`);
+        if (row) row.classList.add('hide');
+      });
+      groupsHost.querySelectorAll('.ae-group[data-group]').forEach((g) => {
+        const gid = g.dataset.group;
+        if (framing === 'head' && (gid === 'body' || gid === 'cloth')) g.style.display = 'none';
+        else g.style.display = '';
       });
       // 裸露状态下手动藏掉衣物行 → 在「穿着打扮」组顶加一句说明，
       // 否则用户只看到裸露状态下拉，以为其余选项丢了
@@ -343,8 +404,10 @@
     function refreshFramingHint() {
       const hint = host.querySelector('#ae-hint');
       if (!hint) return;
-      if (state.app.framing === 'half') {
-        hint.textContent = '半身取景：腰部以下（腿 / 鞋 / 裙摆等）不做提示词描写，出图聚焦上半身。';
+      if (state.app.framing === 'head') {
+        hint.textContent = '头部特写：只保留面部特征与肤色，身体 / 穿着等其余内容一律不写进提示词。';
+      } else if (state.app.framing === 'half') {
+        hint.textContent = '半身取景：下装 / 鞋 / 袜 / 腰带不做提示词描写（相关选择框已隐藏），出图聚焦上半身。';
       } else {
         hint.textContent = '全身取景：完整身体描写。';
       }
@@ -374,10 +437,20 @@
         if (!posEl) return;
         const hadEdit = promptEdited;
         try {
-          const r = await Admin.post('/appearance/prompt',
-            { appearance: state.app, include_sensitive: !!opts.includeSensitive });
-          const p = r.prompt || {};
-          const text = p.posCn || '';
+          let text = '', negText = '';
+          if (typeof opts.onPrompt === 'function') {
+            // 自定义提示词构建器（卡牌侧：按角色外观 + 卡牌动作表情拼卡面提示词）
+            const r = await opts.onPrompt(state.app);
+            const p = (r && r.prompt) ? r.prompt : (r || {});
+            text = p.posCn || p.positive || '';
+            negText = p.negCn || p.negative || '';
+          } else {
+            const r = await Admin.post('/appearance/prompt',
+              { appearance: state.app, include_sensitive: !!opts.includeSensitive });
+            const p = r.prompt || {};
+            text = p.posCn || '';
+            negText = p.negCn || '';
+          }
           posEl.value = text;
           generatedPrompt = text;
           promptEdited = false;
@@ -390,7 +463,7 @@
             setTimeout(() => { if (!promptEdited) setPromptLive(''); }, 2000);
           }
           lastPrompt = text;
-          host.querySelector('#ae-negtext').textContent = p.negCn || '';
+          host.querySelector('#ae-negtext').textContent = negText;
         } catch (e) {
           posEl.value = '提示词生成失败：' + e.message;
         }
@@ -412,6 +485,48 @@
       }
     }
 
+    // ---------- 题材 / 职业 变化 → 重建各维度的候选 ----------
+    function refreshOptions() {
+      let dropped = 0;
+      groupsHost.querySelectorAll('.ae-row').forEach(row => {
+        const id = row.dataset.dim;
+        const d = dims[id];
+        const sel = row.querySelector('select');
+        if (!d || !sel) return;
+        d.__opts = allowedOptions(defs, state.app, d);
+        const cur = state.app[id] || '';
+        const keep = cur && d.__opts.some(o => o.id === cur);
+        sel.innerHTML = `<option value="">（默认）</option>` + d.__opts.map(o =>
+          `<option value="${esc(o.id)}"${o.id === cur ? ' selected' : ''}>${esc(o.name)}</option>`
+        ).join('');
+        if (cur && !keep) {
+          // 换了题材/职业后不适用了：直接清掉，避免提示词里留着别的文化的衣服
+          delete state.app[id];
+          sel.value = '';
+          dropped += 1;
+        } else {
+          sel.value = cur;
+        }
+      });
+      GLOBAL_DIMS.concat(['nudity', 'framing']).forEach(id => {
+        const d = dims[id];
+        const sel = host.querySelector('#ae-g-' + id);
+        if (!d || !sel) return;
+        d.__opts = allowedOptions(defs, state.app, d);
+        const cur = state.app[id] || '';
+        sel.innerHTML = d.__opts.map(o =>
+          `<option value="${esc(o.id)}"${o.id === cur ? ' selected' : ''}>${esc(o.name)}</option>`
+        ).join('');
+        // 裸露状态 / 取景不允许留空
+        if (id === 'nudity' || id === 'framing') {
+          sel.innerHTML = `<option value="">（默认）</option>` + sel.innerHTML;
+          sel.value = cur || '';
+        }
+      });
+      refreshVisibility();
+      return dropped;
+    }
+
     function syncWholeUI() {
       GLOBAL_DIMS.forEach(id => {
         const el = host.querySelector('#ae-g-' + id);
@@ -428,6 +543,8 @@
       if (freeEl) freeEl.value = state.app.free_text || '';
       const themeEl = host.querySelector('#ae-theme');
       if (themeEl) themeEl.value = state.app.theme || '';
+      const classEl = host.querySelector('#ae-class');
+      if (classEl) classEl.value = state.app.classCode || '';
       refreshFramingHint();
       groupsHost.querySelectorAll('.ae-row').forEach(row => {
         const id = row.dataset.dim;
@@ -461,6 +578,32 @@
         refreshPrompt();
         markDirty();
       });
+    });
+
+    // 题材 / 职业：只换候选池，不改已有参数（除非它在新池里不存在）
+    const themeSel = host.querySelector('#ae-theme');
+    if (themeSel) themeSel.addEventListener('change', () => {
+      const v = themeSel.value;
+      if (v) state.app.theme = v; else delete state.app.theme;
+      const dropped = refreshOptions();
+      refreshPrompt();
+      markDirty();
+      const name = (defs.themes.find(t => t.id === v) || {}).name || '不限定';
+      Admin.toast(dropped
+        ? `题材已切到「${name}」，${dropped} 项不属于这个题材的参数已清空`
+        : `题材已切到「${name}」，下面的款式已按题材收敛`, 'success');
+    });
+    const classSel = host.querySelector('#ae-class');
+    if (classSel) classSel.addEventListener('change', () => {
+      const v = classSel.value;
+      if (v) state.app.classCode = v; else delete state.app.classCode;
+      const dropped = refreshOptions();
+      refreshPrompt();
+      markDirty();
+      const name = (defs.classes.find(c => c.code === v) || {}).name || '不限定';
+      Admin.toast(dropped
+        ? `职业已切到「${name}」，${dropped} 项不适用的参数已清空`
+        : `职业已切到「${name}」`, 'success');
     });
 
     // 裸露状态（工具栏控件，已上提，原在分组内）
@@ -517,6 +660,12 @@
         }
       });
       delete state.app.theme;
+      delete state.app.classCode;
+      // pose / expression / poseCategory 在 EXCLUDE 里、不渲染成 .ae-row，
+      // 上面的 DOM 循环删不到 —— 旧配置残留会让提示词里一直冒出【动作表情】。
+      delete state.app.pose;
+      delete state.app.expression;
+      delete state.app.poseCategory;
       // nudity / framing / free_text / name 保留不动
       syncWholeUI();
       refreshPrompt();
@@ -557,9 +706,11 @@
 
     host.querySelector('#ae-random').addEventListener('click', async () => {
       const theme = host.querySelector('#ae-theme').value || undefined;
+      const clsCode = host.querySelector('#ae-class').value || undefined;
       try {
         const body = {
           theme,
+          class_code: clsCode,
           gender: state.app.gender || undefined,
           age: state.app.age || undefined,
           style: theme ? undefined : (state.app.style || undefined),
@@ -575,7 +726,10 @@
         if (keepNudity) state.app.nudity = keepNudity;
         syncWholeUI();
         markDirty();
-        Admin.toast('已随机生成' + (theme ? '（' + theme + '）' : ''), 'success');
+        const thName = (defs.themes || []).find(t => t.id === theme);
+        const clName = (defs.classes || []).find(c => c.code === clsCode);
+        const tag = [thName && thName.name, clName && clName.name].filter(Boolean).join(' · ');
+        Admin.toast('已随机生成' + (tag ? '（' + tag + '）' : ''), 'success');
       } catch (e) {
         Admin.toast('随机失败：' + e.message, 'error');
       }

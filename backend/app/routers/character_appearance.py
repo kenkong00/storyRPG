@@ -36,6 +36,7 @@ class RandomReq(BaseModel):
     age: Optional[str] = None
     style: Optional[str] = None
     theme: Optional[str] = None
+    class_code: Optional[str] = None
     nationality: Optional[str] = None
     pose_category: Optional[str] = None
     mode: str = "default"
@@ -135,14 +136,15 @@ def random_appearance(req: RandomReq):
         gender=req.gender, age=req.age, style=req.style, theme=req.theme,
         nationality=req.nationality, pose_category=req.pose_category,
         mode=req.mode, seed=req.seed, include_sensitive=req.include_sensitive,
+        cls_code=req.class_code,
     )
-    prompt = generator.to_prompt_parts(appearance, include_sensitive=req.include_sensitive)
+    prompt = generator.to_prompt_parts(appearance, include_sensitive=req.include_sensitive, include_pose=False, include_scene=False)
     return {"appearance": appearance, "prompt": prompt}
 
 
 @router.post("/prompt")
 def build_prompt(req: PromptReq):
-    prompt = generator.to_prompt_parts(req.appearance, include_sensitive=req.include_sensitive)
+    prompt = generator.to_prompt_parts(req.appearance, include_sensitive=req.include_sensitive, include_pose=False, include_scene=False)
     return {"prompt": prompt}
 
 
@@ -160,7 +162,7 @@ def reroll_one(req: RerollReq):
     if req.dim == "nudity":
         generator.apply_nudity(c)
     c = generator.normalize(c, req.include_sensitive)
-    prompt = generator.to_prompt_parts(c, include_sensitive=req.include_sensitive)
+    prompt = generator.to_prompt_parts(c, include_sensitive=req.include_sensitive, include_pose=False, include_scene=False)
     return {"appearance": c, "value": new_val, "prompt": prompt}
 
 
@@ -367,7 +369,8 @@ def get_character_appearance(character_id: int, include_sensitive: bool = False,
     prompt = None
     if appearance:
         prompt = generator.to_prompt_parts(_with_name(appearance, char.name),
-                                           include_sensitive=include_sensitive)
+                                           include_sensitive=include_sensitive,
+                                           include_pose=False, include_scene=False)
     return {
         "character_id": character_id,
         "character_name": char.name,
@@ -400,7 +403,8 @@ def save_character_appearance(character_id: int, req: SaveAppearanceReq,
         "character_name": char.name,
         "appearance": app,
         "appearance_id": default.id,
-        "prompt": generator.to_prompt_parts(_with_name(app, char.name), False),
+        "prompt": generator.to_prompt_parts(_with_name(app, char.name), False,
+                                            include_pose=False, include_scene=False),
         "ok": True,
     }
 
@@ -421,7 +425,7 @@ def random_character_appearance(character_id: int, req: RandomReq,
         char.gender = appearance["gender"]
     db.commit()
     db.refresh(char)
-    prompt = generator.to_prompt_parts(appearance, include_sensitive=req.include_sensitive)
+    prompt = generator.to_prompt_parts(appearance, include_sensitive=req.include_sensitive, include_pose=False, include_scene=False)
     return {
         "character_id": character_id, "character_name": char.name,
         "appearance": appearance, "prompt": prompt,
@@ -436,7 +440,7 @@ def character_appearance_prompt(character_id: int, req: PromptReq,
     if not appearance:
         raise HTTPException(status_code=400, detail="该人物尚无外观数据，且请求未提供 appearance")
     prompt = generator.to_prompt_parts(_with_name(appearance, char.name),
-                                       include_sensitive=req.include_sensitive)
+                                       include_sensitive=req.include_sensitive, include_pose=False, include_scene=False)
     return {"character_id": character_id, "character_name": char.name, "prompt": prompt}
 
 

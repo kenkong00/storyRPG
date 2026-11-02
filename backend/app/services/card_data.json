@@ -1,0 +1,1301 @@
+{
+ "classes": [
+  {
+   "id": "warrior",
+   "name": "战士",
+   "heroName": "雷恩·铁誓",
+   "icon": "🛡️",
+   "hp": 32,
+   "def": 4,
+   "spd": 2,
+   "cri": 10,
+   "role": "最高血量与防御，站场磨血、稳定反打",
+   "counters": "擅长克制：刺客、游侠（高防拖垮持续输出）",
+   "nemesis": "主要天敌：法师（高爆发穿透）、迷魂者（降防断费）",
+   "story": "曾是北境叹息壁垒的末代守备官。当裂界风暴撕碎城墙时，雷恩独守断桥三昼夜未退半步，重盾上的每一道裂痕都铭刻着不屈的铁血誓言。",
+   "quote": "“只要我的盾还立在泥土里，身后的城门便不算失守。”",
+   "defaultDeck": {
+    "war_taunt": 2,
+    "war_bash": 3,
+    "war_cry": 2,
+    "war_sunder": 3,
+    "war_fortify": 2
+   }
+  },
+  {
+   "id": "paladin",
+   "name": "圣骑士",
+   "heroName": "薇薇安·晨曦",
+   "icon": "✨",
+   "hp": 30,
+   "def": 3,
+   "spd": 3,
+   "cri": 15,
+   "role": "治疗、护盾与净化，持久战，克制控制",
+   "counters": "擅长克制：迷魂者（净化破除控制）、刺客（治疗拖死爆发）",
+   "nemesis": "主要天敌：法师、游侠（远程持续法术与箭雨消耗）",
+   "story": "白银圣堂最年轻的执剑审判官。她高举的晨曦圣典既能化作庇护伤者的金色穹顶，也能燃起涤荡一切心智诅咒的纯白圣火。",
+   "quote": "“圣光从不偏袒弱者，但它绝不容许黑暗篡改人心。”",
+   "defaultDeck": {
+    "pal_bless": 2,
+    "pal_slash": 3,
+    "pal_purify": 2,
+    "pal_shield": 2,
+    "pal_judge": 2,
+    "pal_revive": 1
+   }
+  },
+  {
+   "id": "mage",
+   "name": "法师",
+   "heroName": "奥古斯都·星陨",
+   "icon": "🔥",
+   "hp": 26,
+   "def": 2,
+   "spd": 3,
+   "cri": 20,
+   "role": "高额法术爆发，带回血，穿透防守",
+   "counters": "擅长克制：战士、圣骑士（火球与爆炎强行轰穿厚甲）",
+   "nemesis": "主要天敌：刺客（先手高暴击速杀）、游侠（高速压制）",
+   "story": "通天星塔的首席秘术导师。曾亲眼目睹陨星坠落深渊，自此领悟了将狂暴以太压缩于指尖的毁灭秘仪，举手投足皆是焦土。",
+   "quote": "“重甲？那只是替你把火焰焖得更透彻的铁炉罢了。”",
+   "defaultDeck": {
+    "mag_missile": 3,
+    "mag_shield": 2,
+    "mag_heal": 2,
+    "mag_fireball": 3,
+    "mag_inferno": 2
+   }
+  },
+  {
+   "id": "mesmer",
+   "name": "迷魂者",
+   "heroName": "赛琳娜·织梦",
+   "icon": "👁️",
+   "hp": 24,
+   "def": 2,
+   "spd": 4,
+   "cri": 15,
+   "role": "心智控制，降费降防降速、窃取对手手牌",
+   "counters": "擅长克制：战士、圣骑士（瓦解护甲与法力，窃取关键大招）",
+   "nemesis": "主要天敌：刺客（控制成型前被秒）、圣骑士（净化反制）",
+   "story": "游走于裂界记忆回廊的神秘织梦人。与她紫瞳对视的剑士往往会遗忘挥剑的力道，甚至连珍藏在心底的秘传招式也会沦为她的玩物。",
+   "quote": "“你以为那是你的底牌？从你听见我低语的那一刻起，它就归我了。”",
+   "defaultDeck": {
+    "mes_spike": 3,
+    "mes_whisper": 2,
+    "mes_weaken": 2,
+    "mes_steal_copy": 2,
+    "mes_slow": 2,
+    "mes_mindtake": 1
+   }
+  },
+  {
+   "id": "ranger",
+   "name": "游侠",
+   "heroName": "艾尔文·苍风",
+   "icon": "🏹",
+   "hp": 24,
+   "def": 2,
+   "spd": 5,
+   "cri": 25,
+   "role": "高速远程，稳定连射与减速牵制",
+   "counters": "擅长克制：法师、战士（减速风筝，穿云箭破甲点杀）",
+   "nemesis": "主要天敌：刺客（更高速度与暴击）、圣骑士（高额回血续航）",
+   "story": "翡翠古林的巡林统领。她的身影如林间疾风般难以捉摸，特制的穿云白羽箭能在百步之外精准钉住敌人的影子与护甲缝隙。",
+   "quote": "“风永远比咒语和重锤更快抵达终点。”",
+   "defaultDeck": {
+    "rng_quick": 3,
+    "rng_aim": 2,
+    "rng_trip": 2,
+    "rng_double": 3,
+    "rng_pierce": 2
+   }
+  },
+  {
+   "id": "assassin",
+   "name": "刺客",
+   "heroName": "烬·影月",
+   "icon": "🗡️",
+   "hp": 22,
+   "def": 1,
+   "spd": 6,
+   "cri": 40,
+   "role": "最快速度与最高暴击，身板脆，先手爆发",
+   "counters": "擅长克制：法师、迷魂者（先手高暴击一套连招直接带走）",
+   "nemesis": "主要天敌：战士、圣骑士（高防与治疗拖入持久战）",
+   "story": "影月教派最令人胆寒的孤刃行者。他抛弃了笨重的铠甲，将全部性命押在电光石火的第一刀上——要么在剎那间决出胜负，要么化作青烟。",
+   "quote": "“天下武功，唯快不破；若一刀不够，那便在影子里再补三刀。”",
+   "defaultDeck": {
+    "asn_stab": 3,
+    "asn_dodge": 2,
+    "asn_ambush": 2,
+    "asn_combo": 3,
+    "asn_execute": 2
+   }
+  }
+ ],
+ "universal": {
+  "atk_1": 4,
+  "atk_2": 3,
+  "atk_3": 2,
+  "grd_1": 2,
+  "grd_2": 2,
+  "grd_3": 1,
+  "spc_draw": 2,
+  "spc_pierce": 1,
+  "spc_clear": 1
+ },
+ "cards": [
+  {
+   "id": "atk_1",
+   "name": "打击",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "attack",
+   "categoryLabel": "通用攻击",
+   "cost": 1,
+   "value": 2,
+   "maxCopies": 4,
+   "desc": "造成 2 点伤害",
+   "icon": "🗡️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "基础伤害 2 点，受暴击率判定（暴击时伤害 ×2 变为 4 点）。",
+    "若对方场上有守卫，伤害必须先打在守卫身上；无守卫时先扣英雄 DEF，再扣 HP。"
+   ],
+   "story": "裂界佣兵团最基础也最实用的近身突刺动作。没有花哨的剑花，只在交错瞬间用钢刃精准切开对手防线的第一道口子。",
+   "quote": "“活下来的老兵从不轻视任何一次一费的平砍。” —— 佣兵教头巴尔"
+  },
+  {
+   "id": "atk_2",
+   "name": "重击",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "attack",
+   "categoryLabel": "通用攻击",
+   "cost": 2,
+   "value": 4,
+   "maxCopies": 3,
+   "desc": "造成 4 点伤害",
+   "icon": "⚔️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "基础伤害 4 点；一旦触发暴击将翻倍造成 8 点巨额伤害，并直接触发【暴击爽点（≥5伤额外抽1张牌）】！",
+    "优先结算敌方场上守卫，守卫清空后打击敌方英雄 DEF 与 HP。"
+   ],
+   "story": "双手紧握剑柄、灌注全身重量向下猛砸的标准战技。无论是木盾还是锁子甲，在这一记势大力沉的挥砍下都会发出哀鸣。",
+   "quote": "“听见骨头与铁片一起碎裂的声音了吗？那就是中期的节奏。”"
+  },
+  {
+   "id": "atk_3",
+   "name": "劈砍",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "attack",
+   "categoryLabel": "通用攻击",
+   "cost": 3,
+   "value": 7,
+   "maxCopies": 3,
+   "desc": "造成 7 点伤害",
+   "icon": "☄️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "基础伤害高达 7 点！若触发暴击将造成惊人的 14 点毁灭伤害，并触发暴击爽点额外抽牌。",
+    "通用牌池中单卡伤害最高的终结技，足以一击摧毁任何满血守卫。"
+   ],
+   "story": "源自古北方狂战士的断岳斩。挥剑时带起的罡风会在地面留下一道三尺深的焦痕，往往作为压垮防线的最后一击。",
+   "quote": "“三费蓄力，一剑封喉！”"
+  },
+  {
+   "id": "grd_1",
+   "name": "壁垒",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "guard",
+   "categoryLabel": "通用守卫",
+   "cost": 1,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "场上召唤 2 血守卫",
+   "icon": "🛡️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "在己方前线召唤一名 2 点生命值的守卫（自带嘲讽）。",
+    "只要场上有守卫存在，敌方所有非【破防】攻击都必须先攻击守卫，保护后排英雄与护甲。"
+   ],
+   "story": "由前线工兵用废弃精钢盾牌迅速支起的临时掩体。虽然单薄，却能在致命冷箭袭来时替指挥官挡下必死的一劫。",
+   "quote": "“一费换一命，这是战场上最划算的买卖。”"
+  },
+  {
+   "id": "grd_2",
+   "name": "高墙",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "guard",
+   "categoryLabel": "通用守卫",
+   "cost": 2,
+   "value": 4,
+   "maxCopies": 3,
+   "desc": "场上召唤 4 血守卫",
+   "icon": "🧱",
+   "needsTarget": false,
+   "rulesDetail": [
+    "在己方前线召唤一名 4 点生命值的重装守卫（嘲讽）。",
+    "4 点血量刚好能稳稳吃下大多数 2 费技能与普通攻击，是中期的中流砥柱。"
+   ],
+   "story": "刻有矮人符文的黑曜石方阵步兵。他们将塔盾深深砸入冻土，肩并肩筑成一道令骑兵绝望的钢铁高墙。",
+   "quote": "“想动我们身后的大人？先从我的盾牌上踏过去！”"
+  },
+  {
+   "id": "grd_3",
+   "name": "坚盾",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "guard",
+   "categoryLabel": "通用守卫",
+   "cost": 3,
+   "value": 6,
+   "maxCopies": 3,
+   "desc": "场上召唤 6 血守卫",
+   "icon": "🏰",
+   "needsTarget": false,
+   "rulesDetail": [
+    "在己方前线召唤一名 6 点生命值的巨型壁垒守卫（嘲讽）。",
+    "全游戏单卡最厚的通用守卫，除非对手交出【清场】或高费大招，否则极难在单回合内突破。"
+   ],
+   "story": "由古代战争魔像核心驱动的活体石堡。它没有痛觉与恐惧，庞大的身躯矗立在战场上，如同不可逾越的叹息山脉。",
+   "quote": "“它不说话，但每一个进攻者都在它面前学会了沉默。”"
+  },
+  {
+   "id": "spc_draw",
+   "name": "抽牌",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "special",
+   "categoryLabel": "通用功能",
+   "cost": 2,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "立刻抽 2 张牌",
+   "icon": "💠",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 2 点法力，立即从牌库顶抽取 2 张卡牌加入手牌。",
+    "注意手牌上限为 7 张（达到 7 张后再抽牌会直接爆牌弃置），牌库抽空后每次抽牌将承受 3 点疲劳伤害。"
+   ],
+   "story": "随军斥候从前线带回的紧急密函与战术补给卷轴。在战局胶着之时，多一份情报往往意味着多一条反败为胜的生路。",
+   "quote": "“兵马未动，情报先行；手中有粮，心中不慌。”"
+  },
+  {
+   "id": "spc_pierce",
+   "name": "破防",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "special",
+   "categoryLabel": "通用功能",
+   "cost": 2,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "无视守卫，对英雄造 3 伤(先扣DEF)",
+   "icon": "⚡",
+   "needsTarget": false,
+   "rulesDetail": [
+    "完全无视敌方场上的所有嘲讽守卫，直接锁定敌方英雄造成 3 点伤害（受暴击率加成）！",
+    "根据第七章规则：虽然无视守卫，但命中敌方英雄时仍需先扣除其当前 DEF 护甲，剩余伤害扣 HP。"
+   ],
+   "story": "利用裂界折跃水晶折射出的暗影死光。它能直接绕过前排密不透风的盾墙，在敌方主将毫无防备的后心炸开血花。",
+   "quote": "“盾墙再厚，也挡不住从脚下影子钻出来的杀机。”"
+  },
+  {
+   "id": "spc_clear",
+   "name": "清场",
+   "classId": "universal",
+   "classLabel": "通用",
+   "category": "special",
+   "categoryLabel": "通用功能",
+   "cost": 3,
+   "value": 0,
+   "maxCopies": 3,
+   "desc": "消灭对方场上全部守卫(限1张/回合)",
+   "icon": "💥",
+   "needsTarget": false,
+   "rulesDetail": [
+    "瞬间消灭敌方前线全部守卫，无论其剩余多少血量！",
+    "平衡红线禁令：每个回合最多只能打出 1 张【清场】。"
+   ],
+   "story": "禁忌的军用以太震荡炸弹。引爆时掀起的引力狂潮会将整条战线的防御工事连根拔起，让龟缩在盾墙后的敌人彻底暴露。",
+   "quote": "“管你有几座高墙，一发震荡弹下去全是平地！”"
+  },
+  {
+   "id": "war_taunt",
+   "name": "挑衅",
+   "classId": "warrior",
+   "classLabel": "战士专属",
+   "category": "skill",
+   "categoryLabel": "战士技能",
+   "cost": 1,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "给自己 +2 DEF",
+   "icon": "🛡️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "立即为我方英雄增加 +2 DEF（护甲）。",
+    "DEF 不会随回合结束消失，可跨回合持久保留并叠加，优先抵挡敌方对我方英雄造成的任何伤害。"
+   ],
+   "story": "雷恩用剑脊重重拍击胸甲，发出一声震耳欲聋的咆哮，同时将重盾卡入最佳受击倾角，严阵以待。",
+   "quote": "“来啊！往这儿砍，让我看看你们有没有吃饭！” —— 雷恩·铁誓"
+  },
+  {
+   "id": "war_bash",
+   "name": "盾击",
+   "classId": "warrior",
+   "classLabel": "战士专属",
+   "category": "skill",
+   "categoryLabel": "战士攻防",
+   "cost": 2,
+   "value": 4,
+   "extraDef": 2,
+   "maxCopies": 3,
+   "desc": "造成 4 点伤害，再给自己 +2 DEF",
+   "icon": "🔨",
+   "needsTarget": true,
+   "rulesDetail": [
+    "攻防一体的神技：对目标造成 4 点伤害（可暴击），同时为自身增加 +2 DEF 护甲。",
+    "既能清理敌方守卫或压低血线，又能同步构筑自身铁桶防线。"
+   ],
+   "story": "借着冲锋的惯性，用包裹着精钢尖刺的巨盾边缘狠狠撞向敌人面门，在撞飞对手的同时顺势完成防御架势。",
+   "quote": "“谁规定盾牌只能用来挨打？” —— 雷恩·铁誓"
+  },
+  {
+   "id": "war_cry",
+   "name": "战吼",
+   "classId": "warrior",
+   "classLabel": "战士专属",
+   "category": "skill",
+   "categoryLabel": "战士战术",
+   "cost": 3,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "给自己 +3 DEF，抽 1 张牌",
+   "icon": "📯",
+   "needsTarget": false,
+   "rulesDetail": [
+    "为自身增加 +3 DEF 护甲，并立即从牌库抽取 1 张牌。",
+    "集叠甲防守与过牌续航于一身，确保战士在中后期手牌不断档。"
+   ],
+   "story": "苍凉的北境牛角号声响彻云霄，激荡的气血让雷恩周身的铠甲泛起古铜色的守护战纹，脑海中的战术愈发清明。",
+   "quote": "“号角不息，冲锋不止！” —— 雷恩·铁誓"
+  },
+  {
+   "id": "war_sunder",
+   "name": "破甲斩",
+   "classId": "warrior",
+   "classLabel": "战士专属",
+   "category": "skill",
+   "categoryLabel": "战士重击",
+   "cost": 4,
+   "value": 6,
+   "halfDefPierce": true,
+   "maxCopies": 3,
+   "desc": "造成 6 点伤害，无视对方一半 DEF",
+   "icon": "🪓",
+   "needsTarget": true,
+   "rulesDetail": [
+    "造成 6 点高额伤害（可暴击）；命中敌方英雄时，无视对方当前一半的 DEF（按向下取整计算有效抵扣护甲，其余伤害直接穿透扣 HP）！",
+    "内战破盾与后期反打的核心杀招。"
+   ],
+   "story": "雷恩将全身斗气凝聚于阔剑刃口，顺着敌方铠甲的铆钉接缝悍然劈落，哪怕是百炼重甲也会被生生撕裂出一道血口。",
+   "quote": "“我最懂怎么造甲，所以我更懂怎么拆了它。” —— 雷恩·铁誓"
+  },
+  {
+   "id": "war_fortify",
+   "name": "坚守",
+   "classId": "warrior",
+   "classLabel": "战士专属",
+   "category": "skill",
+   "categoryLabel": "战士终极",
+   "cost": 5,
+   "value": 6,
+   "healVal": 3,
+   "maxCopies": 3,
+   "desc": "给自己 +6 DEF，回复 3 点 HP",
+   "icon": "🏔️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 5 费全额预算，瞬间获得 +6 DEF 巨额护甲，并恢复 3 点生命值（不超过 32 血上限）。",
+    "绝境翻盘壁垒，一卡提供高达 9 点有效生命质量，令刺客与游侠彻底绝望。"
+   ],
+   "story": "双膝微沉，重剑插地化作不动明王之姿。大地脉动的力量顺着剑身涌入四肢百骸，伤口在金铁共鸣中迅速愈合。",
+   "quote": "“山岳或许会崩塌，但铁誓绝不后退半寸！” —— 雷恩·铁誓"
+  },
+  {
+   "id": "pal_bless",
+   "name": "圣光祝福",
+   "classId": "paladin",
+   "classLabel": "圣骑专属",
+   "category": "skill",
+   "categoryLabel": "圣骑祝福",
+   "cost": 1,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "给自己 +2 DEF",
+   "icon": "🌟",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 1 费，为自身增加 +2 DEF 护甲。",
+    "配合 2 费《圣光斩》（要求自身 DEF ≥ 3 额外回血）可完美触发连招！"
+   ],
+   "story": "晨曦微光顺着圣徽流淌而下，在薇薇安的银白肩甲上凝结出一层晶莹剔透的光之羽翼。",
+   "quote": "“微光虽渺，亦能照亮寒夜。” —— 薇薇安·晨曦"
+  },
+  {
+   "id": "pal_slash",
+   "name": "圣光斩",
+   "classId": "paladin",
+   "classLabel": "圣骑专属",
+   "category": "skill",
+   "categoryLabel": "圣骑惩戒",
+   "cost": 2,
+   "value": 4,
+   "maxCopies": 3,
+   "desc": "造 4 伤；若自身 DEF≥3，再回 2 HP",
+   "icon": "⚔️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "造成 4 点伤害（可暴击）；结算时若自身当前有效 DEF ≥ 3，额外为自己回复 2 点 HP（不超过 30 上限）。",
+    "圣骑士的核心节奏牌，保持护甲在 3 点以上即可实现边打边回血的永动机效果。"
+   ],
+   "story": "长剑挥出炽热的金色弧光，在斩碎敌寇的同时，逸散的圣洁辉光顺着剑柄回流，抚平执剑者身上的伤痕。",
+   "quote": "“以护盾守卫虔诚，以利剑践行慈悲。” —— 薇薇安·晨曦"
+  },
+  {
+   "id": "pal_purify",
+   "name": "净化",
+   "classId": "paladin",
+   "classLabel": "圣骑专属",
+   "category": "skill",
+   "categoryLabel": "圣骑秘术",
+   "cost": 2,
+   "value": 1,
+   "maxCopies": 3,
+   "desc": "移除自身全部持续负面效果，抽 1 张牌",
+   "icon": "🕊️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "全游戏唯一净化手段：一次性清除自身全部持续类负面效果（包括【虚弱咒】降防、【迟滞诅咒/绊足】降速，以及【迷魂低语】下回合降费），并抽 1 张牌！",
+    "注意：根据规则 5.3，一次性附着的【降攻】只能靠打出攻击牌消耗，不被净化清除。"
+   ],
+   "story": "薇薇安高颂《破晓圣咏》，纯白钟声自虚空荡开，纠缠在灵魂上的梦魇蛛网与迟滞枷锁在顷刻间烟消云散。",
+   "quote": "“迷雾与谎言，在真昼面前无处遁形！” —— 薇薇安·晨曦"
+  },
+  {
+   "id": "pal_shield",
+   "name": "护盾祝福",
+   "classId": "paladin",
+   "classLabel": "圣骑专属",
+   "category": "skill",
+   "categoryLabel": "圣骑防护",
+   "cost": 3,
+   "value": 4,
+   "maxCopies": 3,
+   "desc": "给自己 +4 DEF",
+   "icon": "🛡️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 3 费，直接为自身增加 +4 DEF 护甲。",
+    "瞬间将 DEF 抬升至安全线以上，稳稳触发后续所有《圣光斩》的回血特效。"
+   ],
+   "story": "白银圣堂传承百年的守护圣印。四道刻满古希伯来圣言的光盾环绕周身，连巨龙的吐息也难以撼动分毫。",
+   "quote": "“信仰即是吾等最坚固的甲胄。” —— 薇薇安·晨曦"
+  },
+  {
+   "id": "pal_judge",
+   "name": "审判",
+   "classId": "paladin",
+   "classLabel": "圣骑专属",
+   "category": "skill",
+   "categoryLabel": "圣骑裁决",
+   "cost": 3,
+   "value": 6,
+   "maxCopies": 3,
+   "desc": "造成 6 点伤害",
+   "icon": "⚖️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "消耗 3 费，对目标造成 6 点神圣裁决伤害（可暴击，暴击造成 12 点伤害并触发暴击爽点抽牌）。",
+    "圣骑士中后期的主力爆发手段。"
+   ],
+   "story": "苍穹裂开一道金色的十字光柱，巨大的光之裁决剑从天而降，带着不容置疑的威严轰向罪孽深重之徒。",
+   "quote": "“聆听圣堂的终审吧——你有罪！” —— 薇薇安·晨曦"
+  },
+  {
+   "id": "pal_revive",
+   "name": "神圣复苏",
+   "classId": "paladin",
+   "classLabel": "圣骑专属",
+   "category": "skill",
+   "categoryLabel": "圣骑神迹",
+   "cost": 4,
+   "value": 6,
+   "extraDef": 3,
+   "maxCopies": 3,
+   "desc": "回复 6 点 HP，给自己 +3 DEF",
+   "icon": "👼",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 4 费，一口气回复 6 点 HP（不超过 30 上限），并同时获得 +3 DEF 护甲！",
+    "极其强力的逆转神技，一卡拉回 9 点血甲差，彻底粉碎快攻职业的斩杀企图。"
+   ],
+   "story": "当战旗濒临倒下之时，六翼炽天使的虚影在薇薇安身后徐徐展开，温暖如春阳的神迹之光瞬间洗去满身血污。",
+   "quote": "“只要黎明尚未断绝，我便不会倒下。” —— 薇薇安·晨曦"
+  },
+  {
+   "id": "mag_missile",
+   "name": "飞弹",
+   "classId": "mage",
+   "classLabel": "法师专属",
+   "category": "skill",
+   "categoryLabel": "奥术法术",
+   "cost": 1,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "造成 3 点伤害",
+   "icon": "☄️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "消耗 1 费造成 3 点伤害（比通用 1 费《打击》高出 50% 伤害！）。",
+    "若触发法师 20% 暴击率，仅需 1 费即可打出 6 点伤害并触发【暴击爽点】额外抽 1 张牌！"
+   ],
+   "story": "奥古斯都轻叩指环，三枚高速旋转的紫晶奥术飞弹呼啸而出，精准贯穿任何企图靠近的敌人。",
+   "quote": "“一费三伤，这就是星塔算术的优雅之处。” —— 奥古斯都·星陨"
+  },
+  {
+   "id": "mag_shield",
+   "name": "护盾术",
+   "classId": "mage",
+   "classLabel": "法师专属",
+   "category": "skill",
+   "categoryLabel": "防护法术",
+   "cost": 2,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "给自己 +3 DEF",
+   "icon": "🔮",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 2 费，为自身增加 +3 DEF 魔法护甲。",
+    "弥补法师初始 DEF 较低的短板，防止被刺客或游侠先手秒杀。"
+   ],
+   "story": "以星辰轨迹编织而成的六棱以太力场。当刀剑砍在上面时，只会激起一圈圈涟漪般的蓝紫色电弧。",
+   "quote": "“野蛮的铁器，连我的衣角都休想碰到。” —— 奥古斯都·星陨"
+  },
+  {
+   "id": "mag_heal",
+   "name": "治疗",
+   "classId": "mage",
+   "classLabel": "法师专属",
+   "category": "skill",
+   "categoryLabel": "恢复法术",
+   "cost": 2,
+   "value": 4,
+   "maxCopies": 3,
+   "desc": "回复 4 点 HP",
+   "icon": "💚",
+   "needsTarget": false,
+   "rulesDetail": [
+    "消耗 2 费，立即为自身恢复 4 点生命值（不超过 26 血上限）。",
+    "帮助法师在换血博弈中稳住生命线，把战局拖入自己的高费爆发期。"
+   ],
+   "story": "汲取自生命之泉的浓缩以太药剂，配合时光回溯秘纹，让撕裂的伤口在翠绿光华中重归完好。",
+   "quote": "“活着，才能见证下一颗星辰的爆裂。” —— 奥古斯都·星陨"
+  },
+  {
+   "id": "mag_fireball",
+   "name": "火球",
+   "classId": "mage",
+   "classLabel": "法师专属",
+   "category": "skill",
+   "categoryLabel": "烈焰法术",
+   "cost": 3,
+   "value": 6,
+   "maxCopies": 3,
+   "desc": "造成 6 点伤害",
+   "icon": "🔥",
+   "needsTarget": true,
+   "rulesDetail": [
+    "消耗 3 费，造成 6 点高额烈焰伤害（暴击造成 12 点伤害并抽 1 张牌）。",
+    "法师中期稳定拆墙或轰击敌方英雄护甲的招牌咒语。"
+   ],
+   "story": "将高度压缩的红莲火元素凝聚成炽白火球掷出，所过之处空气扭曲，落地瞬间掀起吞噬一切的烈焰风暴。",
+   "quote": "“当拿不定主意的时候，扔一发火球总不会错。” —— 奥古斯都·星陨"
+  },
+  {
+   "id": "mag_inferno",
+   "name": "连锁爆炎",
+   "classId": "mage",
+   "classLabel": "法师专属",
+   "category": "skill",
+   "categoryLabel": "禁咒法术",
+   "cost": 4,
+   "value": 8,
+   "maxCopies": 3,
+   "desc": "造成 8 点伤害",
+   "icon": "🌋",
+   "needsTarget": true,
+   "rulesDetail": [
+    "全游戏单段基础伤害最高的恐怖大招：4 费直接造成 8 点伤害！",
+    "一旦触发法师 20% 暴击率，将瞬间轰出 16 点毁天灭地的伤害并额外抽 1 张牌，连战士的厚甲也能一举熔穿！"
+   ],
+   "story": "引动地脉深处的熔岩火柱与天穹陨火共鸣，接连七道赤红火环在目标脚下连环炸裂，化作一片沸腾的熔岩炼狱。",
+   "quote": "“在星陨的余晖里，化作灰烬吧！” —— 奥古斯都·星陨"
+  },
+  {
+   "id": "mes_spike",
+   "name": "精神刺",
+   "classId": "mesmer",
+   "classLabel": "迷魂专属",
+   "category": "skill",
+   "categoryLabel": "心智穿刺",
+   "cost": 1,
+   "value": 2,
+   "atkDebuff": 1,
+   "maxCopies": 3,
+   "desc": "造 2 伤；对方下一张攻击牌伤害 -1",
+   "icon": "🧠",
+   "needsTarget": true,
+   "rulesDetail": [
+    "造成 2 点伤害，并给敌方英雄挂上一次性【降攻 -1】状态。",
+    "根据规则 5.1：对方打出的下一张攻击/伤害牌基础伤害先 -1 再结算，打出后该降攻效果消失（圣骑士净化无法清除一次性降攻）。"
+   ],
+   "story": "无形的精神尖针直接刺入对手的脑海神经，在造成剧痛的同时令其手腕发麻，下一剑挥出时力道大减。",
+   "quote": "“你的剑在抖呢，刚才那一下很疼吧？” —— 赛琳娜·织梦"
+  },
+  {
+   "id": "mes_whisper",
+   "name": "迷魂低语",
+   "classId": "mesmer",
+   "classLabel": "迷魂专属",
+   "category": "skill",
+   "categoryLabel": "心智扰乱",
+   "cost": 2,
+   "value": 1,
+   "maxCopies": 3,
+   "desc": "对方下一回合法力上限 -1(保底1费)",
+   "icon": "🗣️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "作用于敌方下一回合：令其下回合法力上限减少 1 点（最低保底保留 1 费，不会压到 0 费）。",
+    "卡住对手关键 4 费/5 费大招的致命节奏控制牌！"
+   ],
+   "story": "赛琳娜在虚空中吹出一缕幽紫色的梦境迷雾，无数细碎的呢喃声在对手耳畔回荡，令其无法集中精神调动法力。",
+   "quote": "“嘘……别急着念咒，先听听你心底的恐惧。” —— 赛琳娜·织梦"
+  },
+  {
+   "id": "mes_weaken",
+   "name": "虚弱咒",
+   "classId": "mesmer",
+   "classLabel": "迷魂专属",
+   "category": "skill",
+   "categoryLabel": "诅咒秘术",
+   "cost": 2,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "对方 DEF -2，持续到其下回合结束",
+   "icon": "💔",
+   "needsTarget": false,
+   "rulesDetail": [
+    "令敌方英雄当前 DEF 临时降低 2 点（最低降至 0），持续到对方下一个回合结束时自动恢复原值。",
+    "根据规则 5.1：同类降防不叠加，重复施放只刷新持续时间；专门克制战士与圣骑士的龟壳防守。"
+   ],
+   "story": "暗紫色的腐蚀符文如同藤蔓般爬满对手的铠甲，精钢在诅咒侵蚀下变得如朽木般酥脆易碎。",
+   "quote": "“脱下你那身笨重的铁壳，让我们坦诚相见。” —— 赛琳娜·织梦"
+  },
+  {
+   "id": "mes_steal_copy",
+   "name": "心智窃取",
+   "classId": "mesmer",
+   "classLabel": "迷魂专属",
+   "category": "skill",
+   "categoryLabel": "记忆窃取",
+   "cost": 2,
+   "value": 1,
+   "maxCopies": 3,
+   "desc": "复制对方随机 1 张手牌(每回合限1次)",
+   "icon": "🪞",
+   "needsTarget": false,
+   "rulesDetail": [
+    "从对手当前手牌中随机复制 1 张卡牌加入自己手牌（每回合限发动 1 次；复制来的牌本回合即可使用）。",
+    "若对方手牌为 0，则效果空发。以彼之道还施彼身的核心神技！"
+   ],
+   "story": "透过紫水晶镜面窥视对手的记忆深处，将其苦心演练的独门绝学原封不动地拓印到自己的指尖。",
+   "quote": "“好精妙的招式！可惜现在我也会了。” —— 赛琳娜·织梦"
+  },
+  {
+   "id": "mes_slow",
+   "name": "迟滞诅咒",
+   "classId": "mesmer",
+   "classLabel": "迷魂专属",
+   "category": "skill",
+   "categoryLabel": "时空诅咒",
+   "cost": 3,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "对方 SPD -2，持续到其下回合结束",
+   "icon": "⏳",
+   "needsTarget": false,
+   "rulesDetail": [
+    "令敌方当前 SPD（速度）降低 2 点，持续到其下回合结束自动恢复；同类减速不叠加。",
+    "在下一大回合开始比速度时，助你稳稳夺取【先手行动权】！"
+   ],
+   "story": "将对手周围的时间流速拉入泥沼般的梦境，原本迅捷如电的刺客与游侠在诅咒中也只能像提线木偶般缓慢移动。",
+   "quote": "“跑得那么快做什么？留下来陪我多玩一会儿。” —— 赛琳娜·织梦"
+  },
+  {
+   "id": "mes_mindtake",
+   "name": "夺心",
+   "classId": "mesmer",
+   "classLabel": "迷魂专属",
+   "category": "skill",
+   "categoryLabel": "深渊终极",
+   "cost": 4,
+   "value": 1,
+   "maxCopies": 3,
+   "desc": "偷取对方随机 1 张手牌(下回合可用)",
+   "icon": "🖐️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "直接从对手手牌中随机拿走 1 张牌据为己有！（对方失去该牌，我方获得该牌）。",
+    "根据规则 5.2：夺心偷来的卡牌带有本回合锁定标记，要等到下一回合才能打出。"
+   ],
+   "story": "赛琳娜伸出虚幻的暗影之手，直接探入对手的胸膛记忆核心，将其最珍视的一张王牌连根拔走。",
+   "quote": "“别找了，你刚才想出的那张王牌，现在正躺在我的掌心里呢。” —— 赛琳娜·织梦"
+  },
+  {
+   "id": "rng_quick",
+   "name": "速射",
+   "classId": "ranger",
+   "classLabel": "游侠专属",
+   "category": "skill",
+   "categoryLabel": "远程箭术",
+   "cost": 1,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "造成 3 点伤害",
+   "icon": "🏹",
+   "needsTarget": true,
+   "rulesDetail": [
+    "消耗 1 费造成 3 点远程伤害，配合游侠高达 25% 的基础暴击率，极易在前期打出 6 点暴击伤害并触发抽牌爽点！"
+   ],
+   "story": "艾尔文甚至无需低头看箭囊，反手拈弓搭箭一气呵成，翠绿风矢在弓弦震颤尚未平息前便已没入敌阵。",
+   "quote": "“眨眼的时候小心点，我的箭不会等你。” —— 艾尔文·苍风"
+  },
+  {
+   "id": "rng_aim",
+   "name": "精准射击",
+   "classId": "ranger",
+   "classLabel": "游侠专属",
+   "category": "skill",
+   "categoryLabel": "狙击箭术",
+   "cost": 2,
+   "value": 4,
+   "bonusCrit": 15,
+   "maxCopies": 3,
+   "desc": "造成 4 点伤害，本次暴击率 +15%",
+   "icon": "🎯",
+   "needsTarget": true,
+   "rulesDetail": [
+    "造成 4 点伤害，且本次攻击判定时暴击率临时额外 +15%（游侠使用此牌时暴击率高达 25% + 15% = 40%！）。",
+    "一旦暴击即造成 8 点伤害，并立即触发【暴击爽点】额外抽 1 张牌！"
+   ],
+   "story": "屏息凝神，将森林之风汇聚于一点。在鹰眼锁定敌人护甲裂隙的刹那松开弓弦，箭出必见血光。",
+   "quote": "“风向西南，风速三节——正中眉心。” —— 艾尔文·苍风"
+  },
+  {
+   "id": "rng_trip",
+   "name": "绊足",
+   "classId": "ranger",
+   "classLabel": "游侠专属",
+   "category": "skill",
+   "categoryLabel": "牵制陷阱",
+   "cost": 2,
+   "value": 2,
+   "maxCopies": 3,
+   "desc": "对方 SPD -2(持续到下回合结束)",
+   "icon": "🕸️",
+   "needsTarget": false,
+   "rulesDetail": [
+    "射出缠绕荆棘索的陷阱箭，令敌方 SPD 速度降低 2 点（同类减速不叠加）。",
+    "哪怕面对 SPD 6 的刺客，游侠（SPD 5）只要挂上《绊足》将其降至 SPD 4，下一回合也能稳夺先手权！"
+   ],
+   "story": "带有荆棘倒钩的缚地箭精准钉入对手脚踝前的地面，瞬间暴长的古木藤蔓将其双腿死死缠住。",
+   "quote": "“在我的森林里，猎物没有资格决定快慢。” —— 艾尔文·苍风"
+  },
+  {
+   "id": "rng_double",
+   "name": "连射",
+   "classId": "ranger",
+   "classLabel": "游侠专属",
+   "category": "skill",
+   "categoryLabel": "疾风箭术",
+   "cost": 3,
+   "value": 4,
+   "hits": 2,
+   "maxCopies": 3,
+   "desc": "造 4 伤两次，每次独立进行暴击判定",
+   "icon": "☄️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "连续射出两支 4 伤箭矢（总基础伤害 8 点），且第一箭与第二箭分别独立掷骰进行暴击判定！",
+    "若第一箭击碎了敌方守卫，第二箭会自动继续打击下一个守卫或敌方英雄；任一箭暴击（8伤≥5）即可触发本回合暴击爽点抽牌！"
+   ],
+   "story": "双指夹住两支白羽箭同时满月开弓，一箭破盾，二箭穿心，两道流光首尾相接，令敌人根本来不及举盾换气。",
+   "quote": "“第一箭是打招呼，第二箭才是送行。” —— 艾尔文·苍风"
+  },
+  {
+   "id": "rng_pierce",
+   "name": "穿云箭",
+   "classId": "ranger",
+   "classLabel": "游侠专属",
+   "category": "skill",
+   "categoryLabel": "绝技箭术",
+   "cost": 4,
+   "value": 7,
+   "halfDefPierce": true,
+   "maxCopies": 3,
+   "desc": "造成 7 点伤害，无视对方一半 DEF",
+   "icon": "🌩️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "造成 7 点高额远程伤害（暴击高达 14 点伤害！），且对英雄结算时无视对方一半的 DEF 护甲！",
+    "专门用来射穿战士与圣骑士的厚重护甲，一箭定乾坤。"
+   ],
+   "story": "以千年风暴木制成的重型破甲长箭。离弦时宛如平地惊雷，螺旋状的飓风气旋能轻易钻透最厚重的精钢胸甲。",
+   "quote": "“一箭穿云裂石，百步之外取人首级！” —— 艾尔文·苍风"
+  },
+  {
+   "id": "asn_stab",
+   "name": "快刺",
+   "classId": "assassin",
+   "classLabel": "刺客专属",
+   "category": "skill",
+   "categoryLabel": "暗影刺杀",
+   "cost": 1,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "造成 3 点伤害",
+   "icon": "🗡️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "消耗 1 费造成 3 点伤害；配合刺客惊人的 40% 基础暴击率，有四成概率直接打出 6 点暴击伤害并触发【暴击爽点】白嫖抽 1 张牌！"
+   ],
+   "story": "袖中寒芒一闪即逝，短匕在对手察觉到痛楚之前便已收回鞘中，唯有一滴殷红顺着刀尖滑落。",
+   "quote": "“你看见刀光了吗？没看见就对了。” —— 烬·影月"
+  },
+  {
+   "id": "asn_dodge",
+   "name": "闪身",
+   "classId": "assassin",
+   "classLabel": "刺客专属",
+   "category": "skill",
+   "categoryLabel": "暗影身法",
+   "cost": 2,
+   "value": 3,
+   "maxCopies": 3,
+   "desc": "本轮受到的所有伤害 -3",
+   "icon": "💨",
+   "needsTarget": false,
+   "rulesDetail": [
+    "进入【闪身】残影状态（持续至敌方下一次行动回合结束）：在此期间我方受到的所有攻击伤害每次都直接减免 3 点！",
+    "身板脆弱的刺客赖以生存的保命神技，能让对手的多段连射或小额攻击完全刮痧。"
+   ],
+   "story": "烬的身影在原地化作一缕被风吹散的墨色残影，敌人的重剑劈砍在残影之上，只斩断了几片飘落的枯叶。",
+   "quote": "“打不中影子的剑，再重也是废铁。” —— 烬·影月"
+  },
+  {
+   "id": "asn_ambush",
+   "name": "伏击",
+   "classId": "assassin",
+   "classLabel": "刺客专属",
+   "category": "skill",
+   "categoryLabel": "致命奇袭",
+   "cost": 2,
+   "value": 5,
+   "bonusCrit": 20,
+   "maxCopies": 3,
+   "desc": "造成 5 点伤害，本次暴击率 +20%",
+   "icon": "🩸",
+   "needsTarget": true,
+   "rulesDetail": [
+    "第十章官方结算示例王牌：仅需 2 费即可造成 5 点基础伤害，且本次暴击率额外 +20%（刺客使用此牌暴击率高达 40% + 20% = 60%！）。",
+    "一旦暴击直接轰出 10 点恐怖伤害，并稳稳触发【暴击爽点】额外抽 1 张牌！"
+   ],
+   "story": "潜伏于阴影死角良久，在猎物呼吸换气的千分之一秒内暴起发难，双刃交叉直取咽喉要害。",
+   "quote": "“第一回合，两费，十点伤害——欢迎来到影月的狩猎场。” —— 烬·影月"
+  },
+  {
+   "id": "asn_combo",
+   "name": "连刺",
+   "classId": "assassin",
+   "classLabel": "刺客专属",
+   "category": "skill",
+   "categoryLabel": "连环绝杀",
+   "cost": 3,
+   "value": 4,
+   "critBonusFlat": 3,
+   "maxCopies": 3,
+   "desc": "造成 4 点伤害；若暴击，追加 3 点伤害",
+   "icon": "⚡",
+   "needsTarget": true,
+   "rulesDetail": [
+    "基础造成 4 点伤害；若掷骰触发暴击，不仅伤害翻倍为 8 点，还会额外追加 3 点割裂伤害，合计单卡爆发出 11 点伤害！",
+    "暴击时（11伤≥5）同样触发【暴击爽点】额外抽 1 张牌。"
+   ],
+   "story": "第一刀破开招架，紧接着手腕翻转，藏在左手的副匕顺着第一刀撕开的血口再度深刺三寸，刀刀致命。",
+   "quote": "“影子永远是成双成对出现的。” —— 烬·影月"
+  },
+  {
+   "id": "asn_execute",
+   "name": "绝杀",
+   "classId": "assassin",
+   "classLabel": "刺客专属",
+   "category": "skill",
+   "categoryLabel": "终极暗杀",
+   "cost": 4,
+   "value": 7,
+   "maxCopies": 3,
+   "desc": "造成 7 点伤害",
+   "icon": "☠️",
+   "needsTarget": true,
+   "rulesDetail": [
+    "消耗 4 费造成 7 点高额伤害；在刺客 40% 暴击率加持下，有四成把握一击打出 14 点毁天灭地的斩杀伤害！",
+    "刺客终结比赛的最高单卡爆发。"
+   ],
+   "story": "血月当空，烬将全身真气灌注于妖刀“影月”之中，化作一道横贯战场的黑红色闪电，万物皆在刀鸣声中寂灭。",
+   "quote": "“这一刀之后，世上再无你的名字。” —— 烬·影月"
+  }
+ ],
+ "emotions": [
+  {
+   "id": "emo_anger",
+   "code": "EMOTE #01",
+   "name": "怒火中烧",
+   "tag": "突然发怒",
+   "emoji": "😡🔥",
+   "border": "border-rose-500",
+   "bgGrad": "from-rose-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“岂有此理！你彻底激怒我了，下一击定叫你灰飞烟灭！”",
+   "aiLine": "“可恶！！竟敢伤我至此，我要把你的防线连根撕碎！”",
+   "aiReplyIds": [
+    "emo_laugh",
+    "emo_scorn",
+    "emo_fear"
+   ]
+  },
+  {
+   "id": "emo_laugh",
+   "code": "EMOTE #02",
+   "name": "放声嘲笑",
+   "tag": "肆意嘲笑",
+   "emoji": "🤣👉",
+   "border": "border-amber-400",
+   "bgGrad": "from-amber-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“哈哈哈！就凭这种刮痧伤害，也敢在裂界战场上丢人现眼？”",
+   "aiLine": "“哈哈哈哈！你的出牌破绽百出，简直像个刚拿剑的新兵！”",
+   "aiReplyIds": [
+    "emo_anger",
+    "emo_scorn",
+    "emo_crazy"
+   ]
+  },
+  {
+   "id": "emo_scorn",
+   "code": "EMOTE #03",
+   "name": "冷眼轻蔑",
+   "tag": "高傲轻蔑",
+   "emoji": "😒❄️",
+   "border": "border-sky-400",
+   "bgGrad": "from-sky-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“哼，不堪一击的凡庸之辈，连让我正眼相看的资格都没有。”",
+   "aiLine": "“就这点本事？连我最外层的护甲都蹭不破，太让人失望了。”",
+   "aiReplyIds": [
+    "emo_anger",
+    "emo_provoke",
+    "emo_cold"
+   ]
+  },
+  {
+   "id": "emo_crazy",
+   "code": "EMOTE #04",
+   "name": "癫狂暴走",
+   "tag": "彻底发疯",
+   "emoji": "🤪⚡",
+   "border": "border-purple-500",
+   "bgGrad": "from-purple-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“毁灭吧！全部炸成碎片吧！哈哈哈哈谁也别想活着离开！”",
+   "aiLine": "“疯了！全都疯了！就算同归于尽我也要咬下你一块肉！”",
+   "aiReplyIds": [
+    "emo_fear",
+    "emo_shock",
+    "emo_laststand"
+   ]
+  },
+  {
+   "id": "emo_fear",
+   "code": "EMOTE #05",
+   "name": "惊恐战栗",
+   "tag": "极度害怕",
+   "emoji": "😱💦",
+   "border": "border-cyan-400",
+   "bgGrad": "from-cyan-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“怎、怎么可能？！这一击的杀气……我的手竟然在发抖！”",
+   "aiLine": "“不、不要过来！你手里那张高费王牌到底是什么怪物？！”",
+   "aiReplyIds": [
+    "emo_confident",
+    "emo_king",
+    "emo_scheming"
+   ]
+  },
+  {
+   "id": "emo_beg",
+   "code": "EMOTE #06",
+   "name": "卑微求饶",
+   "tag": "跪地求饶",
+   "emoji": "🥺🙏",
+   "border": "border-emerald-400",
+   "bgGrad": "from-emerald-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“大侠手下留情！给条活路吧，这回合别打我脸行不行！”",
+   "aiLine": "“饶命啊指挥官！我只剩这点血了，再砍一刀人就没了！”",
+   "aiReplyIds": [
+    "emo_scorn",
+    "emo_laugh",
+    "emo_innocent"
+   ]
+  },
+  {
+   "id": "emo_confident",
+   "code": "EMOTE #07",
+   "name": "胜券在握",
+   "tag": "绝对自信",
+   "emoji": "😎✨",
+   "border": "border-amber-300",
+   "bgGrad": "from-amber-900/80 via-slate-900 to-slate-950",
+   "playerLine": "“结局已经注定，你的每一步行动都在我的计算之中。”",
+   "aiLine": "“大局已定！看看我的血量与护甲，你拿什么跟我斗？”",
+   "aiReplyIds": [
+    "emo_scheming",
+    "emo_provoke",
+    "emo_anger"
+   ]
+  },
+  {
+   "id": "emo_scheming",
+   "code": "EMOTE #08",
+   "name": "阴险算计",
+   "tag": "暗中奸笑",
+   "emoji": "😏🕸️",
+   "border": "border-indigo-400",
+   "bgGrad": "from-indigo-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“嘿嘿嘿……尽管攻过来吧，你已经一脚踏进我的陷阱了。”",
+   "aiLine": "“呵呵，你以为我是故意卖破绽给你的吗？下回合有你哭的。”",
+   "aiReplyIds": [
+    "emo_shock",
+    "emo_cold",
+    "emo_scorn"
+   ]
+  },
+  {
+   "id": "emo_provoke",
+   "code": "EMOTE #09",
+   "name": "傲慢挑衅",
+   "tag": "勾手挑衅",
+   "emoji": "🥱👈",
+   "border": "border-orange-400",
+   "bgGrad": "from-orange-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“喂，只有这点力气吗？我站着不动让你打三回合！”",
+   "aiLine": "“就这？再不用出你的全力，我可要打哈欠睡着了。”",
+   "aiReplyIds": [
+    "emo_anger",
+    "emo_crazy",
+    "emo_cold"
+   ]
+  },
+  {
+   "id": "emo_shock",
+   "code": "EMOTE #10",
+   "name": "震惊失色",
+   "tag": "瞳孔地震",
+   "emoji": "🤯💥",
+   "border": "border-yellow-400",
+   "bgGrad": "from-yellow-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“纳尼？！这一招居然直接打穿了防线，太离谱了吧！”",
+   "aiLine": "“什么？！你居然在这时候抽到了这张关键解牌？！”",
+   "aiReplyIds": [
+    "emo_lucky",
+    "emo_confident",
+    "emo_laugh"
+   ]
+  },
+  {
+   "id": "emo_cry",
+   "code": "EMOTE #11",
+   "name": "委屈抱头",
+   "tag": "凄惨哭泣",
+   "emoji": "😭💔",
+   "border": "border-blue-400",
+   "bgGrad": "from-blue-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“呜呜呜别盯着我锤了，辛辛苦苦叠的护甲全没了！”",
+   "aiLine": "“太欺负人了！连守卫带护甲被你一锅端，这还怎么玩呜呜！”",
+   "aiReplyIds": [
+    "emo_laugh",
+    "emo_innocent",
+    "emo_salute"
+   ]
+  },
+  {
+   "id": "emo_despair",
+   "code": "EMOTE #12",
+   "name": "绝望崩盘",
+   "tag": "彻底绝望",
+   "emoji": "🥀💀",
+   "border": "border-slate-400",
+   "bgGrad": "from-slate-800 via-slate-950 to-black",
+   "playerLine": "“手牌断档、防线崩溃……难道今日真要陨落于此？”",
+   "aiLine": "“完了……全完了，牌库已空、血线见底，回天乏术了……”",
+   "aiReplyIds": [
+    "emo_salute",
+    "emo_king",
+    "emo_cold"
+   ]
+  },
+  {
+   "id": "emo_lucky",
+   "code": "EMOTE #13",
+   "name": "赌徒狂喜",
+   "tag": "欧皇附体",
+   "emoji": "🤩🎲",
+   "border": "border-yellow-300",
+   "bgGrad": "from-amber-900/90 via-yellow-950 to-slate-950",
+   "playerLine": "“天命昭昭！这发神仙暴击外加爽点抽牌，简直爽到飞起！”",
+   "aiLine": "“哈哈哈天助我也！精确暴击翻倍，这波节奏直接起飞！”",
+   "aiReplyIds": [
+    "emo_unlucky",
+    "emo_shock",
+    "emo_anger"
+   ]
+  },
+  {
+   "id": "emo_unlucky",
+   "code": "EMOTE #14",
+   "name": "非酋叹息",
+   "tag": "倒霉叹气",
+   "emoji": "😩🌧️",
+   "border": "border-slate-500",
+   "bgGrad": "from-slate-900 via-slate-950 to-slate-900",
+   "playerLine": "“唉……这么高的暴击率居然没爆，今天出门忘看黄历了。”",
+   "aiLine": "“啧，手气怎么这么背，摸上来的全是卡手牌……”",
+   "aiReplyIds": [
+    "emo_laugh",
+    "emo_confident",
+    "emo_scheming"
+   ]
+  },
+  {
+   "id": "emo_cold",
+   "code": "EMOTE #15",
+   "name": "杀意锁定",
+   "tag": "冷酷必杀",
+   "emoji": "👁️🩸",
+   "border": "border-red-500",
+   "bgGrad": "from-red-950/90 via-slate-950 to-black",
+   "playerLine": "“猎物已经踏入斩杀红线——屏住呼吸，迎接终局吧。”",
+   "aiLine": "“我已经闻到你血条归零的味道了，这一击不留活口。”",
+   "aiReplyIds": [
+    "emo_laststand",
+    "emo_fear",
+    "emo_anger"
+   ]
+  },
+  {
+   "id": "emo_salute",
+   "code": "EMOTE #16",
+   "name": "礼貌致敬",
+   "tag": "强者敬意",
+   "emoji": "🫡⚔️",
+   "border": "border-teal-400",
+   "bgGrad": "from-teal-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“漂亮的一手好牌！作为对手，你值得我拿出全部实力致敬。”",
+   "aiLine": "“好精妙的博弈算计！能与你这样的强者交锋，实乃幸事。”",
+   "aiReplyIds": [
+    "emo_salute",
+    "emo_confident",
+    "emo_laststand"
+   ]
+  },
+  {
+   "id": "emo_impatient",
+   "code": "EMOTE #17",
+   "name": "焦躁催促",
+   "tag": "极不耐烦",
+   "emoji": "😤⏱️",
+   "border": "border-orange-500",
+   "bgGrad": "from-orange-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“磨磨蹭蹭干什么呢？花儿都谢了，快点亮底牌吧！”",
+   "aiLine": "“思考这么久？是不是算出来自己怎么打都是输？”",
+   "aiReplyIds": [
+    "emo_anger",
+    "emo_provoke",
+    "emo_scheming"
+   ]
+  },
+  {
+   "id": "emo_innocent",
+   "code": "EMOTE #18",
+   "name": "装傻卖萌",
+   "tag": "无辜眨眼",
+   "emoji": "😇🌸",
+   "border": "border-pink-400",
+   "bgGrad": "from-pink-950/90 via-slate-900 to-slate-950",
+   "playerLine": "“哎呀，刚才那下暴击只是手滑而已，你应该不会记仇吧？”",
+   "aiLine": "“嘻嘻，不好意思又把你的手牌偷走啦，纯属巧合哟~”",
+   "aiReplyIds": [
+    "emo_anger",
+    "emo_laugh",
+    "emo_cry"
+   ]
+  },
+  {
+   "id": "emo_laststand",
+   "code": "EMOTE #19",
+   "name": "绝境悲壮",
+   "tag": "背水死战",
+   "emoji": "🩸🛡️",
+   "border": "border-rose-600",
+   "bgGrad": "from-rose-950 via-red-950 to-slate-950",
+   "playerLine": "“纵使只剩最后一滴血，我的战魂也绝不屈服！来战！”",
+   "aiLine": "“想赢我？哪怕拼尽最后一张牌，我也要在倒下前咬碎你的咽喉！”",
+   "aiReplyIds": [
+    "emo_salute",
+    "emo_cold",
+    "emo_king"
+   ]
+  },
+  {
+   "id": "emo_king",
+   "code": "EMOTE #20",
+   "name": "王者加冕",
+   "tag": "狂傲主宰",
+   "emoji": "👑🦁",
+   "border": "border-amber-400",
+   "bgGrad": "from-amber-900/90 via-slate-900 to-slate-950",
+   "playerLine": "“跪下仰望吧！这片裂界战场，自始至终只有一个主宰！”",
+   "aiLine": "“在绝对的实力面前，一切技巧皆是徒劳——向王低头吧！”",
+   "aiReplyIds": [
+    "emo_anger",
+    "emo_laststand",
+    "emo_beg"
+   ]
+  }
+ ]
+}

@@ -3179,7 +3179,7 @@
     const modelSel = box.querySelector('#pj-model');
     if (modelSel) {
       const opts = (S.options?.model_presets || []).map((m) => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
-      modelSel.innerHTML = `<option value="">（跟随全局激活方案）</option>` + opts;
+      modelSel.innerHTML = `<option value="">（跟随「全局出图参数」）</option>` + opts;
       modelSel.value = p.model_preset || '';
       modelSel.addEventListener('change', (e) => save({ model_preset: e.target.value }));
     }
@@ -5129,7 +5129,7 @@
         </div>
         <div class="cm-field"><label>默认模型方案</label>
           <select id="np-model">
-            <option value="">（跟随全局激活方案）</option>
+            <option value="">（跟随「全局出图参数」）</option>
             ${(S.options.model_presets || []).map((x) => `<option value="${esc(x.name)}">${esc(x.name)}</option>`).join('')}
           </select>
         </div>
