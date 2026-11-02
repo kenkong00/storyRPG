@@ -30,12 +30,16 @@ const CategoryBar = {
       autoSelectFirst: false,
       systemNodes: [],
       onTreeChange: () => {},
+      // 树形模式：递归渲染整棵分类树（含子分类），可折叠、缩进，
+      // 每个节点 hover 显示「改 / 删」；分类下有内容（人物 / 子分类）时删除按钮禁用。
+      treeMode: false,
     }, options || {});
 
     const state = {
       resourceType,
       tree: [],
       currentPath: '',
+      expanded: new Set(),
     };
 
     // 将系统类型节点转换为统一的树节点结构
@@ -117,6 +121,7 @@ const CategoryBar = {
     }
 
     function render() {
+      if (opts.treeMode) { renderTree(); return; }
       let html = '<div class="category-bar-wrap">';
       html += '<div class="cat-bar-inner">';
       html += `<span class="cat-bar-label">${opts.label}:</span>`;
@@ -154,6 +159,68 @@ const CategoryBar = {
       bindEvents();
     }
 
+    // 展开 path 的所有祖先节点，保证当前选中节点在树中可见
+    function expandAncestors(path) {
+      if (!path) return;
+      const parts = path.split('/');
+      let acc = '';
+      for (const p of parts) {
+        acc = acc ? acc + '/' + p : p;
+        if (acc !== path) state.expanded.add(acc);
+      }
+    }
+
+    // 递归渲染单个分类节点（含其子分类），depth 控制缩进层级
+    function buildTreeRow(node, depth) {
+      const hasChildren = node.children && node.children.length > 0;
+      const count = countFor(node.path);
+      const expanded = state.expanded.has(node.path);
+      const active = node.path === state.currentPath;
+      const isSystem = !!node.is_system;
+      // 可删除条件：自定义分类 且 无子分类 且 无直接内容（人物）
+      const deletable = !isSystem && !hasChildren && count === 0;
+      const toggle = hasChildren
+        ? `<span class="tw" data-toggle="${node.path}">${expanded ? '▾' : '▸'}</span>`
+        : `<span class="tw"></span>`;
+      const hc = hasChildren ? `<span class="hc">📁${node.children.length}</span>` : '';
+      const editBtn = isSystem ? '' :
+        `<button class="cat-action-btn cat-edit" data-path="${node.path}" type="button" title="重命名">改</button>`;
+      const delBtn = isSystem ? '' :
+        `<button class="cat-action-btn danger cat-del" data-path="${node.path}" type="button"
+          ${deletable ? 'title="删除"' : 'disabled title="分类下有内容，无法删除（请先移走人物 / 子分类）"'}>删</button>`;
+      let html = `
+        <div class="cat-tree-row cat-node${active ? ' active' : ''}${isSystem ? ' sys' : ''}" data-path="${node.path}" data-depth="${depth}" style="padding-left:${8 + depth * 18}px">
+          ${toggle}
+          <span class="n">${node.name}</span>
+          ${hc}
+          <span class="cat-count">(${count})</span>
+          <span class="cat-actions" data-stop-prop="1">${editBtn}${delBtn}</span>
+        </div>`;
+      if (hasChildren && expanded) {
+        node.children.forEach(ch => { html += buildTreeRow(ch, depth + 1); });
+      }
+      return html;
+    }
+
+    // 树形模式渲染：可折叠 + 缩进的完整分类树，未分类固定置顶
+    function renderTree() {
+      expandAncestors(state.currentPath);
+      const uncategorizedCount = countFor('');
+      let html = '<div class="category-bar-wrap">';
+      html += '<div class="cat-tree">';
+      html += `<div class="cat-tree-row cat-node" data-path="" data-depth="0" style="padding-left:8px">
+          <span class="tw"></span><span class="n">未分类</span>
+          <span class="cat-count">(${uncategorizedCount})</span>
+        </div>`;
+      buildSystemNodes().forEach(n => { html += buildTreeRow(n, 0); });
+      state.tree.forEach(n => { html += buildTreeRow(n, 0); });
+      html += '</div>';
+      html += '<button class="btn btn-outline btn-sm" id="btn-add-cat" type="button" style="margin-top:8px">+ 添加分类</button>';
+      html += '</div>';
+      container.innerHTML = html;
+      bindEvents();
+    }
+
     function bindEvents() {
       // 分类节点点击（排除 .cat-actions 区域）
       container.querySelectorAll('.cat-node').forEach(el => {
@@ -178,6 +245,16 @@ const CategoryBar = {
       // 添加分类
       const addBtn = container.querySelector('#btn-add-cat');
       if (addBtn) addBtn.addEventListener('click', () => showAddCategoryForm(''));
+      // 树形模式：折叠 / 展开子分类
+      container.querySelectorAll('.tw[data-toggle]').forEach(t => {
+        t.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const p = t.dataset.toggle;
+          if (state.expanded.has(p)) state.expanded.delete(p);
+          else state.expanded.add(p);
+          render();
+        });
+      });
       // 重命名
       container.querySelectorAll('.cat-edit').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -189,8 +266,9 @@ const CategoryBar = {
       container.querySelectorAll('.cat-del').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
+          if (btn.hasAttribute('disabled')) return; // 有内容 / 有子分类时不许删
           const path = btn.dataset.path;
-          const confirmed = await Admin.confirm(`确定要删除分类 "${path}" 吗？\n若分类下有子分类，将拒绝删除。`);
+          const confirmed = await Admin.confirm(`确定要删除分类 "${path}" 吗？\n该分类必须为空（无人物、无子分类）才能删除。`);
           if (!confirmed) return;
           try {
             await Admin.del(`/resource-categories/${resourceType}/${encodeURIComponent(path)}`);
@@ -310,24 +388,72 @@ const CategoryBar = {
         return (node && node.children) ? node.children : [];
       },
       // 渲染子分类文件夹卡片到指定容器，返回 HTML 字符串
-      renderFolderCards() {
+      // opts.withActions=true 时，每张卡片右上角附带「改 / 删」按钮，
+      // 配合 bindFolderCards() 使用，可让二级（及更深）分类也能被改名 / 删除。
+      renderFolderCards(opts) {
+        const withActions = !!(opts && opts.withActions);
         const children = this.getChildren();
         if (!children || children.length === 0) return '';
         let html = '<div class="folder-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px">';
         children.forEach(cat => {
           const count = countFor(cat.path);
+          const hasChildren = cat.children && cat.children.length > 0;
+          const actions = withActions ? `
+              <span class="cat-actions" data-stop-prop="1" style="position:absolute;right:8px;top:8px;display:none">
+                <button class="cat-action-btn cat-edit" data-folder-edit="${cat.path}" title="重命名" type="button">改</button>
+                <button class="cat-action-btn danger cat-del" data-folder-del="${cat.path}" title="删除" type="button">删</button>
+              </span>` : '';
           html += `
-            <div class="folder-card" data-path="${cat.path}" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s">
+            <div class="folder-card" data-path="${cat.path}" style="position:relative;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s">
               <span style="font-size:20px">📁</span>
               <div style="flex:1;min-width:0">
-                <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat.name}</div>
+                <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cat.name}${hasChildren ? ` <span style="font-size:10px;color:var(--text-muted)">📁${cat.children.length}</span>` : ''}</div>
                 <div style="font-size:10px;color:var(--text-muted)">${count} 项</div>
               </div>
+              ${actions}
             </div>
           `;
         });
         html += '</div>';
         return html;
+      },
+
+      // 绑定子分类文件夹卡片的交互（需在宿主把 renderFolderCards 的 HTML 插入 DOM 后调用）。
+      // 提供：点击卡片进入该子分类、右上角「改 / 删」操作。
+      // 这样二级（及更深）分类也能被改名 / 删除，而不只是根分类。
+      bindFolderCards(rootEl) {
+        if (!rootEl) return;
+        rootEl.querySelectorAll('.folder-card').forEach(el => {
+          const path = el.dataset.path || '';
+          el.addEventListener('click', (e) => {
+            if (e.target.closest('.cat-actions')) return;
+            state.currentPath = path;
+            render();
+            try { opts.onSelect(path); } catch (_) {}
+          });
+          const delBtn = el.querySelector('[data-folder-del]');
+          if (delBtn) delBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const p = delBtn.dataset.folderDel;
+            const confirmed = await Admin.confirm(`确定要删除分类 "${p}" 吗？\n若分类下有子分类，将拒绝删除。`);
+            if (!confirmed) return;
+            try {
+              await Admin.del(`/resource-categories/${resourceType}/${encodeURIComponent(p)}`);
+              Admin.toast('分类已删除', 'success');
+              await loadTree();
+              render();
+              try { opts.onSelect(state.currentPath); } catch (_) {}
+              try { opts.onTreeChange(); } catch (_) {}
+            } catch (err) {
+              Admin.toast('删除失败: ' + err.message, 'error');
+            }
+          });
+          const editBtn = el.querySelector('[data-folder-edit]');
+          if (editBtn) editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showRenameCategoryForm(editBtn.dataset.folderEdit);
+          });
+        });
       },
     };
   }

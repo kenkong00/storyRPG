@@ -371,11 +371,6 @@ Admin.registerPage('characters', async (container) => {
       `;
     }
 
-    let folderHtml = '';
-    if (categoryBarInstance) {
-      folderHtml = categoryBarInstance.renderFolderCards();
-    }
-
     let bodyHtml = '';
     if (chars.length === 0) {
       bodyHtml = '<div class="table-empty">暂无人物</div>';
@@ -474,8 +469,16 @@ Admin.registerPage('characters', async (container) => {
       bodyHtml += '</tbody></table></div>';
     }
 
+    let folderHtml = '';
+    if (categoryBarInstance) {
+      folderHtml = categoryBarInstance.renderFolderCards({ withActions: true });
+    }
+
     const bodyEl = document.getElementById('chars-body');
-    if (bodyEl) bodyEl.innerHTML = folderHtml + bodyHtml + renderRuntimeSection();
+    if (bodyEl) {
+      bodyEl.innerHTML = folderHtml + bodyHtml + renderRuntimeSection();
+      if (categoryBarInstance) categoryBarInstance.bindFolderCards(bodyEl);
+    }
     bindEvents();
   }
 
@@ -501,16 +504,6 @@ Admin.registerPage('characters', async (container) => {
     document.getElementById('btn-view-list')?.addEventListener('click', () => { viewMode = 'list'; render(); });
     document.getElementById('btn-add')?.addEventListener('click', () => showForm());
     document.getElementById('btn-move-selected')?.addEventListener('click', () => batchMoveToCategory());
-
-    // 子分类文件夹卡片点击
-    container.querySelectorAll('.folder-card').forEach(el => {
-      el.addEventListener('click', () => {
-        const path = el.dataset.path || '';
-        currentCategory = path;
-        if (categoryBarInstance) categoryBarInstance.setPath(path);
-        applyClientFilter();
-      });
-    });
 
     // 全选
     document.getElementById('select-all')?.addEventListener('change', (e) => {

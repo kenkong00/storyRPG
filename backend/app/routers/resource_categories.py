@@ -14,6 +14,7 @@ from sqlalchemy import text
 
 from ..database import get_db
 from ..models.resource_category import ResourceCategory
+from ..models.character import Character
 
 router = APIRouter(prefix="/api/resource-categories", tags=["resource-categories"])
 
@@ -231,6 +232,15 @@ def delete_category(resource_type: str, cat_path: str, db: Session = Depends(get
     ).count()
     if children > 0:
         raise HTTPException(status_code=400, detail=f"该分类下有 {children} 个子分类，请先删除子分类")
+
+    # 分类下有内容（人物）则拒绝删除：避免人物 category_path 悬空
+    if resource_type == "character":
+        used = db.query(Character).filter(Character.category_path == cat_path).count()
+        if used > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"该分类下还有 {used} 个人物，请先把这些人物移到其他分类或删除后再删除分类",
+            )
 
     db.delete(cat)
     db.commit()

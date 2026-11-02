@@ -1155,11 +1155,20 @@ def art_preview_live(payload: dict, db: Session = Depends(get_db)):
     from ..models.character import Character
 
     code = payload.get("card_code")
-    if not code:
-        raise HTTPException(400, "缺少 card_code")
-    card = db.query(CardDef).filter(CardDef.code == code).first()
-    if not card:
-        raise HTTPException(404, "卡牌不存在")
+    card = None
+    if code:
+        card = db.query(CardDef).filter(CardDef.code == code).first()
+        if not card:
+            raise HTTPException(404, "卡牌不存在")
+    else:
+        # 「卡牌（动作表情取自这张）」选了默认：不引用任何卡，
+        # 提示词只拼角色外观（动作 / 表情 / 附加一律为空），
+        # 即「提示词中不出现动作提示词」。
+        card = SimpleNamespace(
+            name="", desc="",
+            art_action="", art_expression="", art_extra="",
+            class_code=payload.get("class_code") or "",
+        )
 
     def pick(key, fallback):
         v = payload.get(key)

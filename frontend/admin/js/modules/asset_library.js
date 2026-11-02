@@ -135,6 +135,7 @@ window.AssetLibrary = (function () {
 
     const grid = host.querySelector('.al-grid');
     const stat = host.querySelector('.al-stat');
+    let gridApi = null;
 
     async function load() {
       grid.innerHTML = '<div class="al-empty">加载中…</div>';
@@ -162,31 +163,62 @@ window.AssetLibrary = (function () {
     function paint() {
       stat.innerHTML = `共 <b>${S.total}</b> 张`;
       if (!S.items.length) {
-        grid.innerHTML = `<div class="al-empty">没有符合条件的素材。<br>
-          点右上角 <b>同步磁盘</b> 把目录里还没入库的图片收进来。</div>`;
+        if (!gridApi) {
+          grid.innerHTML = `<div class="al-empty">没有符合条件的素材。<br>
+            点右上角 <b>同步磁盘</b> 把目录里还没入库的图片收进来。</div>`;
+        } else {
+          gridApi.setItems([]);
+        }
         return;
       }
-      grid.innerHTML = S.items.map((a) => {
-        const name = a.subject_name || a.variant_name || a.name || KIND_LABEL[a.kind] || '素材';
-        const dim = a.width && a.height ? `${a.width}×${a.height}` : '';
-        const used = S.usage[a.url] || 0;
-        return `<div class="al-card" data-id="${a.id}">
-          <div class="al-thumb"><img loading="lazy" src="${esc(a.url)}" alt=""></div>
-          <span class="al-tag ${a.origin === 'ai' ? 'ai' : ''}">${esc(ORIGIN_LABEL[a.origin] || '')}</span>
-          ${used ? `<span class="al-use">被用 ${used}</span>` : ''}
-          ${a.status === 'archived' ? '<div class="al-arch">已弃用</div>' : ''}
-          <div class="al-body">
-            <div class="al-name" title="${esc(name)}">${esc(name)}</div>
-            <div class="al-sub"><span class="k">${esc(KIND_LABEL[a.kind] || '其他')}</span><span>${dim}</span></div>
-          </div>
-        </div>`;
-      }).join('');
-      grid.querySelectorAll('.al-card').forEach((c) => {
-        c.addEventListener('click', () => {
-          const a = S.items.find((x) => String(x.id) === c.dataset.id);
-          if (a) openDetail(a, load);
-        });
-      });
+      // 统一图片网格：单选 / Shift 连选 / Ctrl 切换 / 双击大图 / 右键菜单（含「详情」）
+      const opts = {
+        container: grid,
+        items: S.items,
+        getId: (a) => String(a.id),
+        renderCard: (a) => {
+          const name = a.subject_name || a.variant_name || a.name || KIND_LABEL[a.kind] || '素材';
+          const dim = a.width && a.height ? `${a.width}×${a.height}` : '';
+          const used = S.usage[a.url] || 0;
+          return `<div class="al-card" data-ig-id="${esc(a.id)}">
+            <div class="al-thumb"><img loading="lazy" src="${esc(a.url)}" alt=""></div>
+            <span class="al-tag ${a.origin === 'ai' ? 'ai' : ''}">${esc(ORIGIN_LABEL[a.origin] || '')}</span>
+            ${used ? `<span class="al-use">被用 ${used}</span>` : ''}
+            ${a.status === 'archived' ? '<div class="al-arch">已弃用</div>' : ''}
+            <div class="al-body">
+              <div class="al-name" title="${esc(name)}">${esc(name)}</div>
+              <div class="al-sub"><span class="k">${esc(KIND_LABEL[a.kind] || '其他')}</span><span>${dim}</span></div>
+            </div>
+          </div>`;
+        },
+        getPreview: (a) => {
+          const name = a.subject_name || a.variant_name || a.name || KIND_LABEL[a.kind] || '素材';
+          const dim = a.width && a.height ? `${a.width}×${a.height}` : '';
+          return {
+            url: a.url, title: name, prompt: a.prompt || '', width: a.width, height: a.height,
+            meta: {
+              '类型': KIND_LABEL[a.kind] || '其他',
+              '来源': ORIGIN_LABEL[a.origin] || '',
+              '尺寸': dim,
+              '主体': a.subject_name || '未关联',
+              '被使用': (S.usage[a.url] || 0) + ' 处',
+            },
+          };
+        },
+        onDelete: async (ids) => {
+          for (const id of ids) {
+            await Admin.del(`/assets/${id}?remove_file=true&force=true`);
+          }
+          await load();
+        },
+        menuItems: () => [{ label: '📝 详情', act: 'detail' }],
+        onMenuAct: async (act, ids, it) => {
+          if (act === 'detail' && it) openDetail(it, load);
+        },
+        emptyText: '没有符合条件的素材。点右上角「同步磁盘」把目录里还没入库的图片收进来。',
+      };
+      if (gridApi) gridApi.setItems(S.items);
+      else gridApi = window.ImageGrid.mount(opts);
     }
 
     host.querySelector('.al-q').addEventListener('input', (e) => {

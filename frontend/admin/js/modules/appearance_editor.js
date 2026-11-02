@@ -228,8 +228,10 @@
               <option value="head"${state.app.framing === 'head' ? ' selected' : ''}>头部特写</option>
             </select>
           </label>`}
+          ${opts.extraToolbarAfter || ''}
           <div class="ae-actions">
             <button class="ae-btn" id="ae-random">🎲 整体随机</button>
+            ${opts.extraActions || ''}
             <button class="ae-btn primary" id="ae-save">💾 保存外观</button>
           </div>
         </div>

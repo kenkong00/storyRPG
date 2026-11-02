@@ -686,6 +686,9 @@ table tr:last-child td { border-bottom: none; }
 .cat-node:hover .cat-actions {
   display: flex;
 }
+.folder-card:hover .cat-actions {
+  display: flex;
+}
 .cat-action-btn {
   padding: 1px 6px;
   background: transparent;
@@ -705,6 +708,85 @@ table tr:last-child td { border-bottom: none; }
   background: rgba(224, 85, 85, 0.15);
   color: var(--red);
   border-color: var(--red);
+}
+.cat-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+/* ===== 分类树（可折叠 + 缩进，二级分类直接显示改/删） ===== */
+.cat-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 360px;
+  overflow: auto;
+  padding: 4px 2px;
+}
+.cat-tree .cat-node {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  position: relative;
+  color: var(--text-primary);
+}
+.cat-tree .cat-node:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+.cat-tree .cat-node.active {
+  background: var(--gold);
+  color: #000;
+}
+.cat-tree .cat-node.active .cat-count,
+.cat-tree .cat-node.active .hc,
+.cat-tree .cat-node.active .tw {
+  color: #000;
+  opacity: 0.8;
+}
+.cat-tree .tw {
+  width: 16px;
+  flex: 0 0 16px;
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+}
+.cat-tree .n {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-tree .hc {
+  margin-left: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+.cat-tree .cat-count {
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.7;
+  flex: 0 0 auto;
+}
+.cat-tree .cat-actions {
+  position: static;
+  transform: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 4px;
+  margin-left: auto;
+}
+.cat-tree .cat-node:hover .cat-actions {
+  display: flex;
 }
 /* 子分类文件夹卡片 */
 .folder-card:hover {

@@ -1,6 +1,37 @@
 // ========== 后台管理系统核心 ==========
 const API_BASE = '/api';
 
+// ========== 图片加载失败自动重试 ==========
+// 现象：项目刚启动、后端还没完全就绪时，页面里那一批 <img> 会撞上瞬时失败
+// （连接被拒 / 5xx），浏览器就把它们缓存成「裂图」，必须手动刷新才恢复。
+// 这里在 document 捕获阶段统一监听图片 error，按 300/600/1200ms 退避重试最多 3 次，
+// 并加 _rb 时间戳破除负缓存；服务器就绪后这些图会自动补加载，无需手动刷新。
+// 仅对 http(s) 同源静态资源生效，blob:/data: 无法重试则跳过。
+(function installImageAutoRetry() {
+  const MAX_RETRY = 3;
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    if (!img.src || img.dataset.imgNoRetry === '1') return;
+    const tried = parseInt(img.dataset.imgRetry || '0', 10);
+    if (tried >= MAX_RETRY) return;
+    let abs;
+    try { abs = new URL(img.src, location.href); } catch (_) { return; }
+    if (abs.protocol !== 'http:' && abs.protocol !== 'https:') return;
+    img.dataset.imgRetry = String(tried + 1);
+    const delay = 300 * Math.pow(2, tried);
+    setTimeout(() => {
+      try {
+        const u = new URL(img.src, location.href);
+        u.searchParams.set('_rb', String(Date.now()));
+        img.src = u.toString();
+      } catch (_) {
+        const s = img.src; img.src = s; // 兜底：直接重设触发重新加载
+      }
+    }, delay);
+  }, true);
+})();
+
 const Admin = {
   currentPage: 'dashboard',
   pages: {},

@@ -108,8 +108,10 @@ Admin.registerPage('card_appearance', async (container) => {
       prefix_prompt: '', suffix_prompt: '', note: '', enabled: 1,
     }, detail.params || {});
     const list = cardsForRole();
-    if (!ST.card || !list.some(c => c.code === ST.card)) {
-      ST.card = (list[0] || {}).code || '';
+    // 之前选的卡在当前职业下不存在了 → 退回默认（空 = 提示词不出现动作）；
+    // 空 ST.card 是「卡牌（动作表情取自这张）」的默认项，本身合法，不要强行补第一张卡。
+    if (ST.card && !list.some(c => c.code === ST.card)) {
+      ST.card = '';
     }
     loadCardFields();
     // 必须 await：不等待挂载完成就 refreshPrompt()，会作用在旧编辑器实例上，
@@ -168,140 +170,30 @@ Admin.registerPage('card_appearance', async (container) => {
       applyRole();
       return;
     }
-    if (!ST.card) {
-      body.innerHTML = '<div class="table-empty">卡牌库里还没有卡，先去「卡牌系统 → 卡牌库」建一张</div>';
-      return;
-    }
-
-    const clsOpts = ST.roles.classes.map((c) => {
-      const sel = ST.role.kind === 'class' && ST.role.id === c.code ? ' selected' : '';
-      return `<option value="class:${esc(c.code)}"${sel}>${esc(c.name || '')}${c.has_appearance ? ' ◆' : ''}</option>`;
-    }).join('');
-    const charOpts = ST.roles.characters.map((c) => {
-      const sel = ST.role.kind === 'character' && String(ST.role.id) === String(c.id) ? ' selected' : '';
-      const clsName = (ST.roles.classes.find(x => x.code === c.class_code) || {}).name || c.class_code || '';
-      return `<option value="character:${esc(c.id)}"${sel}>${esc(c.name || '')}${clsName ? '（' + esc(clsName) + '）' : ''}</option>`;
-    }).join('');
-    const cardOpts = cardsForRole().map((c) =>
-      `<option value="${esc(c.code)}" ${c.code === ST.card ? 'selected' : ''}>${esc(c.name)}（${esc(c.code)}）</option>`).join('') || '<option value="">没有卡牌</option>';
-
-    const isChar = ST.role.kind === 'character';
-    const pf = (k, label, ph, area) => `
-      <label class="cx-f"><span>${label}</span>
-        ${area
-          ? `<textarea class="apx-ta cx-pin" data-pk="${k}" rows="2" spellcheck="false" placeholder="${esc(ph || '')}">${esc(ST.p[k] || '')}</textarea>`
-          : `<input class="apx-inp cx-pin" data-pk="${k}" value="${esc(ST.p[k] || '')}" placeholder="${esc(ph || '')}">`}
-      </label>`;
 
     body.innerHTML = `
       <div class="apx-bar">
-        <label class="apx-field"><span>卡牌角色（职业 / 人物）</span>
-          <select class="apx-sel" id="ca-role" style="min-width:210px">
-            <optgroup label="职业">${clsOpts}</optgroup>
-            <optgroup label="人物">${charOpts}</optgroup>
-          </select>
-        </label>
-        <label class="apx-field"><span>卡牌（动作表情取自这张）</span>
-          <select class="apx-sel" id="ca-card" style="min-width:190px">${cardOpts}</select>
-        </label>
-        <label class="apx-field"><span>性别（兜底衣着 / 出图参数）</span>
-          <select class="apx-sel" id="ca-gender">
-            <option value="female"${ST.gender === 'female' ? ' selected' : ''}>女</option>
-            <option value="male"${ST.gender === 'male' ? ' selected' : ''}>男</option>
-            <option value="unknown"${ST.gender === 'unknown' ? ' selected' : ''}>不确定</option>
-          </select>
-        </label>
         <button class="apx-btn" id="ca-gen-toggle" title="展开 / 收起全局出图参数">⚙ 出图参数</button>
-        <button class="apx-btn" id="ca-params-toggle" title="画风覆盖 / 衣着覆盖 / 前后缀">⚙ 卡面参数</button>
-        <button class="apx-btn primary" id="ca-render">🖼 按当前外观出图</button>
-        <button class="apx-btn primary" id="ca-save">💾 保存</button>
         <span class="apx-hint" id="ca-status"></span>
       </div>
 
-      <div id="ca-genbox" style="display:none;margin-bottom:10px"><div id="ca-gen-params"></div></div>
-
-      <div class="apx-hintbar">
-        上面「卡牌角色」里的<b>职业</b>就是卡牌系统里的「职业」：改名 / 改画风 / 新增 / 删除都在
-        <b>卡牌系统 → 职业</b> 那一页（每个职业自带一套面板、画风与男女衣着）。
-        <button class="apx-btn xs" id="ca-goto-classes">去管理职业 →</button>
-      </div>
-
-
-      <div id="ca-params" class="cx-params" style="display:none">
-        <div class="cx-params-h">
-          <span>卡面参数</span>
-          <span class="apx-hint">${isChar ? '存在这个人身上，优先级：这里 > 套装 > 职业' : '直接写回职业（与「卡牌系统 → 职业」同一份）'}</span>
-        </div>
-        <div class="cx-params-grid">
-          ${pf('style_override', isChar ? '画风覆盖（留空 = 套装/职业画风）' : '职业画风',
-              '例如：水墨卡牌风，宣纸质感，朱红点缀', true)}
-          ${pf('outfit_male', '男装着装', '例如：玄铁重铠，护肩刻裂纹，腰悬断剑')}
-          ${pf('outfit_female', '女装着装', '例如：银白长裙，腰束流苏，锁骨链坠魂晶')}
-          ${pf('outfit_other', '兜底装（性别未知）', '男女都不合适时用这段')}
-          ${isChar ? pf('prefix_prompt', '前置（贴在整段最前）', '例如：全身卡面，暗金边框，背景是燃烧的裂界', true) : ''}
-          ${isChar ? pf('suffix_prompt', '后置（贴在整段最后）', '例如：脚下碎裂的石板，衣角被热浪掀起', true) : ''}
-          ${isChar ? pf('note', '备注（只给自己看）', '例如：这套只给 SSR 版本用') : ''}
-        </div>
-        ${isChar ? `
-        <div class="cx-params-en">
-          <label class="cx-f" style="flex-direction:row;align-items:center;gap:6px">
-            <input type="checkbox" id="ca-enabled" ${Number(ST.p.enabled) ? 'checked' : ''}>
-            <span>启用这份卡牌角色配置（关掉 = 完全按职业/套装/人物外观来拼）</span>
-          </label>
-        </div>` : ''}
-      </div>
+      <div id="ca-genbox" style="display:block;margin-bottom:10px"><div id="ca-gen-params"></div></div>
 
       <div id="ca-editor" class="cx-editor"></div>`;
 
-    // ---- 绑定 ----
-    $('ca-role').addEventListener('change', async (e) => {
-      ST.role = parseRole(e.target.value);
-      try { localStorage.setItem('ca_role', roleVal(ST.role)); } catch (_) {}
-      await applyRole();
-      refreshPrompt();
-    });
-    $('ca-card').addEventListener('change', (e) => {
-      ST.card = e.target.value;
-      try { localStorage.setItem('ca_card', ST.card); } catch (_) {}
-      loadCardFields();
-      refreshPrompt();
-    });
-    $('ca-gender').addEventListener('change', (e) => {
-      ST.gender = e.target.value;
-      try { localStorage.setItem('ca_gender', ST.gender); } catch (_) {}
-      refreshPrompt();
-    });
-    $('ca-params-toggle').addEventListener('click', () => {
-      const box = $('ca-params');
-      box.style.display = box.style.display === 'none' ? '' : 'none';
-    });
-    body.querySelectorAll('.cx-pin').forEach((el) => {
-      el.addEventListener('input', () => {
-        ST.p[el.dataset.pk] = el.value;
-        schedulePromptRefresh();
-      });
-    });
-    const enEl = $('ca-enabled');
-    if (enEl) enEl.addEventListener('change', () => { ST.p.enabled = enEl.checked ? 1 : 0; });
-    const gotoCls = $('ca-goto-classes');
-    if (gotoCls) gotoCls.addEventListener('click', () => {
-      // 先切到卡牌系统页，等它挂好再切到「职业」分页（模块是懒加载的）
-      const jump = () => { if (window.CardGameTabs) window.CardGameTabs.goto('classes'); };
-      if (Admin.navigate) { Admin.navigate('cards'); setTimeout(jump, 350); } else jump();
-    });
-    $('ca-save').addEventListener('click', saveAll);
-    $('ca-render').addEventListener('click', generate);
-
-    let genMounted = false;
-    $('ca-gen-toggle').addEventListener('click', async () => {
-      const box = $('ca-genbox');
-      const open = box.style.display === 'none';
-      box.style.display = open ? '' : 'none';
-      if (open && !genMounted && window.GenParams) {
-        genMounted = true;
-        try { await GenParams.init($('ca-gen-params'), { scope: 'cards_appearance' }); }
-        catch (e) { $('ca-gen-params').innerHTML = `<div class="apx-hint">参数加载失败：${esc(e.message)}</div>`; }
+    // ---- 绑定（角色/性别/卡牌下拉/出图按钮已移除或挪进编辑器）----
+    // 出图参数：默认展开，渲染即挂载
+    try {
+      const gp = window.GenParams && GenParams.init($('ca-gen-params'), { scope: 'cards_appearance' });
+      if (gp && typeof gp.catch === 'function') {
+        gp.catch((e) => { $('ca-gen-params').innerHTML = `<div class="apx-hint">参数加载失败：${esc(e.message)}</div>`; });
       }
+    } catch (e) {
+      $('ca-gen-params').innerHTML = `<div class="apx-hint">参数加载失败：${esc(e.message)}</div>`;
+    }
+    $('ca-gen-toggle').addEventListener('click', () => {
+      const box = $('ca-genbox');
+      box.style.display = box.style.display === 'none' ? '' : 'none';
     });
 
     mountEditor();
@@ -341,13 +233,44 @@ Admin.registerPage('card_appearance', async (container) => {
     const host = $('ca-editor');
     if (!host) return;
     host.innerHTML = '<div class="apx-loading">加载外观编辑器…</div>';
+
+    // 卡牌下拉：默认项 = 不引用任何卡，提示词里不出现动作 / 表情（满足「提示词中不出现动作提示词」）。
+    // 放进外观编辑器的 extraToolbarAfter 插槽（位于「立绘取景」之后）。
+    const cardOpts = cardsForRole().map((c) =>
+      `<option value="${esc(c.code)}" ${c.code === ST.card ? 'selected' : ''}>${esc(c.name)}（${esc(c.code)}）</option>`).join('');
+    const extraToolbarAfter = `
+      <label class="ae-field"><span>卡牌（动作表情取自这张）</span>
+        <select class="ae-sel" id="ca-card">
+          <option value="">（默认：提示词不出现动作）</option>
+          ${cardOpts}
+        </select>
+      </label>`;
+    // 「按当前外观出图」放进 extraActions 插槽（位于「整体随机」之后、保存之前）。
+    const extraActions = `<button class="ae-btn" id="ca-render">🖼 按当前外观出图</button>`;
+
     ST.editor = await window.AppearanceEditor.mount(host, ST.appearance, {
       includeSensitive: false,   // 卡面出图一律干净，成人维度不参与
       layout: 'split',
       onPrompt: cardPromptBuilder,
       onChange: () => { ST.appearance = ST.editor ? ST.editor.getAppearance() : ST.appearance; },
       onSave: async () => saveAll(),
+      extraToolbarAfter,
+      extraActions,
     });
+
+    // 编辑器挂载完成后，绑定从顶部整行挪进来的两个控件
+    const cardSel = host.querySelector('#ca-card');
+    if (cardSel) {
+      cardSel.addEventListener('change', () => {
+        ST.card = cardSel.value;
+        loadCardFields();
+        schedulePromptRefresh();
+      });
+    }
+    const renderBtn = host.querySelector('#ca-render');
+    if (renderBtn) {
+      renderBtn.addEventListener('click', (e) => generate(e));
+    }
   }
 
   // ---- 保存 ----
@@ -383,6 +306,11 @@ Admin.registerPage('card_appearance', async (container) => {
   // ---- 出图 ----
   async function generate(e) {
     const btn = e && e.currentTarget;
+    // 默认（不引用任何卡）时没法出卡面，先提示选一张卡
+    if (!ST.card) {
+      Admin.toast('请先在「卡牌（动作表情取自这张）」里选一张卡再出图', 'error');
+      return;
+    }
     const text = ST.editor ? ST.editor.getPromptText() : '';
     if (!text) { Admin.toast('提示词是空的，先拼一份', 'error'); return; }
     if (btn) btn.disabled = true;

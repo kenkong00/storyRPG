@@ -48,19 +48,21 @@ def _d(a: Asset) -> dict:
 @router.get("/summary")
 def summary(db: Session = Depends(get_db)):
     """按人物汇总：每个人物多少张、最新一张是什么时候。"""
-    rows = (db.query(Asset.subject_id, Asset.subject_name,
+    # 仅按 subject_id 分组：同一人物的图片若 subject_name 不一致（历史脏数据），
+    # 不能把ta拆成多行，否则左栏出现重复人物。名字统一用 Character 主表。
+    rows = (db.query(Asset.subject_id,
                      func.count(Asset.id), func.max(Asset.created_at))
             .filter(Asset.origin == "ai", Asset.status != "archived")
-            .group_by(Asset.subject_id, Asset.subject_name).all())
+            .group_by(Asset.subject_id).all())
 
     char_map = {c.id: c.name for c in db.query(Character).all()}
 
     chars = []
     unattached = 0
     total = 0
-    for cid, cname, cnt, latest in rows:
+    for cid, cnt, latest in rows:
         total += cnt
-        name = char_map.get(cid) or cname or (f"人物#{cid}" if cid else "")
+        name = char_map.get(cid) or (f"人物#{cid}" if cid else "")
         if not cid:
             unattached += cnt
             continue
@@ -84,14 +86,34 @@ def list_images(character_id: Optional[int] = Query(None),
                 source: Optional[str] = Query(None),
                 q: Optional[str] = Query(None),
                 only_unattached: bool = Query(False),
+                subject_category: Optional[str] = Query(None,
+                    description="按人物分类路径过滤（含该分类及其所有子分类下的人物），"
+                                "与 Character.category_path 对齐"),
+                only_uncat: bool = Query(False,
+                    description="只看「未分类」人物的图（人物 category_path 为空）"),
                 limit: int = Query(500, ge=1, le=3000),
                 db: Session = Depends(get_db)):
     query = db.query(Asset).filter(Asset.origin == "ai", Asset.status != "archived")
     if only_unattached:
         query = query.filter(Asset.subject_id.is_(None))
+    elif only_uncat:
+        # 未分类人物：人物 category_path 为空
+        cids = [c.id for c in db.query(Character.id).filter(
+            (Character.category_path.is_(None)) | (Character.category_path == "")
+        ).all()]
+        query = query.filter(Asset.subject_type == "character",
+                             Asset.subject_id.in_(cids))
     elif character_id is not None:
         query = query.filter(Asset.subject_type == "character",
                              Asset.subject_id == character_id)
+    elif subject_category is not None:
+        # 该分类路径下（含子分类）的人物 id 集合
+        cids = [c.id for c in db.query(Character.id).filter(
+            (Character.category_path == subject_category) |
+            (Character.category_path.like(f"{subject_category}/%"))
+        ).all()]
+        query = query.filter(Asset.subject_type == "character",
+                             Asset.subject_id.in_(cids))
     if source:
         query = query.filter(Asset.source == source)
     if q:

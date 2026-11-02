@@ -754,15 +754,10 @@ Admin.registerPage('cards', async (container) => {
         { k: 'counters', label: '擅长克制', type: 'textarea', rows: 2, span: true },
         { k: 'nemesis', label: '主要天敌', type: 'textarea', rows: 2, span: true },
       ],
-    }, {
-      title: '卡面拼装（会拼进每张专属卡与通用卡的提示词）',
-      fields: [
-        { k: 'art_style', label: '职业画风', type: 'textarea', rows: 3, span: true },
-        { k: 'outfit_male', label: '男性衣着', type: 'textarea', rows: 2, span: true },
-        { k: 'outfit_female', label: '女性衣着', type: 'textarea', rows: 2, span: true },
-        { k: 'outfit_other', label: '其他衣着', type: 'textarea', rows: 2, span: true },
-      ],
     }];
+    // 注：原来第二组「卡面拼装（职业画风 / 男女衣着）」已移除 —— 外观交给
+    // 「卡片外观拼装」页统一设置，职业面板只负责职业初始数值，不再在此拼提示词。
+    // 后端 update_class 是合并更新，不带 art_style/outfit_* 不会清空已存值。
     Admin.showModal(`职业 · ${isNew ? '新建' : base.name}`, formHtml(groups, base), async () => {
       try {
         const data = readForm(groups);
