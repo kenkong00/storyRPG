@@ -138,6 +138,49 @@ MULTILINGUAL_VOICES: dict[str, dict[str, object]] = {
         "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
         "note": "多语言音色，中文带洋腔（建议先试听）；语气随意，适合旅人、商贩",
     },
+    # 2026-11-06：实测微软在线共 322 个音色、其中 Multilingual 系列 12 个。
+    # 官方中文音色只有 14 个、已全部收录，所以「更多中文」只能从这批跨语种
+    # 音色里引进。如实标注口音，用户可先试听再决定用不用。
+    "en-AU-WilliamMultilingualNeural": {
+        "name": "威廉（澳洲）", "gender": GENDER_MALE, "style": "醇厚",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带澳英口音；成熟男声，适合外籍导师、航海角色",
+    },
+    "fr-FR-VivienneMultilingualNeural": {
+        "name": "薇薇安（法）", "gender": GENDER_FEMALE, "style": "优雅",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带法语口音；适合异国贵妇、外交角色",
+    },
+    "fr-FR-RemyMultilingualNeural": {
+        "name": "雷米（法）", "gender": GENDER_MALE, "style": "温和",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带法语口音；适合异国学者、旅人",
+    },
+    "de-DE-SeraphinaMultilingualNeural": {
+        "name": "塞拉菲娜（德）", "gender": GENDER_FEMALE, "style": "清冷",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带德语口音；适合冷峻异族女角色",
+    },
+    "de-DE-FlorianMultilingualNeural": {
+        "name": "弗洛里安（德）", "gender": GENDER_MALE, "style": "明快",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带德语口音；适合年轻异族同伴",
+    },
+    "it-IT-GiuseppeMultilingualNeural": {
+        "name": "朱塞佩（意）", "gender": GENDER_MALE, "style": "热情",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带意语口音；适合商人、酒馆老板",
+    },
+    "ko-KR-HyunsuMultilingualNeural": {
+        "name": "玄秀（韩）", "gender": GENDER_MALE, "style": "沉稳",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带韩语口音；东亚面孔角色更贴",
+    },
+    "pt-BR-ThalitaMultilingualNeural": {
+        "name": "塔莉塔（巴葡）", "gender": GENDER_FEMALE, "style": "明亮",
+        "age": AGE_ADULT, "group": GROUP_MULTILINGUAL,
+        "note": "可读中文、带葡语口音；适合活泼异族少女",
+    },
 }
 
 # 这些 ID 是「允许进入音色列表」的例外白名单：
@@ -235,6 +278,80 @@ ROLE_VOICES: dict[str, dict[str, object]] = {
         "name": "沉稳女旁白", "gender": GENDER_FEMALE, "age": AGE_ADULT,
         "base": "zh-CN-XiaoxiaoNeural", "rate": -3, "pitch": -4,
         "style": "沉稳", "note": "女声旁白，适合绘本式叙事、回忆段落",
+    },
+    # ---------- 2026-11-06 扩充：全部基于**纯中文**官方音色派生 ----------
+    # 用户要「更多中文语音」。官方中文音色只有 14 个、已全部收录，
+    # 这批靠 rate / pitch 在真中文音色上塑形（不额外消耗网络请求），
+    # 比拉一批英文母语的多语言音色更贴中文语感。
+    "youth_m": {
+        "name": "少年侠客", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-CN-YunxiNeural", "rate": 12, "pitch": 12,
+        "style": "清爽", "note": "轻快少年感，适合初出江湖的主角",
+    },
+    "scholar_m": {
+        "name": "青涩书生", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-CN-YunxiNeural", "rate": -8, "pitch": 6,
+        "style": "文气", "note": "慢条斯理，适合书生、谋士、账房先生",
+    },
+    "cool_m": {
+        "name": "冷面少年", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-CN-YunxiNeural", "rate": -10, "pitch": -14,
+        "style": "寡言", "note": "压低变冷，适合寡言剑客、冷峻护卫",
+    },
+    "uncle_m": {
+        "name": "憨厚大叔", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-CN-YunjianNeural", "rate": -8, "pitch": -18,
+        "style": "憨实", "note": "厚实放缓，适合铁匠、村长、邻家大叔",
+    },
+    "heroine_f": {
+        "name": "豪爽女将", "gender": GENDER_FEMALE, "age": AGE_ADULT,
+        "base": "zh-CN-XiaoyiNeural", "rate": 14, "pitch": -10,
+        "style": "爽利", "note": "明亮压低，适合女将军、侠女、队长",
+    },
+    "mystic_f": {
+        "name": "神秘巫女", "gender": GENDER_FEMALE, "age": AGE_ADULT,
+        "base": "zh-CN-XiaoxiaoNeural", "rate": -12, "pitch": -12,
+        "style": "幽远", "note": "低缓疏离，适合祭司、占卜师、预言者",
+    },
+    "lazy_m": {
+        "name": "慵懒青年", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-CN-YunxiNeural", "rate": -18, "pitch": -8,
+        "style": "散漫", "note": "拖慢压暗，适合浪人、闲散掌柜",
+    },
+    "whisper_f": {
+        "name": "轻声耳语", "gender": GENDER_FEMALE, "age": AGE_ADULT,
+        "base": "zh-CN-XiaoxiaoNeural", "rate": -14, "pitch": 2,
+        "style": "私密", "note": "慢声细语，适合密谈、内心独白、哄睡",
+    },
+    "orator_m": {
+        "name": "激昂演说", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-CN-YunyangNeural", "rate": 22, "pitch": 8,
+        "style": "昂扬", "note": "播报腔提速，适合战前动员、宣告、旁白高潮",
+    },
+    "little_f": {
+        "name": "娇憨幼女", "gender": GENDER_FEMALE, "age": AGE_CHILD,
+        "base": "zh-CN-YunxiaNeural", "rate": 12, "pitch": 30,
+        "style": "软糯", "note": "官方童声提亮，适合小女孩、小妖精",
+    },
+    "queen_f": {
+        "name": "威严女王", "gender": GENDER_FEMALE, "age": AGE_ADULT,
+        "base": "zh-CN-XiaoxiaoNeural", "rate": -10, "pitch": -18,
+        "style": "威仪", "note": "知性压低，适合女帝、掌门、审判者",
+    },
+    "granny_ne": {
+        "name": "东北老太", "gender": GENDER_FEMALE, "age": AGE_ELDER,
+        "base": "zh-CN-liaoning-XiaobeiNeural", "rate": -16, "pitch": -16,
+        "style": "乡土", "note": "东北话放缓，适合市井老太太、邻里长辈",
+    },
+    "cantonese_old": {
+        "name": "粤语老者", "gender": GENDER_MALE, "age": AGE_ELDER,
+        "base": "zh-HK-WanLungNeural", "rate": -16, "pitch": -20,
+        "style": "沧桑", "note": "粤语男声放缓，适合南洋老掌柜、宗族长辈",
+    },
+    "tw_youth": {
+        "name": "台普少年", "gender": GENDER_MALE, "age": AGE_ADULT,
+        "base": "zh-TW-YunJheNeural", "rate": 10, "pitch": 12,
+        "style": "轻快", "note": "台普男声提亮，适合校园、海岛少年角色",
     },
 }
 

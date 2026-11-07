@@ -74,6 +74,7 @@ Admin.registerPage('story_blueprint', async (container) => {
         <button class="btn btn-outline btn-sm" id="bp-zoom-in">＋</button>
         <span class="bp-sep"></span>
         <button class="btn btn-outline btn-sm" id="bp-validate" title="检查断链 / 空节点 / 重复序号 / 循环">✓ 校验</button>
+        <button class="btn btn-outline btn-sm" id="bp-import" title="和「剧情管理」里同一套批量导入：贴剧本 → 解析 → 生成人物/节点/配音">↥ 批量导入剧情</button>
         <button class="btn btn-gold btn-sm" id="bp-run" title="逐个节点载入真实画面">▶ 运行本章</button>
         <button class="btn btn-outline btn-sm" id="bp-refresh">↻ 刷新</button>
         <button class="btn btn-outline btn-sm" id="bp-list-view" title="切回原来的表格/卡片列表">☰ 列表视图</button>
@@ -1107,6 +1108,32 @@ Admin.registerPage('story_blueprint', async (container) => {
     });
     $('bp-run').addEventListener('click', runChapter);
     $('bp-refresh').addEventListener('click', () => refresh(state.sel && state.sel.kind === 'node' ? state.sel.ref_id : null));
+    // 批量导入：和「剧情管理」里那套弹窗是同一个（选音色已是平铺卡片 + 试听）。
+    // 两个分支：
+    //   · 本次会话打开过剧情页 → 直接原地弹窗，导完留在蓝图里重画；
+    //   · 直接进蓝图（剧情页还没渲染过，导入组件尚未初始化）→ 切到剧情页再弹，
+    //     宁可换个页面也不能少功能：章节选择、导入记录、按章节生成都在那边。
+    $('bp-import').addEventListener('click', async () => {
+      if (typeof window.StoryImport === 'function') {
+        await window.StoryImport({
+          arcId: state.arcFilter || undefined,
+          onDone: async () => {
+            try { await refresh(); fitView(); } catch (_) {}
+          },
+        });
+        return;
+      }
+      const go = await Admin.confirm(
+        '批量导入在「剧情管理」页展开（章节选择、导入记录、按章节生成都在那边）。\n\n' +
+        '现在就过去？导入完成后点左侧「剧情蓝图」即可回来。');
+      if (!go) return;
+      await Admin.navigate('story');
+      if (typeof window.StoryImport === 'function') {
+        window.StoryImport({});
+      } else {
+        Admin.toast('批量导入入口没就绪，刷新页面再试', 'error');
+      }
+    });
     $('bp-list-view').addEventListener('click', () => Admin.navigate('story'));
     $('bp-run-prev').addEventListener('click', () => { if (state.run.i > 0) { state.run.i--; loadRunNode(); } });
     $('bp-run-next').addEventListener('click', () => { if (state.run.i < state.run.list.length - 1) { state.run.i++; loadRunNode(); } });

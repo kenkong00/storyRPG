@@ -109,6 +109,7 @@ const Admin = {
       scenes: '场景管理', skills: '技能书', story: '剧情管理', images: '图片管理',
       prompt_lib: '提示词管理',
       tags: '标签管理', animations: '动效展示', sounds: '声音管理', voice_tasks: '语音任务',
+      voice_library: '角色语音库',
       games: '游戏设置', users: '用户管理', players: '玩家角色',
       character_appearance: '人物外观拼装', settings: '设置', compose: '人物场景合成',
       comic: '漫画制作', comic_manage: '漫画管理', cards: '卡牌系统',

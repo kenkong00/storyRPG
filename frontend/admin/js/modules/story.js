@@ -1027,32 +1027,91 @@ Admin.registerPage('story', async (container) => {
     }
     return voiceId;
   }
+  /** 把 /tts/voices 的分组拍平成一维（VoiceGrid 只吃数组），补上引擎归属 */
+  function impFlatVoices(groups) {
+    const out = [];
+    (groups || []).forEach(g => {
+      (g.voices || []).forEach(v => {
+        out.push(Object.assign({}, v, {
+          engine: v.engine || g.id,
+          engine_name: g.name,
+          engine_available: g.available,
+        }));
+      });
+    });
+    return out;
+  }
+  /** 从已解析剧情里挑一句这个角色（或旁白）的台词，当试听文案 */
+  function impSampleLine(kind, index) {
+    try {
+      const c = kind === 'narr' ? null : IMP.chars[index];
+      const nodes = (IMP.parsed && IMP.parsed.nodes) || [];
+      for (const n of nodes) {
+        for (const d of (n.dialogues || [])) {
+          const t = (d.content || '').trim();
+          if (!t) continue;
+          if (kind === 'narr') {
+            if (!(d.speaker || '').trim()) return t.slice(0, 36);
+          } else if (c && (d.speaker === c.name || d.speaker_id === c.id)) {
+            return t.slice(0, 36);
+          }
+        }
+      }
+    } catch (_) {}
+    return '';
+  }
   async function openVoicePicker(btn, kind, index) {
     closeVoicePicker();
     const groups = await impLoadVoices();
+    const flat = impFlatVoices(groups);
     let current = kind === 'narr'
       ? (IMP.narration ? (IMP.narration.voice || '') : '')
       : (IMP.chars[index] ? (IMP.chars[index].voice || '') : '');
-    // 旁白没选过时，下拉里预选系统旁白音色（让使用者看清默认会用什么），但落库仍记空=用系统
+    // 旁白没选过时，预选系统旁白音色（让使用者看清默认会用什么），但落库仍记空=用系统
     const displayCurrent = (kind === 'narr' && !current) ? _impSysNarrVoice : current;
-    const title = kind === 'narr' ? '📢 旁白音色' : ('🔊 角色音色 · ' + (IMP.chars[index] ? IMP.chars[index].name : ''));
+    const who = kind === 'narr' ? '旁白' : (IMP.chars[index] ? IMP.chars[index].name : '');
+    const title = kind === 'narr' ? '📢 选择旁白音色' : ('🔊 选择角色音色 · ' + who);
+    const sample = impSampleLine(kind, index) || '前方似有埋伏，公子小心。';
+
     const pop = document.createElement('div');
-    pop.className = 'imp-voice-pop';
+    pop.className = 'vg-modal';
     pop.id = 'imp-voice-pop';
     pop.innerHTML = `
-      <div class="imp-vp-head"><span>${esc(title)}</span><button type="button" class="imp-vp-close">&times;</button></div>
-      <div class="imp-vp-search"><input type="text" id="imp-vp-kw" placeholder="搜索音色名 / 性别…" autocomplete="off"></div>
-      <select class="imp-vp-sel" id="imp-vp-sel" size="12">${impVoiceOptionsHtml(groups, displayCurrent)}</select>
-      <div class="imp-vp-foot">
-        <button type="button" class="btn btn-outline btn-sm" id="imp-vp-clear">用默认（系统旁白 / 角色档案）</button>
-        <span class="sp"></span>
-        <button type="button" class="btn btn-gold btn-sm" id="imp-vp-ok">确定</button>
+      <div class="vg-modal-card">
+        <div class="vg-modal-head">
+          <div>
+            <div class="vg-modal-title">${esc(title)}</div>
+            <div class="vg-modal-sub">共 ${flat.length} 个音色，平铺在此。点卡片右下角 ▶ 直接用「${esc(sample)}」试听；单击卡片选中，再点「确定」。派生角色声线（如苍老长者）会按自己的语速/音调偏移发声。</div>
+          </div>
+          <button type="button" class="vg-modal-x" title="关闭">&times;</button>
+        </div>
+        <div class="vg-modal-body"></div>
+        <div class="vg-modal-foot">
+          <span class="vg-picked">当前：<b class="vg-picked-name">—</b></span>
+          <span class="sp"></span>
+          <button type="button" class="btn btn-outline btn-sm" id="imp-vp-clear">用默认（系统旁白 / 角色档案）</button>
+          <button type="button" class="btn btn-gold btn-sm" id="imp-vp-ok">确定</button>
+        </div>
       </div>`;
     document.body.appendChild(pop);
-    const selEl = pop.querySelector('#imp-vp-sel');
-    const kwEl = pop.querySelector('#imp-vp-kw');
-    function filterList() { selEl.innerHTML = impVoiceOptionsHtml(groups, displayCurrent, kwEl.value); }
-    kwEl.addEventListener('input', filterList);
+
+    let picked = displayCurrent || '';
+    const nameEl = pop.querySelector('.vg-picked-name');
+    function labelOf(vid) {
+      if (!vid) return '—（用默认）';
+      const v = flat.find(x => x.voice_id === vid);
+      return v ? `${v.name}${v.style ? ' · ' + v.style : ''}` : vid;
+    }
+    function syncFoot() { nameEl.textContent = labelOf(picked); }
+
+    const grid = VoiceGrid.mount(pop.querySelector('.vg-modal-body'), flat, {
+      variant: 'popup',
+      current: displayCurrent || '',
+      previewText: sample,
+      onPick(vid) { picked = vid; syncFoot(); },
+    });
+    syncFoot();
+
     function commit(voiceId) {
       // 旁白选了系统默认音色 → 落库空（=用系统）；否则记具体音色
       if (kind === 'narr') {
@@ -1063,22 +1122,23 @@ Admin.registerPage('story', async (container) => {
       impRenderOut();
       closeVoicePicker();
     }
-    selEl.addEventListener('dblclick', () => commit(selEl.value || ''));
-    pop.querySelector('#imp-vp-ok').addEventListener('click', () => commit(selEl.value || ''));
+    pop.querySelector('#imp-vp-ok').addEventListener('click', () => commit(picked || ''));
     pop.querySelector('#imp-vp-clear').addEventListener('click', () => commit(''));
-    pop.querySelector('.imp-vp-close').addEventListener('click', closeVoicePicker);
-    const r = btn.getBoundingClientRect();
-    const pw = 300, ph = 400;
-    let left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
-    let top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - ph - 8));
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
-    setTimeout(() => document.addEventListener('mousedown', voicePopOutsideHandler, true), 0);
-    setTimeout(() => kwEl.focus(), 0);
+    pop.querySelector('.vg-modal-x').addEventListener('click', closeVoicePicker);
+    // 点遮罩（卡片外）关闭；点卡片内不关
+    pop.addEventListener('mousedown', e => { if (e.target === pop) closeVoicePicker(); });
+    // Esc 关闭
+    pop._escHandler = e => { if (e.key === 'Escape') { e.stopPropagation(); closeVoicePicker(); } };
+    document.addEventListener('keydown', pop._escHandler);
+    void grid;
   }
   function closeVoicePicker() {
     const p = document.getElementById('imp-voice-pop');
-    if (p) p.remove();
+    if (p) {
+      if (p._escHandler) document.removeEventListener('keydown', p._escHandler);
+      p.remove();
+    }
+    if (window.VoiceGrid) VoiceGrid.stop();
     document.removeEventListener('mousedown', voicePopOutsideHandler, true);
   }
   function voicePopOutsideHandler(e) {
@@ -1563,20 +1623,26 @@ Admin.registerPage('story', async (container) => {
       // impClose() 会把 IMP 置空，后面要用的东西先取出来，否则读 IMP.xxx 直接抛错
       // （以前导进「新建章节」时会在这一步炸掉：数据已经写进去了，界面却报「导入失败」）
       const arcIdForJump = IMP.arcId || currentArcId;
+      const onDone = IMP.onDone || null;
       impClose();
       mask.remove();
-      try {
-        allChaptersCache = await Admin.get(`/story/chapters?story_arc_id=${arcIdForJump}`);
-        chapters = allChaptersCache;
-      } catch (_) {}
-      // 不管导进的是哪一章，直接跳到那一章的节点列表 —— 让人马上看到刚进去的内容
-      // （导入到「新建章节」时以前会退回章节列表，新章节混在一堆卡里找不到）
-      currentArcId = arcIdForJump;
-      if (r.chapter_id) await loadNodes(r.chapter_id);
-      else renderChapters();
       let msg = `${r.replaced ? '已替换' : '已导入'} ${r.node_ids.length} 段 / ${r.dialogues} 句对话`;
       if ((r.created_characters || []).length) msg += `，新建人物 ${r.created_characters.length} 个`;
       if ((r.created_scenes || []).length) msg += `，新建场景 ${r.created_scenes.length} 个`;
+      if (onDone) {
+        // 从别的页面（如剧情蓝图）调起导入时，不碰剧情页的 DOM，交给调用方自己刷新
+        try { await onDone(r, { arcId: arcIdForJump }); } catch (_) {}
+      } else {
+        try {
+          allChaptersCache = await Admin.get(`/story/chapters?story_arc_id=${arcIdForJump}`);
+          chapters = allChaptersCache;
+        } catch (_) {}
+        // 不管导进的是哪一章，直接跳到那一章的节点列表 —— 让人马上看到刚进去的内容
+        // （导入到「新建章节」时以前会退回章节列表，新章节混在一堆卡里找不到）
+        currentArcId = arcIdForJump;
+        if (r.chapter_id) await loadNodes(r.chapter_id);
+        else renderChapters();
+      }
       Admin.toast(msg, 'success');
       const jn = (r.art_job_ids || []).length + (r.scene_job_ids || []).length
         + (r.voice_job_id ? 1 : 0);
@@ -1653,6 +1719,31 @@ Admin.registerPage('story', async (container) => {
     });
   }
 
+  /**
+   * 给别的页面（剧情蓝图）调起的批量导入入口。
+   *
+   * openImportDialog 依赖故事页的 currentArcId / chapters 这些状态，
+   * 直接跳到蓝图页再点导入时它们是空的，所以这里先补一次数据再弹窗，
+   * 保证「编辑工作流」里的批量导入和剧情管理页里是同一套东西、能力不缺。
+   */
+  window.StoryImport = async function (opts) {
+    opts = Object.assign({}, opts || {});
+    if (!opts.arcId) {
+      try {
+        const arcs = await Admin.get('/story-arcs/');
+        const list = Array.isArray(arcs) ? arcs : (arcs.arcs || arcs.items || []);
+        if (list.length) opts.arcId = list[list.length - 1].id;
+      } catch (_) {}
+    }
+    if (!chapters.length && opts.arcId) {
+      try {
+        chapters = await Admin.get(`/story/chapters?story_arc_id=${opts.arcId}`);
+        currentArcId = opts.arcId;
+      } catch (_) {}
+    }
+    return openImportDialog(opts);
+  };
+
   async function openImportDialog(opts = {}) {
     const arcId = opts.arcId || currentArcId || null;
     // 带 batchId = 回来改上次那批；带 chapterTitle = 从章节行进「按章节生成」
@@ -1691,7 +1782,7 @@ Admin.registerPage('story', async (container) => {
       el: null, mode: 'script', parsed: null, chars: [], scenes: [], poses, dims,
       arcId, chapterId, openChar: null, openNodes: 'first', openLine: null,
       batchId: opts.batchId || null, batch: (batchData && batchData.batch) || null,
-      narration: null, lockedSigs: new Set(),
+      narration: null, lockedSigs: new Set(), onDone: opts.onDone || null,
     };
     // 新建导入（相当于新建剧情）不显示锁定按钮、按钮叫「批量导入」；
     // 导入记录>重新编辑 才显示锁定、按钮叫「重新生成」。
@@ -3949,8 +4040,9 @@ Admin.registerPage('story', async (container) => {
         -webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all`;
       dlgBox.appendChild(txt);
       box.appendChild(dlgBox);
+      // 画完再接交互：拖动人物 / 滚轮缩放
+      enhanceStageInline(box);
     }
-    enhanceStageInline(box);
 
     // 内联舞台增强：直接拖动人物改坐标、滚轮缩放（不再依赖滑块）
     function enhanceStageInline(box) {
@@ -4175,7 +4267,11 @@ Admin.registerPage('story', async (container) => {
     // ===== 对话行语音面板（与参数面板同款弹窗样式） =====
     function closeVoicePop() {
       const old = document.getElementById('dlg-voice-pop');
-      if (old) old.remove();
+      if (old) {
+        if (old._escHandler) document.removeEventListener('keydown', old._escHandler);
+        old.remove();
+      }
+      if (window.VoiceGrid) VoiceGrid.stop();
       document.removeEventListener('mousedown', voicePopOutsideHandler, true);
     }
     function voicePopOutsideHandler(e) {
@@ -4210,36 +4306,42 @@ Admin.registerPage('story', async (container) => {
       pop.className = 'dlg-voice-pop';
       pop.id = 'dlg-voice-pop';
       pop.innerHTML = `
-        <div class="dlg-cfg-head">
-          <span>#${idx} 语音生成${ch ? ' · ' + esc(ch.name) : ''}</span>
-          <button type="button" class="dlg-cfg-close">&times;</button>
-        </div>
-        <div class="dv-body">
-          <div class="dv-row">
-            <label>语音引擎
-              <select class="dv-engine">
-                <option value="">跟随人物配置</option>
-                <option value="edge">Edge TTS（在线 · 推荐）</option>
-                <option value="onecore">本机 Windows 语音（离线）</option>
-              </select>
-            </label>
-            <label style="flex:2">音色
-              <select class="dv-voice"></select>
-            </label>
+        <div class="dv-card">
+          <div class="dv-head">
+            <div>
+              <div class="dv-title">🎙 第 ${idx} 句语音生成${ch ? ' · ' + esc(ch.name) : ''}</div>
+              <div class="dv-sub">左边调语速 / 音调 / 音量，右边点卡片右下角 ▶ 直接试听这句台词；单击卡片选中音色，再点「生成此句语音」。</div>
+            </div>
+            <button type="button" class="dlg-cfg-close" title="关闭">&times;</button>
           </div>
-          <div class="dv-row">
-            <label>语速 <b class="dv-rate-v">0%</b><input type="range" class="dv-rate" min="-50" max="50" value="0"></label>
-            <label>音调 <b class="dv-pitch-v">0%</b><input type="range" class="dv-pitch" min="-30" max="30" value="0"></label>
-            <label>音量 <b class="dv-volume-v">0%</b><input type="range" class="dv-volume" min="-50" max="50" value="0"></label>
+          <div class="dv-main">
+            <aside class="dv-side">
+              <div class="dv-row"><label>语音引擎
+                <select class="dv-engine">
+                  <option value="">跟随人物配置</option>
+                  <option value="edge">Edge TTS（在线 · 推荐）</option>
+                  <option value="onecore">本机 Windows 语音（离线）</option>
+                </select>
+              </label></div>
+              <div class="dv-row"><label>语速 <b class="dv-rate-v">0%</b><input type="range" class="dv-rate" min="-50" max="50" value="0"></label></div>
+              <div class="dv-row"><label>音调 <b class="dv-pitch-v">0%</b><input type="range" class="dv-pitch" min="-30" max="30" value="0"></label></div>
+              <div class="dv-row"><label>音量 <b class="dv-volume-v">0%</b><input type="range" class="dv-volume" min="-50" max="50" value="0"></label></div>
+              <div class="dv-current" style="display:none"></div>
+              <div class="dv-note"></div>
+              <div class="dv-actions">
+                <button type="button" class="btn btn-outline btn-sm dv-reset" title="把面板恢复成角色的语音配置">↻ 用角色配置</button>
+                <button type="button" class="btn btn-gold btn-sm dv-gen">🎙 生成此句语音</button>
+              </div>
+              <div class="dv-state"></div>
+              <input type="hidden" class="dv-voice" value="">
+            </aside>
+            <section class="dv-grid-wrap">
+              <div class="dv-picked-bar">已选音色：<b class="dv-picked-name">—（跟随人物配置）</b>
+                <button type="button" class="btn btn-outline btn-sm dv-play-picked" title="用这句台词试听当前选中的音色">▶ 试听所选</button>
+                <span style="margin-left:auto;font-size:11px">单击卡片选中 · 点 ▶ 试听</span></div>
+              <div class="dv-grid"></div>
+            </section>
           </div>
-          <div class="dv-current" style="display:none"></div>
-          <div class="dv-note"></div>
-          <div class="dv-actions">
-            <button type="button" class="btn btn-outline btn-sm dv-reset" title="把面板恢复成角色的语音配置">↻ 用角色配置</button>
-            <span style="flex:1"></span>
-            <button type="button" class="btn btn-gold btn-sm dv-gen">🎙 生成此句语音</button>
-          </div>
-          <div class="dv-state"></div>
         </div>
       `;
       document.body.appendChild(pop);
@@ -4247,6 +4349,41 @@ Admin.registerPage('story', async (container) => {
       const q = (s) => pop.querySelector(s);
       const genBtn = q('.dv-gen');
       const stateEl = q('.dv-state');
+      const gridHost = q('.dv-grid');
+      const content0 = (row.querySelector('.dlg-content')?.value || '').trim();
+      let picked = '';
+      let grid = null;
+      let flatCache = [];
+
+      function labelOf(vid) {
+        if (!vid) return '—（跟随人物配置）';
+        const v = flatCache.find(x => x.voice_id === vid);
+        return v ? `${v.name}${v.style ? ' · ' + v.style : ''}` : vid;
+      }
+      function setPicked(vid) {
+        picked = vid || '';
+        q('.dv-voice').value = picked;
+        q('.dv-picked-name').textContent = labelOf(picked);
+      }
+      async function paintGrid(cur) {
+        const groups = await ensureVoiceGroups();
+        const engineId = q('.dv-engine').value;
+        flatCache = impFlatVoices(groups).filter(v => !engineId || v.engine === engineId);
+        if (grid && grid.destroy) grid.destroy();
+        grid = null;
+        gridHost.innerHTML = '';
+        q('.dv-picked-name').textContent = labelOf(picked);
+        if (!flatCache.length) {
+          gridHost.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px">这个引擎下暂无可选音色，换成「跟随人物配置」或试试另一个引擎。</div>';
+          return;
+        }
+        grid = VoiceGrid.mount(gridHost, flatCache, {
+          variant: 'popup',
+          current: cur || '',
+          previewText: content0 || '前方似有埋伏，公子小心。',
+          onPick(vid) { setPicked(vid); },
+        });
+      }
 
       // 预填：人物角色的语音配置
       function fillFromCharacter() {
@@ -4257,11 +4394,8 @@ Admin.registerPage('story', async (container) => {
         q('.dv-rate-v').textContent = q('.dv-rate').value + '%';
         q('.dv-pitch-v').textContent = q('.dv-pitch').value + '%';
         q('.dv-volume-v').textContent = q('.dv-volume').value + '%';
-        refreshVoiceList((ch && ch.tts_voice) || '');
-      }
-      async function refreshVoiceList(cur) {
-        const groups = await ensureVoiceGroups();
-        q('.dv-voice').innerHTML = voiceOptionsHtml(groups, q('.dv-engine').value, cur || '');
+        setPicked((ch && ch.tts_voice) || '');
+        paintGrid(picked);
       }
 
       // 状态区：这句已有的语音 → 试听 / 清除
@@ -4296,13 +4430,17 @@ Admin.registerPage('story', async (container) => {
       if (!ch) stateEl.textContent = '这一行没有说话者（旁白无法配角色语音），请先在上方选择角色。';
 
       q('.dv-engine').addEventListener('change', () => {
-        refreshVoiceList((ch && ch.tts_voice) || '');
+        paintGrid(picked);
       });
       ['rate', 'pitch', 'volume'].forEach(k => {
         const el = q('.dv-' + k);
         el.addEventListener('input', () => { q('.dv-' + k + '-v').textContent = el.value + '%'; });
       });
       q('.dv-reset').addEventListener('click', () => { fillFromCharacter(); Admin.toast('已恢复角色的语音配置', 'info'); });
+      q('.dv-play-picked').addEventListener('click', () => {
+        if (!picked) { Admin.toast('先点一张卡片选音色，或直接在卡片上点 ▶', 'info'); return; }
+        if (grid) grid.preview(picked);
+      });
       q('.dlg-cfg-close').addEventListener('click', closeVoicePop);
 
       genBtn.addEventListener('click', async () => {
@@ -4317,7 +4455,7 @@ Admin.registerPage('story', async (container) => {
               speaker_id: ch.id,
               content,
               engine: q('.dv-engine').value || null,
-              voice_id: q('.dv-voice').value || null,
+              voice_id: picked || null,
               rate: parseInt(q('.dv-rate').value, 10),
               pitch: parseInt(q('.dv-pitch').value, 10),
               volume: parseInt(q('.dv-volume').value, 10),
@@ -4344,22 +4482,10 @@ Admin.registerPage('story', async (container) => {
         finally { genBtn.disabled = false; }
       });
 
-      // 定位：跟表情/参数弹窗一致，别盖住右侧舞台预览
-      const r = btn.getBoundingClientRect();
-      const pw = pop.offsetWidth || 420, ph = pop.offsetHeight || 320;
-      let left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
-      let top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - ph - 8));
-      const preview = document.getElementById('dlg-stage-preview');
-      if (preview) {
-        const pr = preview.getBoundingClientRect();
-        if (left + pw > pr.left - 8 && left < pr.right && top < pr.bottom && top + ph > pr.top) {
-          left = Math.max(8, pr.left - pw - 12);
-          top = Math.max(8, Math.min(r.top, window.innerHeight - ph - 8));
-        }
-      }
-      pop.style.left = left + 'px';
-      pop.style.top = top + 'px';
-      setTimeout(() => document.addEventListener('mousedown', voicePopOutsideHandler, true), 0);
+      // 整屏模态：点遮罩关闭，Esc 关闭；不再做「避开预览区」的定位
+      pop.addEventListener('mousedown', e => { if (e.target === pop) closeVoicePop(); });
+      pop._escHandler = e => { if (e.key === 'Escape') { e.stopPropagation(); closeVoicePop(); } };
+      document.addEventListener('keydown', pop._escHandler);
     }
 
     // 这个节点生成的对话语音 → 声音库分类路径（声音管理里可按「剧情语音」分类看）
