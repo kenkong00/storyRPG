@@ -147,6 +147,7 @@ def get_node_full(node_id: int, db: Session = Depends(get_db)):
         return {
             "id": d.id, "node_id": d.node_id, "order_index": d.order_index,
             "speaker_id": d.speaker_id, "content": d.content, "expression": d.expression,
+            "pose_extra": d.pose_extra,
             "pos_x": d.pos_x, "pos_y": d.pos_y, "scale": d.scale,
             "crop_top": d.crop_top, "crop_bottom": d.crop_bottom,
             "flip": d.flip, "z_index": d.z_index,

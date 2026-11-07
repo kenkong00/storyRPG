@@ -27,6 +27,7 @@ from .voice_task import VoiceTask, VoiceTaskLine
 from .narration_voice import NarrationVoice
 from .story_setting import StorySetting
 from .story_import import StoryImportBatch
+from .story_layout import StoryLayout
 from .comic import ComicProject, ComicBook, ComicPage, ComicCell, ComicCellVersion
 from .cardgame import (
     CardClass, CardDef, CardEmotion, CardDialogue, CardLoadout, CardBattle,
@@ -66,4 +67,5 @@ __all__ = [
     "NarrationVoice",
     "StorySetting",
     "StoryImportBatch",
+    "StoryLayout",
 ]

@@ -41,8 +41,9 @@ const Admin = {
     this.bindNav();
     this.bindSidebarToggle();
     this.registerPages();
-    // 从 localStorage 恢复上次访问的页面，避免刷新后丢失
-    const lastPage = localStorage.getItem('admin_current_page') || 'dashboard';
+    // 从 localStorage 恢复上次访问的页面；也支持 ?page=xxx 直接深链到某一页
+    const urlPage = new URLSearchParams(location.search).get('page');
+    const lastPage = urlPage || localStorage.getItem('admin_current_page') || 'dashboard';
     this.navigate(lastPage);
   },
 
@@ -111,7 +112,7 @@ const Admin = {
       games: '游戏设置', users: '用户管理', players: '玩家角色',
       character_appearance: '人物外观拼装', settings: '设置', compose: '人物场景合成',
       comic: '漫画制作', comic_manage: '漫画管理', cards: '卡牌系统',
-      card_appearance: '卡牌外观拼装',
+      card_appearance: '卡牌外观拼装', story_blueprint: '剧情蓝图',
     };
     document.getElementById('page-title').textContent = titles[page] || page;
     // 供 CSS 按栏目放大字号 / 定制面板样式用
