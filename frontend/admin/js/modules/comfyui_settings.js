@@ -143,7 +143,16 @@
     ['conn', '连接'],
     ['providers', '服务商'],
     ['presets', '模型配置'],
+    ['story', '剧情管理'],
   ];
+
+  // 当前分组的副标题：设置页不只放 ComfyUI 了，标题得跟着分组走
+  const TAB_TITLE = {
+    conn: 'ComfyUI · 连接',
+    providers: 'ComfyUI · 服务商',
+    presets: 'ComfyUI · 模型配置',
+    story: '剧情演出',
+  };
 
   function tabBar() {
     return `<div class="cs-tabs">${TABS.map(([k, t]) =>
@@ -485,17 +494,28 @@
     if (S.tab === 'conn') body = viewConn();
     else if (S.tab === 'providers') body = viewProviders();
     else if (S.tab === 'presets') body = viewPresets();
+    else if (S.tab === 'story') body = '<div id="sst-host"><div class="cs-empty">加载…</div></div>';
     else { S.tab = 'conn'; body = viewConn(); }   // 提示词/工作流标签已移到独立栏目，兜底回连接页
 
     rootEl.innerHTML = `
       <div class="cs-head">
-        <div class="cs-title" style="font-size:15px">ComfyUI · 模型配置中心</div>
+        <div class="cs-title" style="font-size:15px">设置
+          <span style="color:var(--text-muted);font-size:12px;font-weight:400;margin-left:8px">· ${esc(TAB_TITLE[S.tab] || '')}</span>
+        </div>
         <span class="cs-hint" style="margin:0">
-          当前服务商 <b>${esc(S.activeProvider || '-')}</b> · 全局默认方案 <b>${esc(S.globalPreset || '未指定（用第一套）')}</b>
+          ${S.tab === 'story'
+            ? '剧情演出的全站默认值；玩家在游戏内「设置 → 剧情演出」可以按自己的喜好覆盖'
+            : `当前服务商 <b>${esc(S.activeProvider || '-')}</b> · 全局默认方案 <b>${esc(S.globalPreset || '未指定（用第一套）')}</b>`}
         </span>
       </div>
       ${tabBar()}
       <div id="cs-body">${body}</div>`;
+
+    // 剧情管理：内容和 ComfyUI 配置完全无关，交给独立模块渲染
+    if (S.tab === 'story' && window.StorySettings) {
+      const host = document.getElementById('sst-host');
+      if (host) StorySettings.render(host).catch(() => {});
+    }
 
     // 连接页底部挂「全局出图参数」面板（和出图页共用同一个组件）
     if (S.tab === 'conn' && window.GenParams) {

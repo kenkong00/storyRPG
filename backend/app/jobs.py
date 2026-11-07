@@ -33,6 +33,35 @@ _jobs: dict[str, dict] = {}
 #: 已结束的任务保留多久（秒），够用户切回来点「查看结果」
 KEEP_FINISHED_SEC = 1800
 
+# ---------------------------------------------------------------------------
+# 任务分类
+# ---------------------------------------------------------------------------
+# 出图（ComfyUI）和出声（TTS）都是几十秒起步的后台活，混在一张列表里时
+# 用户没法一眼分清「哪些是我的图、哪些是我点的语音」——所以每条任务带一个
+# category，面板上方按分类过滤（全部 / 音频 / 图像 / 其他）。
+#
+# 分类由 kind 自动推导，新增任务类型时只补这张表即可，不用去改前端。
+KIND_CATEGORY = {
+    # ---- 图像（ComfyUI）----
+    "pose_batch": "image",
+    "appearance_render": "image",
+    "scene_render": "image",
+    "compose_render": "image",
+    "comic_cell": "image",
+    "card_art": "image",
+    "card_emotion": "image",
+    "story_cast": "image",
+    # ---- 音频（TTS / 静音裁剪）----
+    "voice_pack": "audio",
+    "voice_dialogue": "audio",
+    "tts_chapter": "audio",
+    # ---- 文本（解析 / 导入这类秒级活）----
+    "story_import": "text",
+}
+CATEGORY_LABEL = {"image": "图像", "audio": "音频", "text": "文本", "other": "其他"}
+#: 面板里的排列顺序
+CATEGORY_ORDER = ("audio", "image", "text", "other")
+
 #: 这些状态代表「还在机器上占着」，暂停也算活着（还要能点继续）
 LIVE = ("queued", "running", "paused")
 #: 已结束的状态
@@ -48,13 +77,20 @@ def _now_iso() -> str:
 
 
 def create(kind: str, title: str, *, page: str = "", total: int = 1,
-           focus: dict | None = None, message: str = "") -> dict:
-    """建一个 running 状态的任务。"""
+           focus: dict | None = None, message: str = "",
+           category: str = "") -> dict:
+    """建一个 running 状态的任务。
+
+    category 不传就按 kind 自动归类（见 KIND_CATEGORY）。
+    started_ts 是浮点秒，用来算「已用多久 / 还剩多久」——面板要给出等待预期，
+    光有进度条是不够的（用户的原话：不知道要等多长时间）。
+    """
     prune()
     jid = uuid.uuid4().hex[:12]
     job = {
         "id": jid,
-        "kind": kind,                 # pose_batch / appearance_render / ...
+        "kind": kind,                 # pose_batch / appearance_render / voice_pack ...
+        "category": (category or KIND_CATEGORY.get(kind) or "other"),
         "title": title,
         "page": page,                 # 点击跳转的后台栏目
         "focus": focus or {},         # 页面用来定位（人物 id、tab 等）
@@ -65,8 +101,11 @@ def create(kind: str, title: str, *, page: str = "", total: int = 1,
         "message": message,
         "results": [],
         "images": [],
+        "audio": [],
         "started_at": _now_iso(),
+        "started_ts": time.time(),
         "finished_at": "",
+        "finished_ts": 0.0,
         "updated_ts": time.time(),
         # ---- 控制位（对外暴露给面板画按钮，内部以下划线字段为准）----
         "paused": False,
@@ -80,8 +119,29 @@ def create(kind: str, title: str, *, page: str = "", total: int = 1,
 
 
 def _public(j: dict) -> dict:
-    """去掉下划线开头的内部控制位再给前端。"""
-    return {k: v for k, v in j.items() if not k.startswith("_")}
+    """去掉下划线开头的内部控制位再给前端，并补上「已用 / 预计剩余」。"""
+    d = {k: v for k, v in j.items() if not k.startswith("_")}
+    cat = d.get("category") or "other"
+    d["category"] = cat
+    d["category_label"] = CATEGORY_LABEL.get(cat, "其他")
+
+    t0 = float(j.get("started_ts") or 0)
+    now = float(j.get("finished_ts") or 0) or time.time()
+    elapsed = max(0.0, now - t0) if t0 else 0.0
+    processed = int(d.get("done") or 0) + int(d.get("failed") or 0)
+    total = int(d.get("total") or 0)
+    # 已处理过的条数才有「单条约耗时」可算；一条都没完成时不给数字，
+    # 前端显示「计算中…」——瞎猜一个剩余时间比不显示更让人焦虑。
+    d["elapsed_sec"] = round(elapsed, 1)
+    d["per_item_sec"] = round(elapsed / processed, 2) if processed else None
+    if d.get("status") in ("running", "paused", "queued") and processed and total > processed:
+        d["eta_sec"] = round(elapsed / processed * (total - processed), 1)
+    elif d.get("status") in ("running", "paused", "queued") and processed >= total:
+        d["eta_sec"] = 0.0
+    else:
+        d["eta_sec"] = None
+    return d
+
 
 
 def get(job_id: str) -> dict | None:
@@ -111,6 +171,23 @@ def counts() -> dict:
     return c
 
 
+def category_counts() -> dict:
+    """按「在跑 / 等待 / 暂停」统计各分类数量（面板分类标签上的小数字）。"""
+    out: dict[str, dict] = {}
+    with _lock:
+        for j in _jobs.values():
+            if j["status"] not in LIVE:
+                continue
+            cat = j.get("category") or "other"
+            slot = out.setdefault(cat, {"live": 0, "running": 0, "paused": 0})
+            slot["live"] += 1
+            if j["status"] == "paused":
+                slot["paused"] += 1
+            elif j["status"] == "running":
+                slot["running"] += 1
+    return out
+
+
 def update(job_id: str, **kw) -> None:
     with _lock:
         j = _jobs.get(job_id)
@@ -121,8 +198,12 @@ def update(job_id: str, **kw) -> None:
 
 
 def step(job_id: str, *, ok: bool, result: dict | None = None,
-         image: str = "", message: str = "") -> None:
-    """记一步结果（成功/失败都会推进 done 计数）。"""
+         image: str = "", audio: str = "", message: str = "") -> None:
+    """记一步结果（成功/失败都会推进 done 计数）。
+
+    image / audio 分别收进各自的产物列表：面板要按分类给不同的「查看」动作
+    （图 → 图片浏览，音 → 直接试听最后一条）。
+    """
     with _lock:
         j = _jobs.get(job_id)
         if not j:
@@ -131,6 +212,8 @@ def step(job_id: str, *, ok: bool, result: dict | None = None,
             j["done"] += 1
             if image:
                 j["images"].append(image)
+            if audio:
+                j["audio"].append(audio)
         else:
             j["failed"] += 1
         if result:
@@ -154,9 +237,11 @@ def finish(job_id: str, *, status: str | None = None, message: str = "") -> None
         j["paused"] = False
         j["_pause"] = False
         j["finished_at"] = _now_iso()
+        j["finished_ts"] = time.time()
         if message:
             j["message"] = message
         j["updated_ts"] = time.time()
+
 
 
 def fail(job_id: str, message: str) -> None:

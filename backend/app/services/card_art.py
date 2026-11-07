@@ -76,7 +76,8 @@ DEFAULTS = {
     # 模板留空 = 走「外观维度拼装」：画风 → 人物外观（发型/瞳色/衣着/体型…）→ 动作/表情/构图/画质。
     # 外观维度从哪来见 compose：卡牌角色外观 > 外观配置 > 人物默认外观 > 职业英雄外观。
     "art_template": "",
-    "art_negative": "文字，水印，签名，多个人物，拼接，畸变手指，模糊，低分辨率，边框，UI",
+    # 负面词默认留空（用户要求：CFG 不需要负面提示词）；需要时在卡牌设置里自己填
+    "art_negative": "",
     "art_model_preset": "Moss_int8_5步",
     "art_width": "512",
     "art_height": "768",
@@ -551,8 +552,9 @@ def compose(db: Session, card: CardDef, cls: Optional[CardClass], gender: str = 
     if suf:
         positive = positive + "\n" + suf
 
-    # 负面词：全局负面词 + 题材专属负面词（武侠别出板甲、魔兽别出和服）
-    negative = st.get("art_negative") or DEFAULTS["art_negative"]
+    # 负面词：只用用户在卡牌设置里填的值；留空就是留空，不用默认值顶回来。
+    # （题材负面词若哪天要用，请在卡牌设置里手写，不再由程序注入）
+    negative = (st.get("art_negative") or "").strip()
 
     return {
         "positive": positive.strip(),
@@ -582,10 +584,9 @@ def compose(db: Session, card: CardDef, cls: Optional[CardClass], gender: str = 
 
 
 # ===================== 角色情感表现（战斗中的一张图 + 一句话） =====================
-# 「情感与表现」里手写提示词时用的固定负面词。
-# 刻意不读 settings：用户明确要求这一块和「提示词与设置」彻底解耦，
-# 那边改模板 / 改负面词，不该把已经调好的情感提示词带跑。
-EMOTION_NEGATIVE = ("文字，水印，签名，多个人物，拼接，畸变手指，模糊，低分辨率，边框，UI")
+# 「情感与表现」里手写提示词时不再注入固定负面词（用户要求：负面词一律留空，
+# 需要自己在「情感与表现」的负面词栏里填）。保持与「提示词与设置」解耦的设计。
+EMOTION_NEGATIVE = ""
 
 
 def _out_params(db: Session, settings: Optional[dict] = None) -> dict:

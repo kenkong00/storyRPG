@@ -39,6 +39,9 @@ class Character(Base):
 
     # ===== 人物外观拼装（随机生成的多维外观 JSON，包含各维度取值与配色） =====
     appearance_json: Mapped[str | None] = mapped_column(Text)
+    # 动作表情的「自定义动作追加词」：只在这一人物的动作 / 表情出图时接在提示词末尾，
+    # 不影响立绘与其他出图入口。
+    pose_extra_prompt: Mapped[str | None] = mapped_column(Text)
 
     # ===== 语音配置（对话播报用） =====
     # gender: male / female / unknown —— 用于后台筛选语音主播，防止给男性角色配上女声

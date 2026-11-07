@@ -44,6 +44,8 @@ def _task_dict(db: Session, t: VoiceTask) -> dict:
         "done": t.done or 0,
         "message": t.message or "",
         "running": runner.is_running(t.id),
+        # 这次运行在「任务中心」里的记录 id（面板上能看到进度 / 剩余时间）
+        "job_id": runner.job_id_of(t.id),
         "created_at": t.created_at,
         "updated_at": t.updated_at,
     }
@@ -242,15 +244,15 @@ def run_task(task_id: int, payload: Optional[dict] = None, db: Session = Depends
             t.done = 0
             t.total = len(lines)
         db.commit()
-    ok = runner.start(t.id, rerun_failed=bool(p.get("rerun_failed")),
-                      only_ids=[int(x) for x in only] if only else None)
+    ok, job_id = runner.start(t.id, rerun_failed=bool(p.get("rerun_failed")),
+                              only_ids=[int(x) for x in only] if only else None)
     if not ok:
         raise HTTPException(status_code=409, detail="这个任务正在跑，等它结束再点")
     db.refresh(t)
     t.status = "running"
     t.message = "已排队…"
     db.commit()
-    return {"ok": True, "running": True}
+    return {"ok": True, "running": True, "job_id": job_id}
 
 
 @router.post("/batch-delete")
@@ -298,5 +300,6 @@ def task_progress(task_id: int, db: Session = Depends(get_db)):
         "total": t.total or 0,
         "message": t.message or "",
         "running": runner.is_running(t.id),
+        "job_id": runner.job_id_of(t.id),
         "lines": [_line_dict(l) for l in lines],
     }

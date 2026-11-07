@@ -6,6 +6,7 @@ import os
 
 from .database import init_db
 from .routers import character, relationship, skill, scene, story, story_arc, battle, event, item, upload, animation, sound, realm, tag, equipment, audio, voice_task, voice_gen
+from .routers import story_import, story_settings
 from .routers import resource_categories
 from .routers import games, users, character_states
 from .routers import admin_user_chars
@@ -125,6 +126,8 @@ app.include_router(sound.router)
 app.include_router(audio.router)
 app.include_router(voice_task.router)
 app.include_router(voice_gen.router)
+app.include_router(story_import.router)
+app.include_router(story_settings.router)
 app.include_router(realm.router)
 app.include_router(tag.router)
 app.include_router(equipment.router)

@@ -111,6 +111,10 @@ class PoseGenReq(BaseModel):
     framing: Optional[str] = None
     page: str = "characters"
     title: str = ""
+    # 自定义动作追加词：只作用于这一批动作表情出图，接在外观提示词末尾。
+    # 不传就用人物自己存的 pose_extra_prompt（人物编辑页里填的那段）。
+    extra_prompt: Optional[str] = None
+    use_character_extra: bool = True
 
 
 # ===================== 库读取 =====================
@@ -366,10 +370,19 @@ def _run_pose_batch(job_id: str, cid: int, char_name: str, appearance: dict,
         pose_dim = _pose_dim()
         all_poses = {p["id"]: p for p in (pose_dim.get("options") or [])}
         ch = db.query(Character).filter(Character.id == cid).first()
+        # 自定义动作追加词：请求里显式传了就用请求的，否则用人物身上存的那段。
+        extra = req.extra_prompt
+        if extra is None and req.use_character_extra and ch is not None:
+            extra = getattr(ch, "pose_extra_prompt", None)
+        extra = (extra or "").strip()
         for pid in target_ids:
             pose = all_poses.get(pid) or {"id": pid, "name": pid, "cat": ""}
             ap = {**appearance, "pose": pid, "poseCategory": pose.get("cat") or "",
                   "name": char_name}
+            if extra:
+                # 接在自由提示词末尾，不动外观维度拼出来的部分
+                base_free = (ap.get("free_text") or "").strip()
+                ap["free_text"] = (base_free + "\n" + extra).strip() if base_free else extra
             payload = comfyui_router.GenerateReq(
                 appearance=ap,
                 mode="t2i",

@@ -24,6 +24,9 @@ from .generated_image import GeneratedImage
 from .asset import Asset
 from .compose_config import ComposeConfig
 from .voice_task import VoiceTask, VoiceTaskLine
+from .narration_voice import NarrationVoice
+from .story_setting import StorySetting
+from .story_import import StoryImportBatch
 from .comic import ComicProject, ComicBook, ComicPage, ComicCell, ComicCellVersion
 from .cardgame import (
     CardClass, CardDef, CardEmotion, CardDialogue, CardLoadout, CardBattle,
@@ -60,4 +63,7 @@ __all__ = [
     "CardClass", "CardDef", "CardEmotion", "CardDialogue", "CardLoadout",
     "CardBattle", "CardArt", "CardArtSet", "CardSetting", "CardCharacterEmotion",
     "VoiceTask", "VoiceTaskLine",
+    "NarrationVoice",
+    "StorySetting",
+    "StoryImportBatch",
 ]

@@ -189,8 +189,8 @@
     };
     if (!state.app.mode) state.app.mode = 'default';
     if (!state.app.classCode) state.app.classCode = '';
-    if (!state.app.nudity) state.app.nudity = 'none';
-    if (!state.app.framing) state.app.framing = 'full';
+    // nudity / framing 不再强制赋值：空值 = 「（默认）」，语义上等价 none / full，
+    // 但用户可以明确选「（默认）」，出图行为与之前一致。
 
     const split = opts.layout === 'split';
     host.innerHTML = `
@@ -217,13 +217,20 @@
               ${optionSel(dims[id], state.app[id] || '', `id="ae-g-${id}"`)}
             </label>`).join('')}
           ${dims.nudity ? `<label class="ae-field"><span>${esc(dims.nudity.name)}</span>
-            ${optionSel(dims.nudity, state.app.nudity || 'none', 'id="ae-g-nudity"', true)}
+            <select class="ae-sel" id="ae-g-nudity">
+              <option value=""${!state.app.nudity || state.app.nudity === 'none' ? ' selected' : ''}>（默认）</option>
+              ${(dims.nudity.options || []).map(o => `<option value="${esc(o.id)}"${state.app.nudity === o.id ? ' selected' : ''}>${esc(o.name)}</option>`).join('')}
+            </select>
           </label>` : ''}
           ${dims.framing ? `<label class="ae-field"><span>${esc(dims.framing.name)}</span>
-            ${optionSel(dims.framing, state.app.framing || 'full', 'id="ae-g-framing"', true)}
+            <select class="ae-sel" id="ae-g-framing">
+              <option value=""${!state.app.framing ? ' selected' : ''}>（默认）</option>
+              ${(dims.framing.options || []).map(o => `<option value="${esc(o.id)}"${state.app.framing === o.id ? ' selected' : ''}>${esc(o.name)}</option>`).join('')}
+            </select>
           </label>` : `<label class="ae-field"><span>立绘取景</span>
             <select class="ae-sel" id="ae-g-framing">
-              <option value="full"${state.app.framing !== 'half' && state.app.framing !== 'head' ? ' selected' : ''}>全身</option>
+              <option value=""${!state.app.framing ? ' selected' : ''}>（默认）</option>
+              <option value="full"${state.app.framing === 'full' ? ' selected' : ''}>全身</option>
               <option value="half"${state.app.framing === 'half' ? ' selected' : ''}>半身</option>
               <option value="head"${state.app.framing === 'head' ? ' selected' : ''}>头部特写</option>
             </select>
@@ -411,7 +418,7 @@
       } else if (state.app.framing === 'half') {
         hint.textContent = '半身取景：下装 / 鞋 / 袜 / 腰带不做提示词描写（相关选择框已隐藏），出图聚焦上半身。';
       } else {
-        hint.textContent = '全身取景：完整身体描写。';
+        hint.textContent = (state.app.framing || '') === '' ? '默认取景（= 全身）：完整身体描写。画面 / 取景固定段可在「定义管理 → 画面模板」里修改或删空。' : '全身取景：完整身体描写。';
       }
     }
 
@@ -535,9 +542,9 @@
         if (el) el.value = state.app[id] || '';
       });
       const nudEl = host.querySelector('#ae-g-nudity');
-      if (nudEl) nudEl.value = state.app.nudity || 'none';
+      if (nudEl) nudEl.value = state.app.nudity || '';
       const frEl = host.querySelector('#ae-g-framing');
-      if (frEl) frEl.value = state.app.framing || 'full';
+      if (frEl) frEl.value = state.app.framing || '';
       // 姓名 / 自定义追加词 / 题材 同步回控件（整体随机或重置后保持视觉一致）
       const nameEl = host.querySelector('#ae-name');
       if (nameEl) nameEl.value = state.app.name || '';

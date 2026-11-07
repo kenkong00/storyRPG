@@ -654,6 +654,9 @@ class ComfyUIConfigStore:
         "comic",
         "cards",
         "cards_appearance",
+        # 剧情导入里「顺手生成人物立绘」用的参数。单独一格：
+        # 用户要的是「这个入口的 ComfyUI 配置只在这里生效」，不串到人物管理去。
+        "story_import",
     )
 
     def _scope_slot(self, scope):
@@ -684,8 +687,14 @@ class ComfyUIConfigStore:
 
     def set_gen_params(self, patch: dict, scope: str = "global"):
         base, slot, key = self._scope_slot(scope)
-        cur = dict(DEFAULT_CONFIG["gen_params"])
-        cur.update(base)
+        if base:
+            cur = dict(DEFAULT_CONFIG["gen_params"])
+            cur.update(base)
+        else:
+            # 该栏目还没单独存过 → 起点用「它此刻读到的值」（继承 global），
+            # 不能用硬编码默认，否则只改一项的保存会把其余参数一起打回
+            # 832×1216 / 空模型方案，用户会觉得刚才看到的设置白设了。
+            cur = self.get_gen_params(scope)
         for k, v in (patch or {}).items():
             if k not in DEFAULT_CONFIG["gen_params"]:
                 continue

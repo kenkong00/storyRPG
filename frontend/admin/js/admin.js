@@ -108,7 +108,7 @@ const Admin = {
       scenes: '场景管理', skills: '技能书', story: '剧情管理', images: '图片管理',
       prompt_lib: '提示词管理',
       tags: '标签管理', animations: '动效展示', sounds: '声音管理', voice_tasks: '语音任务',
-      games: '游戏设置', users: '用户管理', character_states: '人物状态管理', players: '玩家角色',
+      games: '游戏设置', users: '用户管理', players: '玩家角色',
       character_appearance: '人物外观拼装', settings: '设置', compose: '人物场景合成',
       comic: '漫画制作', comic_manage: '漫画管理', cards: '卡牌系统',
       card_appearance: '卡牌外观拼装',
@@ -139,8 +139,8 @@ const Admin = {
   },
 
   // ===== API 封装 =====
-  async get(path) {
-    const res = await fetch(`${API_BASE}${path}`);
+  async get(path, { noCache } = {}) {
+    const res = await fetch(`${API_BASE}${path}`, noCache ? { cache: 'no-store' } : undefined);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       const msg = Array.isArray(err.detail) ? err.detail.map(e => e.msg || JSON.stringify(e)).join('; ') : (err.detail || `HTTP ${res.status}`);

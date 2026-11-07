@@ -24,6 +24,10 @@ class Game(Base):
     is_carousel: Mapped[int] = mapped_column(Integer, default=0)
     is_coming_soon: Mapped[int] = mapped_column(Integer, default=0)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    # 单主角制：本作唯一可扮演的主角（character_type='player' 的角色）。
+    # 前台开局时跳过选角，直接以该角色进入；为空则退回旧的"可选玩家"多选兜底。
+    protagonist_character_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("characters.id"), nullable=True)
     created_at: Mapped[str] = mapped_column(String(30), default=lambda: datetime.now().isoformat())
     updated_at: Mapped[str] = mapped_column(String(30), default=lambda: datetime.now().isoformat())
 

@@ -763,6 +763,104 @@ Admin.Pickers = (function () {
         emptyText: '暂无场景',
       });
     },
+    // 动作表情选择器（全局）：一条动作一行 —— 上面是名字，下面就是会写进提示词的那句描述。
+    // 动作库里的 cn 本身就是描述语句（「双臂交叉抱在胸前」），按语句列比图片格子直观得多，
+    // 而且大多数动作根本没有出过图，格子版全是空白占位。
+    // opts: { current, category, title }  → 选中返回动作 id；选「不指定」返回 ''；取消返回 null
+    pose(opts = {}) {
+      return new Promise(async (resolve) => {
+        let lib = null;
+        try { lib = await Admin.get('/poses/library'); } catch (_) { lib = null; }
+        if (!lib || !(lib.poses || []).length) {
+          Admin.toast('动作表情库还是空的，先去「动作表情」页添加几条', 'info');
+          resolve(null);
+          return;
+        }
+
+        const dlg = createDialog(opts.title || '选择动作表情', {});
+        const pane = dlg.overlay.querySelector('.picker-dialog');
+        if (pane) pane.style.maxWidth = '1140px';
+        // 高度固定：列表区定高滚动，不随条目数量撑高弹层
+        dlg.body.style.height = '62vh';
+        dlg.body.style.overflowY = 'auto';
+        dlg.overlay.querySelector('.picker-cancel')
+          .addEventListener('click', () => resolve(null));
+        // 右上角 × 也按「取消」处理，否则这处 await 会一直挂起
+        dlg.overlay.querySelector('.picker-close')
+          .addEventListener('click', () => resolve(null));
+
+        const poses = (lib.poses || []).slice();
+        const cats = [{ id: '', name: '全部', count: poses.length }]
+          .concat((lib.categories || []).map(c => ({ id: c.id, name: c.name, count: c.count || 0 })));
+        const catName = {};
+        cats.forEach(c => { catName[c.id] = c.name; });
+
+        let curCat = opts.category || '';
+        let kw = '';
+
+        dlg.filterArea.innerHTML = `
+          <input class="pp-kw" type="text" placeholder="搜索名字或语句，例如 愤怒 / 抱臂 / 拔剑"
+            style="flex:1 1 100%;padding:8px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:12.5px">
+          <div class="pp-cats" style="display:flex;gap:6px;flex-wrap:wrap;flex:1 1 100%"></div>
+          <span style="flex:1 1 100%;font-size:11px;color:var(--text-muted)">点一行即选；选中的动作只作用于当前这一句</span>`;
+
+        const catsEl = dlg.filterArea.querySelector('.pp-cats');
+        const kwEl = dlg.filterArea.querySelector('.pp-kw');
+
+        function drawCats() {
+          catsEl.innerHTML = cats.map(c => {
+            const on = c.id === curCat;
+            return `<span class="pp-cat${on ? ' on' : ''}" data-cat="${esc(c.id)}">${esc(c.name)}<b>${c.count}</b></span>`;
+          }).join('');
+          catsEl.querySelectorAll('.pp-cat').forEach(el => {
+            el.addEventListener('click', () => { curCat = el.dataset.cat; drawCats(); draw(); });
+          });
+        }
+
+        function rowHtml(id, name, cn, tags, sel) {
+          return `<div class="pp-row${sel ? ' on' : ''}" data-id="${esc(id)}">
+            <div class="pp-row-l">
+              <div class="pp-row-top"><span class="pp-row-name">${esc(name)}</span>${tags}</div>
+              <div class="pp-row-cn">${esc(cn)}</div>
+            </div>
+            <span class="pp-row-tick">✓</span>
+          </div>`;
+        }
+
+        function pick(id) {
+          dlg.close();
+          resolve(id || '');
+        }
+
+        function draw() {
+          const list = poses.filter(p => {
+            if (curCat && p.cat !== curCat) return false;
+            if (!kw) return true;
+            return `${p.name || ''} ${p.cn || ''} ${p.id || ''}`.toLowerCase().includes(kw);
+          });
+          const noneRow = rowHtml('', '不指定', '这一句不给动作，只用台词（和表情）', '<span class="pp-tag">默认</span>',
+            !opts.current);
+          const rows = list.map(p => {
+            const tags = (p.cat ? `<span class="pp-tag">${esc(catName[p.cat] || p.cat)}</span>` : '')
+              + (p.duo ? '<span class="pp-tag pp-tag-duo">双人</span>' : '');
+            return rowHtml(p.id, p.name || p.id, p.cn || '', tags, p.id === (opts.current || ''));
+          }).join('');
+          dlg.body.innerHTML = `<div class="pp-list">${noneRow}${rows}</div>`
+            + (list.length ? '' : '<div style="text-align:center;padding:26px;color:var(--text-muted);font-size:12px">这个分类下没有匹配的动作</div>');
+          dlg.body.querySelectorAll('.pp-row').forEach(el => {
+            el.addEventListener('click', () => pick(el.dataset.id || ''));
+          });
+          dlg.info.textContent = `动作库共 ${poses.length} 条 · 当前列出 ${list.length} 条`;
+          const on = dlg.body.querySelector('.pp-row.on');
+          if (on) on.scrollIntoView({ block: 'nearest' });
+        }
+
+        kwEl.addEventListener('input', () => { kw = kwEl.value.trim().toLowerCase(); draw(); });
+        drawCats();
+        draw();
+        kwEl.focus();
+      });
+    },
     // 上传图片浮层（图片管理专用）
     uploadImage(defaultCategory, onDone) {
       return openImageUploader(defaultCategory, onDone);

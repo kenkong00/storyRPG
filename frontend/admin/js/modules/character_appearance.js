@@ -104,6 +104,7 @@ Admin.registerPage('character_appearance', async (container) => {
       <!-- ============ 定义管理 ============ -->
       <div id="ap-tab-manage" class="ap-pane">
         <div class="ap-toolbar">
+          <button class="ap-btn" id="ap-mg-render-tpl" title="【画面】【取景】固定段与负面词都在这里改，出图时按取景自动套用">🎨 画面模板 / 负面词</button>
           <button class="ap-btn" id="ap-mg-reset">恢复默认定义</button>
           <span class="ap-hint">改动立即写盘，同时影响「外观拼装」的下拉与出图提示词。</span>
         </div>
@@ -535,6 +536,12 @@ Admin.registerPage('character_appearance', async (container) => {
             <input class="ap-inp ap-opt-cn" data-f="cn" value="${esc(o.cn || '')}" placeholder="提示词文本（留空则用显示名）">
             <input class="ap-inp ap-opt-tags" data-f="tags" value="${esc((o.tags || []).join(','))}" placeholder="tags">
             <input class="ap-inp ap-opt-cat" data-f="cat" value="${esc(o.cat || '')}" placeholder="分类" style="width:72px">
+            ${dimId === 'framing' ? `<select class="ap-sel" data-f="behavior" title="套用哪套画面模板 / 裁剪逻辑" style="width:84px">
+              <option value=""${!o.behavior ? ' selected' : ''}>默认(全身)</option>
+              <option value="full"${o.behavior === 'full' ? ' selected' : ''}>全身</option>
+              <option value="half"${o.behavior === 'half' ? ' selected' : ''}>半身</option>
+              <option value="head"${o.behavior === 'head' ? ' selected' : ''}>特写</option>
+            </select>` : ''}
             <button class="ap-btn xs" data-osave="${esc(o.id)}">存</button>
             <button class="ap-btn xs" data-omove="${esc(o.id)}">↑</button>
             <button class="ap-btn xs" data-odel="${esc(o.id)}">✕</button>
@@ -593,12 +600,14 @@ Admin.registerPage('character_appearance', async (container) => {
       b.addEventListener('click', async () => {
         const row = b.closest('.ap-opt');
         const val = (f) => row.querySelector(`[data-f="${f}"]`).value;
+        const behEl = row.querySelector('[data-f="behavior"]');
         try {
           await Admin.put(`/appearance/manage/dims/${dimId}/options/${b.dataset.osave}`, {
             name: val('name'),
             cn: val('cn'),
             tags: val('tags').split(',').map(s => s.trim()).filter(Boolean),
             cat: val('cat'),
+            ...(behEl ? { behavior: behEl.value } : {}),
           });
           Admin.toast('已保存选项', 'success');
         } catch (e) { Admin.toast('保存失败：' + e.message, 'error'); }
@@ -673,6 +682,73 @@ Admin.registerPage('character_appearance', async (container) => {
     await mountEditor();
     Admin.toast('已恢复默认定义', 'success');
   });
+
+  // ---------- 画面模板 / 负面词（红线：所有提示词可改/删/增） ----------
+  $('ap-mg-render-tpl').addEventListener('click', () => renderRenderTemplates());
+
+  async function renderRenderTemplates() {
+    const data = await Admin.get('/appearance/manage/render-templates');
+    const rt = data.renderTemplates || {};
+    const nw = data.negativeWords || {};
+    const order = ['full', 'half', 'head'];
+    const frBeh = {};
+    (data.framingOptions || []).forEach(o => { frBeh[o.id] = o.behavior || (order.includes(o.id) ? o.id : 'full'); });
+
+    const tplCard = (key) => {
+      const t = rt[key] || { name: key, tags: [], sceneLine: '' };
+      const label = order.includes(key) ? ({ full: '全身', half: '半身', head: '头部特写' }[key]) : esc(t.name || key);
+      return `
+        <div class="ap-opt-card" style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px">
+          <div style="font-weight:600;margin-bottom:6px">【画面】取景：${label} <span class="ap-hint">(key=${esc(key)})</span></div>
+          <label class="ap-field" style="margin-bottom:6px"><span>画面标签（顿号/逗号分隔，删空 = 这一行不出现在提示词）</span>
+            <textarea class="ap-ta" data-rt-tags="${esc(key)}" rows="2">${esc((t.tags || []).join('、'))}</textarea></label>
+          <label class="ap-field"><span>【取景】说明句（可空）</span>
+            <textarea class="ap-ta" data-rt-line="${esc(key)}" rows="2">${esc(t.sceneLine || '')}</textarea></label>
+        </div>`;
+    };
+
+    const negCard = (key, label) => `
+      <label class="ap-field" style="margin-bottom:8px"><span>${label}（逗号分隔）</span>
+        <textarea class="ap-ta" data-nw="${esc(key)}" rows="2">${esc((nw[key] || []).join('，'))}</textarea></label>`;
+
+    $('ap-dim-editor').innerHTML = `
+      <div class="ap-side-head">
+        <span>🎨 画面模板 / 负面词</span>
+        <span style="margin-left:auto"><button class="ap-btn primary" id="ap-rt-save">💾 保存全部</button></span>
+      </div>
+      <div class="ap-hint" style="padding:6px 0;line-height:1.7">
+        出图提示词末尾的 <b>【画面】…</b> 与 <b>【取景】…</b> 不再写死在程序里：按当前「立绘取景」套用下面的模板，
+        改完立即生效（外观拼装的预览、动作表情批量出图、剧情导入出图共用这一套）。
+        把标签删空 = 该段整行不出现。<br>
+        另外：立绘取景选项本身在左侧「meta → 立绘取景」里维护，每个选项可配 <b>behavior</b>（full/half/head）决定套哪套模板。
+      </div>
+      ${order.map(tplCard).join('')}
+      <div style="font-weight:600;margin:8px 0 6px">负面词模板</div>
+      ${negCard('base', '基础（所有取景都带）')}
+      ${negCard('half', '半身取景追加')}
+      ${negCard('head', '头部特写追加')}
+    `;
+
+    $('ap-rt-save').addEventListener('click', async () => {
+      const splitTags = (s) => s.split(/[、,，\n]+/).map(x => x.trim()).filter(Boolean);
+      const renderTemplates = {};
+      order.forEach(key => {
+        const tagsEl = document.querySelector(`[data-rt-tags="${key}"]`);
+        const lineEl = document.querySelector(`[data-rt-line="${key}"]`);
+        renderTemplates[key] = {
+          name: ({ full: '全身', half: '半身', head: '头部特写' })[key],
+          tags: tagsEl ? splitTags(tagsEl.value) : [],
+          sceneLine: lineEl ? lineEl.value.trim() : '',
+        };
+      });
+      const negativeWords = {};
+      document.querySelectorAll('[data-nw]').forEach(el => {
+        negativeWords[el.dataset.nw] = el.value.split(/[，,\n]+/).map(x => x.trim()).filter(Boolean);
+      });
+      await Admin.put('/appearance/manage/render-templates', { renderTemplates, negativeWords });
+      Admin.toast('画面模板 / 负面词已保存，立即生效', 'success');
+    });
+  }
 
   $('ap-theme-add').addEventListener('click', async () => {
     const d = await prompt2('新增题材', [

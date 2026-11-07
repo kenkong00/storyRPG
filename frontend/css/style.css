@@ -407,7 +407,7 @@ html, body {
   overflow: hidden;
   transform: translateX(-50%);
   opacity: 0;
-  transition: opacity .45s ease, filter .45s ease,
+  transition: opacity .45s ease, filter var(--stage-transition, .45s) ease,
               left .45s ease, bottom .45s ease, width .45s ease, height .45s ease;
   filter: drop-shadow(0 -8px 40px rgba(0,0,0,0.6));
 }
@@ -1934,8 +1934,171 @@ html, body {
   padding-top: 5px;
 }
 
-/* 正在说话的角色：轻微提亮，让玩家一眼看出谁在开口 */
-#expression-layer .stage-char.speaking img {
-  filter: brightness(1.08) saturate(1.05);
-  transition: filter 0.25s ease;
+/* 说话人高亮已统一由 DialogueUI.focusStyle（剧情演出设置）在 .stage-char 上内联控制，
+   这里不再给 img 叠加固定提亮 —— 否则「关闭」档位也会被这层滤镜拉亮。 */
+
+/* ===== 演示模式角标（后台「▶ 演示」打开的页面里显示） ===== */
+#demo-badge {
+    position: fixed;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: rgba(12, 12, 18, .82);
+    border: 1px solid rgba(212, 175, 55, .55);
+    color: #f1e6c8;
+    font-size: 13px;
+    letter-spacing: .3px;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .45);
+}
+#demo-badge b { color: var(--gold, #d4af37); font-weight: 600; }
+#demo-badge .demo-part { color: #fff; }
+#demo-badge .demo-dim { color: #9a9284; font-size: 12px; }
+#demo-badge.demo-done { border-color: rgba(120, 200, 130, .6); }
+#demo-badge.demo-done b { color: #7fd18b; }
+
+/* ========== 右上角：自动播放开关 ========== */
+/* 放在 #ui-toggle 左边。不用 absolute 而用 fixed：两种定位下它都得贴着右上角，
+   演示模式（后台 iframe 里整页）和正常游玩时位置一致。 */
+#auto-play-toggle {
+  position: fixed;
+  top: 16px; right: 60px;
+  height: 34px;
+  padding: 0 12px 0 10px;
+  display: flex; align-items: center; gap: 6px;
+  border-radius: 17px;
+  background: rgba(5, 5, 10, .6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12.5px;
+  letter-spacing: .5px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 61;
+  transition: all .22s ease;
+  font-family: inherit;
+}
+#auto-play-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(212, 175, 55, .1);
+}
+#auto-play-toggle .ap-icon {
+  font-size: 10px;
+  line-height: 1;
+  opacity: .85;
+  /* 固定宽度，避免 ▶ / ❚❚ 宽度不同导致整颗按钮抖 */
+  width: 12px; text-align: center;
+}
+/* 开启态：金色实底 + 缓慢呼吸，余光能看见「它正自己往前走」 */
+#auto-play-toggle.on {
+  color: #1a1408;
+  background: linear-gradient(180deg, #e8c766, #c9a84c);
+  border-color: #e8c766;
+  box-shadow: 0 0 16px rgba(212, 175, 55, .45);
+  animation: ap-breathe 2.4s ease-in-out infinite;
+}
+#auto-play-toggle.on:hover {
+  color: #1a1408;
+  background: linear-gradient(180deg, #f0d47a, #d4b45a);
+  transform: none;
+}
+@keyframes ap-breathe {
+  0%, 100% { box-shadow: 0 0 12px rgba(212, 175, 55, .32); }
+  50%      { box-shadow: 0 0 22px rgba(212, 175, 55, .62); }
+}
+/* 界面隐藏时（点了 • ）自动播放开关一起藏起来，别在纯画面里露一个金属胶囊 */
+#auto-play-toggle.ap-hidden { display: none; }
+
+/* ========== 设置面板 · 剧情演出 ========== */
+.ss-h3 {
+  margin: 20px 0 6px;
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: .5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(212, 175, 55, .18);
+}
+.ss-note {
+  font-size: 11.5px;
+  color: #8a8272;
+  line-height: 1.75;
+  margin: 0 0 10px;
+}
+.ss-modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.ss-modes .focus-opt { width: auto !important; flex: 1 1 96px; margin: 5px 0 !important; }
+
+.ss-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 7px 0;
+}
+.ss-lbl {
+  flex: 0 0 108px;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.ss-hint { display: block; font-size: 10px; color: #6d6656; margin-top: 1px; }
+.ss-val {
+  flex: 0 0 58px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+/* 滑块：默认样式在深色面板里几乎看不见轨道 */
+.ss-range {
+  flex: 1 1 auto;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(212, 175, 55, .5), rgba(212, 175, 55, .12));
+  outline: none;
+  cursor: pointer;
+}
+.ss-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #14100a;
+  box-shadow: 0 0 8px rgba(212, 175, 55, .5);
+  cursor: pointer;
+}
+.ss-range::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #14100a;
+  cursor: pointer;
+}
+.ss-ck {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  margin-top: 4px;
+}
+.ss-ck input { accent-color: var(--accent); }
+.ss-tip {
+  margin-top: 8px;
+  padding: 7px 10px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #8a8272;
+  background: rgba(212, 175, 55, .06);
+  border-left: 2px solid rgba(212, 175, 55, .4);
+  border-radius: 0 4px 4px 0;
 }

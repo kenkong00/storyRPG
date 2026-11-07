@@ -15,6 +15,7 @@ Admin.registerPage('sounds', async (container) => {
   let currentFilterCat = ''; // voice/bgm 客户端筛选
   let currentTab = 'library';
   let charVoiceCache = [];   // 角色语音配置页数据
+  let narrVoiceCache = null; // 旁白（叙述）的语音配置
   let packCache = [];        // 语音包页数据
   let _voiceGroups = null;   // TTS 音色分组缓存
 
@@ -414,6 +415,7 @@ Admin.registerPage('sounds', async (container) => {
     if (!pane) return;
     pane.innerHTML = '<div class="table-empty">加载中…</div>';
     try { charVoiceCache = await Admin.get('/characters/'); } catch (_) { charVoiceCache = []; }
+    try { narrVoiceCache = await Admin.get('/tts/narration'); } catch (_) { narrVoiceCache = null; }
     if (!_voiceGroups) {
       try { const r = await Admin.get('/tts/voices?grouped=true'); _voiceGroups = (r && r.groups) || r || []; } catch (_) { _voiceGroups = []; }
     }
@@ -450,6 +452,32 @@ Admin.registerPage('sounds', async (container) => {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+  // 旁白行：剧情里没有说话人的句子（旁白 / 环境描写）用这一套音色。
+  // 和人物行同一列布局，保存走 /tts/narration（单行配置表）。
+  function narrRowHtml() {
+    const n = narrVoiceCache || {};
+    const on = n.enabled !== false;
+    return `<tr data-cid="narr" class="cv-narr-row">
+      <td><b>旁白</b> <span class="tag tag-npc">叙述</span>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px">
+          <label style="cursor:pointer;white-space:nowrap"><input type="checkbox" class="cv-enabled" ${on ? 'checked' : ''}> 朗读</label>
+        </div>
+      </td>
+      <td style="min-width:150px"><select class="cv-engine" data-cid="narr">${engineOptionHtml(n.engine || '')}</select></td>
+      <td style="min-width:230px"><select class="cv-voice" data-cid="narr">${voiceOptionHtml(n.engine || '', n.voice_id || '')}</select></td>
+      <td style="min-width:120px"><input type="range" class="cv-rate" data-cid="narr" min="-50" max="50" value="${n.rate || 0}">
+        <b class="cv-rate-v" style="color:var(--gold);font-size:11px">${n.rate || 0}%</b></td>
+      <td style="min-width:120px"><input type="range" class="cv-pitch" data-cid="narr" min="-30" max="30" value="${n.pitch || 0}">
+        <b class="cv-pitch-v" style="color:var(--gold);font-size:11px">${n.pitch || 0}%</b></td>
+      <td style="min-width:120px"><input type="range" class="cv-volume" data-cid="narr" min="-50" max="50" value="${n.volume || 0}">
+        <b class="cv-volume-v" style="color:var(--gold);font-size:11px">${n.volume || 0}%</b></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm cv-preview" data-cid="narr">试听</button>
+        <button class="btn btn-gold btn-sm cv-save" data-cid="narr">保存</button>
+      </td>
+    </tr>`;
+  }
+
   function renderVoices() {
     const pane = document.getElementById('sm-pane-voices');
     if (!pane) return;
@@ -479,6 +507,8 @@ Admin.registerPage('sounds', async (container) => {
     pane.innerHTML = `
       <div class="sm-pane-head">
         专为每个人物配「说话的声音」：引擎 + 音色 + 语速/音调/音量。<br>
+        <b style="color:var(--gold)">第一行是「旁白」</b>——剧情里没有说话人的句子（叙述、环境描写）用它朗读，
+        观看到旁白时的声音和这里配的完全一致。<br>
         人物管理里的「语音」页已并入这里 —— 语音任务、剧情对话批量生成都会自动沿用这套配置。<br>
         派生声线（角色声线组）= 用语速/音调在基础音色上派生，来源已标注在音色名后面。
       </div>
@@ -487,7 +517,7 @@ Admin.registerPage('sounds', async (container) => {
           <thead><tr>
             <th>人物</th><th>引擎</th><th>音色</th><th>语速</th><th>音调</th><th>音量</th><th>操作</th>
           </tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody>${narrRowHtml()}${rows}</tbody>
         </table>
       </div>
     `;
@@ -497,7 +527,10 @@ Admin.registerPage('sounds', async (container) => {
       sel.addEventListener('change', () => {
         const cid = sel.dataset.cid;
         const voiceSel = pane.querySelector(`.cv-voice[data-cid="${cid}"]`);
-        if (voiceSel) voiceSel.innerHTML = voiceOptionHtml(sel.value, (charVoiceCache.find(c => String(c.id) === cid) || {}).tts_voice);
+        const cur = cid === 'narr'
+          ? (narrVoiceCache || {}).voice_id
+          : (charVoiceCache.find(c => String(c.id) === cid) || {}).tts_voice;
+        if (voiceSel) voiceSel.innerHTML = voiceOptionHtml(sel.value, cur);
       });
     });
     // 滑杆数值
@@ -512,11 +545,13 @@ Admin.registerPage('sounds', async (container) => {
     // 试听：用当前行配置直接合成
     pane.querySelectorAll('.cv-preview').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const cid = parseInt(btn.dataset.cid, 10);
-        const row = pane.querySelector(`tr[data-cid="${cid}"]`);
-        const ch = charVoiceCache.find(c => c.id === cid);
+        const key = btn.dataset.cid;
+        const isNarr = key === 'narr';
+        const row = pane.querySelector(`tr[data-cid="${key}"]`);
+        const ch = isNarr ? null : charVoiceCache.find(c => c.id === parseInt(key, 10));
         const body = {
-          text: '前方似有埋伏，公子小心。',
+          // 旁白试听用一段叙述文字，比角色台词更能听出语速/音调是否合适
+          text: isNarr ? '夜色沉下来，风穿过破庙的窗棂，远处传来更鼓声。' : '前方似有埋伏，公子小心。',
           engine_id: row.querySelector('.cv-engine').value || '',
           voice_id: row.querySelector('.cv-voice').value || null,
           rate: parseInt(row.querySelector('.cv-rate').value, 10) || 0,
@@ -535,29 +570,45 @@ Admin.registerPage('sounds', async (container) => {
         finally { btn.disabled = false; }
       });
     });
-    // 保存：写回人物角色
+    // 保存：写回人物角色；旁白写单行配置表
     pane.querySelectorAll('.cv-save').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const cid = parseInt(btn.dataset.cid, 10);
-        const row = pane.querySelector(`tr[data-cid="${cid}"]`);
-        const ch = charVoiceCache.find(c => c.id === cid);
+        const key = btn.dataset.cid;
+        const isNarr = key === 'narr';
+        const row = pane.querySelector(`tr[data-cid="${key}"]`);
+        const ch = isNarr ? null : charVoiceCache.find(c => c.id === parseInt(key, 10));
+        const vals = {
+          engine: row.querySelector('.cv-engine').value || '',
+          voice_id: row.querySelector('.cv-voice').value || '',
+          rate: parseInt(row.querySelector('.cv-rate').value, 10) || 0,
+          pitch: parseInt(row.querySelector('.cv-pitch').value, 10) || 0,
+          volume: parseInt(row.querySelector('.cv-volume').value, 10) || 0,
+        };
         btn.disabled = true;
         try {
-          await Admin.put(`/characters/${cid}`, {
-            tts_engine: row.querySelector('.cv-engine').value || null,
-            tts_voice: row.querySelector('.cv-voice').value || null,
-            tts_rate: parseInt(row.querySelector('.cv-rate').value, 10) || 0,
-            tts_pitch: parseInt(row.querySelector('.cv-pitch').value, 10) || 0,
-            tts_volume: parseInt(row.querySelector('.cv-volume').value, 10) || 0,
+          if (isNarr) {
+            const enabled = !!row.querySelector('.cv-enabled')?.checked;
+            narrVoiceCache = await Admin.put('/tts/narration', { ...vals, enabled });
+            Admin.toast(enabled
+              ? '旁白语音已保存，剧情里没有说话人的句子会用这个音色朗读'
+              : '旁白语音已保存（已关闭朗读：观看时旁白不出声）', 'success');
+            return;
+          }
+          await Admin.put(`/characters/${key}`, {
+            tts_engine: vals.engine || null,
+            tts_voice: vals.voice_id || null,
+            tts_rate: vals.rate,
+            tts_pitch: vals.pitch,
+            tts_volume: vals.volume,
           });
           if (ch) {
-            ch.tts_engine = row.querySelector('.cv-engine').value;
-            ch.tts_voice = row.querySelector('.cv-voice').value;
-            ch.tts_rate = parseInt(row.querySelector('.cv-rate').value, 10) || 0;
-            ch.tts_pitch = parseInt(row.querySelector('.cv-pitch').value, 10) || 0;
-            ch.tts_volume = parseInt(row.querySelector('.cv-volume').value, 10) || 0;
+            ch.tts_engine = vals.engine;
+            ch.tts_voice = vals.voice_id;
+            ch.tts_rate = vals.rate;
+            ch.tts_pitch = vals.pitch;
+            ch.tts_volume = vals.volume;
           }
-          Admin.toast(`「${ch ? ch.name : cid}」的语音配置已保存`, 'success');
+          Admin.toast(`「${ch ? ch.name : key}」的语音配置已保存`, 'success');
         } catch (e) { Admin.toast('保存失败：' + e.message, 'error'); }
         finally { btn.disabled = false; }
       });

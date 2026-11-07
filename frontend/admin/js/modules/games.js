@@ -414,8 +414,8 @@ Admin.registerPage('games', async (container) => {
   function showButtonConfig(game) {
     let buttons = []; // 当前编辑中的按钮列表
     let originalButtonIds = []; // 原始按钮ID集合，用于检测删除
-    let players = []; // 当前选中的角色ID列表
-    let activatedPlayers = [];
+    let protagonistId = null; // 单主角制：本作唯一主角的角色ID
+    let activatedPlayers = []; // 可选的玩家角色（player 类型）
     let chapters = [];
     const isComingSoon = game.is_coming_soon === 1;
 
@@ -438,11 +438,11 @@ Admin.registerPage('games', async (container) => {
 
             <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <span style="font-size:13px;font-weight:600;color:var(--gold)">可选玩家配置</span>
-                <span id="gb-players-count" style="font-size:11px;color:var(--text-muted)">已选 0 个</span>
+                <span style="font-size:13px;font-weight:600;color:var(--gold)">本作主角（单主角制）</span>
+                <span id="gb-players-count" style="font-size:11px;color:var(--text-muted)"></span>
               </div>
-              <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">每个游戏可指定不同的已激活玩家组合供用户选择</div>
-              <div id="gb-players-area" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px"></div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">本作只允许扮演一个角色。前台点「开始」将直接以该主角进入，不再让玩家选角。人物需在「人物管理」里设为「玩家角色」类型。</div>
+              <select id="gb-protagonist" style="width:100%;padding:6px 8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:12px"></select>
             </div>
           </div>
         </div>
@@ -472,7 +472,7 @@ Admin.registerPage('games', async (container) => {
         ]);
         buttons = (detail.buttons || []).map(b => ({ ...b }));
         originalButtonIds = buttons.map(b => b.id);
-        players = (detail.player_options || []).map(o => o.character_id);
+        protagonistId = detail.protagonist_character_id || null;
         activatedPlayers = actPlayers || [];
         chapters = chapList || [];
         document.getElementById('gb-loading').style.display = 'none';
@@ -529,8 +529,14 @@ Admin.registerPage('games', async (container) => {
               <button type="button" class="btn-del-btn-row btn btn-outline btn-sm" data-idx="${i}" style="color:var(--red);border-color:var(--red);padding:2px 8px">删除</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;font-size:11px">
-              <div><label style="color:var(--text-muted)">位置 X%</label><input type="number" min="0" max="100" class="gb-x" value="${b.position_x ?? 50}" style="width:100%;padding:3px 6px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary)"></div>
-              <div><label style="color:var(--text-muted)">位置 Y%</label><input type="number" min="0" max="100" class="gb-y" value="${b.position_y ?? 50}" style="width:100%;padding:3px 6px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary)"></div>
+              <div>
+                <label style="color:var(--text-muted);display:flex;justify-content:space-between;align-items:center">位置 X% <output class="gb-x-out" style="color:var(--gold);font-variant-numeric:tabular-nums">${b.position_x ?? 50}</output></label>
+                <input type="range" min="0" max="100" step="1" class="gb-x" value="${b.position_x ?? 50}" style="width:100%;accent-color:var(--gold);cursor:pointer;margin:2px 0">
+              </div>
+              <div>
+                <label style="color:var(--text-muted);display:flex;justify-content:space-between;align-items:center">位置 Y% <output class="gb-y-out" style="color:var(--gold);font-variant-numeric:tabular-nums">${b.position_y ?? 50}</output></label>
+                <input type="range" min="0" max="100" step="1" class="gb-y" value="${b.position_y ?? 50}" style="width:100%;accent-color:var(--gold);cursor:pointer;margin:2px 0">
+              </div>
               <div><label style="color:var(--text-muted)">动作类型</label><select class="gb-action" style="width:100%;padding:3px 6px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary)">${Object.entries(ACTION_TYPE_MAP).map(([k, v]) => `<option value="${k}" ${b.action_type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
               <div><label style="color:var(--text-muted)">排序</label><input type="number" class="gb-sort" value="${b.sort_order ?? 0}" style="width:100%;padding:3px 6px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;color:var(--text-primary)"></div>
             </div>
@@ -552,40 +558,34 @@ Admin.registerPage('games', async (container) => {
     }
 
     function renderPlayers() {
-      const area = document.getElementById('gb-players-area');
-      if (!area) return;
+      const sel = document.getElementById('gb-protagonist');
+      if (!sel) return;
       if (activatedPlayers.length === 0) {
-        area.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px">暂无已激活的玩家角色</div>';
+        sel.innerHTML = '<option value="">（暂无玩家角色，请先在人物管理创建 player 类型角色）</option>';
+        sel.value = '';
         updatePlayersCount();
         return;
       }
-      area.innerHTML = activatedPlayers.map(c => {
-        const checked = players.includes(c.id);
-        return `<label class="player-chip" data-cid="${c.id}" style="display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid ${checked ? 'var(--gold)' : 'var(--border)'};border-radius:6px;cursor:pointer;background:${checked ? 'rgba(201,168,76,0.1)' : 'transparent'}">
-          <input type="checkbox" class="player-cb" data-cid="${c.id}" ${checked ? 'checked' : ''} style="accent-color:var(--gold)">
-          ${c.portrait_image ? `<img src="${c.portrait_image}" style="width:24px;height:24px;border-radius:3px;object-fit:cover">` : ''}
-          <span style="font-size:12px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}${c.title ? ' · ' + c.title : ''}</span>
-        </label>`;
-      }).join('');
+      sel.innerHTML = '<option value="">— 未指定（退回旧的选角方式）—</option>' + activatedPlayers.map(c =>
+        `<option value="${c.id}" ${protagonistId === c.id ? 'selected' : ''}>${c.name}${c.title ? ' · ' + c.title : ''}（Lv.${c.level || 1}）</option>`
+      ).join('');
+      // 当前主角不在列表中（可能已被删/改了类型）时保留一个提示项
+      if (protagonistId && !activatedPlayers.some(c => c.id === protagonistId)) {
+        sel.innerHTML += `<option value="${protagonistId}" selected>#${protagonistId}（已失效，请重选）</option>`;
+      }
       updatePlayersCount();
-      area.querySelectorAll('.player-cb').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const cid = parseInt(cb.dataset.cid);
-          if (cb.checked) { if (!players.includes(cid)) players.push(cid); }
-          else { players = players.filter(x => x !== cid); }
-          const chip = cb.closest('.player-chip');
-          if (chip) {
-            chip.style.borderColor = cb.checked ? 'var(--gold)' : 'var(--border)';
-            chip.style.background = cb.checked ? 'rgba(201,168,76,0.1)' : 'transparent';
-          }
-          updatePlayersCount();
-        });
-      });
+      sel.onchange = () => {
+        protagonistId = sel.value ? parseInt(sel.value) : null;
+        updatePlayersCount();
+      };
     }
 
     function updatePlayersCount() {
       const el = document.getElementById('gb-players-count');
-      if (el) el.textContent = `已选 ${players.length} 个`;
+      if (!el) return;
+      if (!protagonistId) { el.textContent = '未指定主角'; return; }
+      const c = activatedPlayers.find(x => x.id === protagonistId);
+      el.textContent = c ? ('主角：' + c.name) : ('主角：#' + protagonistId);
     }
 
     function bindGlobalEvents() {
@@ -619,10 +619,10 @@ Admin.registerPage('games', async (container) => {
           if (buttons[idx]) { buttons[idx].label = e.target.value; renderPreview(); }
         });
         row.querySelector('.gb-x')?.addEventListener('input', e => {
-          if (buttons[idx]) { buttons[idx].position_x = parseInt(e.target.value) || 0; renderPreview(); }
+          if (buttons[idx]) { buttons[idx].position_x = parseInt(e.target.value) || 0; const o = e.target.parentElement.querySelector('.gb-x-out'); if (o) o.value = e.target.value; renderPreview(); }
         });
         row.querySelector('.gb-y')?.addEventListener('input', e => {
-          if (buttons[idx]) { buttons[idx].position_y = parseInt(e.target.value) || 0; renderPreview(); }
+          if (buttons[idx]) { buttons[idx].position_y = parseInt(e.target.value) || 0; const o = e.target.parentElement.querySelector('.gb-y-out'); if (o) o.value = e.target.value; renderPreview(); }
         });
         row.querySelector('.gb-sort')?.addEventListener('input', e => {
           if (buttons[idx]) buttons[idx].sort_order = parseInt(e.target.value) || 0;
@@ -710,9 +710,9 @@ Admin.registerPage('games', async (container) => {
           ok++;
         } catch (e) { fail++; }
       }
-      // 3. 保存可选玩家（批量替换）
+      // 3. 保存本作主角（单主角制：唯一主角角色）
       try {
-        await Admin.post(`/games/${game.id}/players/batch`, { character_ids: players });
+        await Admin.put(`/games/${game.id}`, { protagonist_character_id: protagonistId });
       } catch (e) { fail++; }
 
       Admin.toast(`保存完成: ${ok} 个按钮成功${deletedIds.length > 0 ? `, 删除 ${deletedIds.length}` : ''}${fail > 0 ? `, ${fail} 失败` : ''}`, fail > 0 ? 'error' : 'success');

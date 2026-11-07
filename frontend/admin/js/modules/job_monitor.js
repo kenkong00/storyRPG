@@ -14,6 +14,7 @@
 
   const S = {
     jobs: [],
+    meta: {},            // 最近一次 /api/jobs 的附带头（分类统计等）
     seen: {},            // id -> status，用来识别「刚刚完成」
     timer: null,
     booted: false,
@@ -59,9 +60,11 @@
       S.seen[j.id] = j.status;
       if (prev === 'running' && j.status !== 'running') {
         const ok = j.status === 'done' || j.status === 'partial';
+        // 出图说「张」、出声说「句」，别让用户看到「已生成 12 张语音」这种话
+        const unit = j.category === 'audio' ? '条语音' : (j.category === 'text' ? '项' : '张');
         Admin.toast(
-          `${j.title}：${ok ? '已生成 ' + j.done + ' 张' : '失败'}` +
-          (j.failed ? `（${j.failed} 张失败）` : ''),
+          `${j.title}：${ok ? '已生成 ' + j.done + ' ' + unit : '失败'}` +
+          (j.failed ? `（${j.failed} ${unit}失败）` : ''),
           ok ? 'success' : 'error'
         );
         // 让当前页自己刷新（图立刻出现，不用手动刷新）
@@ -74,6 +77,7 @@
     try {
       const r = await Admin.get('/jobs');
       S.jobs = r.jobs || [];
+      S.meta = r;
       toastTransitions();
       render();
       // 广播给页面内各面板，跟着任务进度自己刷新（不用各自写轮询）
@@ -129,6 +133,7 @@
     boot,
     refresh: fetchNow,
     jobs: () => S.jobs.slice(),
+    meta: () => S.meta || {},
     lastError: () => S.lastError,
     runningFor: (kind) => S.jobs.filter((j) => j.status === 'running' && (!kind || j.kind === kind)),
   };

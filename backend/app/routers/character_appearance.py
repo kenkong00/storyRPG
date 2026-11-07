@@ -95,6 +95,8 @@ class OptionReq(BaseModel):
     cn: Optional[str] = ""
     tags: Optional[list[str]] = None
     cat: Optional[str] = ""
+    # 仅「立绘取景」维度使用：full / half / head，决定套哪套画面模板与裁剪逻辑
+    behavior: Optional[str] = None
 
 
 class MoveReq(BaseModel):
@@ -504,6 +506,45 @@ def reset_defs():
     return {"ok": True, "version": defs.reset().get("version")}
 
 
+# ---- 画面/取景模板 + 负面词（红线：提示词不写死，全部可改/删/增） ----
+@admin_router.get("/render-templates")
+def get_render_templates():
+    d = defs.data()
+    return {
+        "renderTemplates": d.get("renderTemplates") or {},
+        "negativeWords": d.get("negativeWords") or {},
+        "framingOptions": (defs.dim_by_id("framing") or {}).get("options") or [],
+    }
+
+
+@admin_router.put("/render-templates")
+def put_render_templates(req: dict):
+    """整体保存画面模板与负面词。body:
+    { "renderTemplates": {full/half/head: {name, tags:[...], sceneLine}}, "negativeWords": {base/half/head:[...]} }
+    """
+    d = defs.data()
+    rt = req.get("renderTemplates")
+    if isinstance(rt, dict):
+        clean = {}
+        for key, tpl in rt.items():
+            if not isinstance(tpl, dict):
+                continue
+            clean[key] = {
+                "name": str(tpl.get("name") or key),
+                "tags": [str(t).strip() for t in (tpl.get("tags") or []) if str(t).strip()],
+                "sceneLine": str(tpl.get("sceneLine") or "").strip(),
+            }
+        d["renderTemplates"] = clean
+    nw = req.get("negativeWords")
+    if isinstance(nw, dict):
+        d["negativeWords"] = {
+            k: [str(t).strip() for t in (v or []) if str(t).strip()]
+            for k, v in nw.items() if isinstance(v, list)
+        }
+    defs.save(d)
+    return {"ok": True}
+
+
 # ---- 分组 ----
 @admin_router.post("/groups", status_code=201)
 def create_group(req: GroupReq):
@@ -567,8 +608,11 @@ def create_option(dim_id: str, req: OptionReq):
     oid = req.id or ("o" + str(int(__import__("time").time() * 1000)))
     if defs.option_of(dim_id, oid):
         raise HTTPException(status_code=400, detail="选项 id 已存在")
+    if req.behavior and req.behavior not in ("full", "half", "head"):
+        raise HTTPException(status_code=400, detail="behavior 只能是 full / half / head")
     defs.upsert_option(dim_id, {"id": oid, "name": req.name, "cn": req.cn or "",
-                                "tags": req.tags or [], "cat": req.cat or ""})
+                                "tags": req.tags or [], "cat": req.cat or "",
+                                "behavior": req.behavior or ""})
     return {"id": oid, "ok": True}
 
 
@@ -577,9 +621,14 @@ def update_option(dim_id: str, opt_id: str, req: OptionReq):
     cur = defs.option_of(dim_id, opt_id)
     if not cur:
         raise HTTPException(status_code=404, detail="选项不存在")
-    defs.upsert_option(dim_id, {**cur, "name": req.name, "cn": req.cn or "",
-                                "tags": req.tags if req.tags is not None else cur.get("tags") or [],
-                                "cat": req.cat or cur.get("cat") or ""})
+    new = {**cur, "name": req.name, "cn": req.cn or "",
+           "tags": req.tags if req.tags is not None else cur.get("tags") or [],
+           "cat": req.cat or cur.get("cat") or ""}
+    if req.behavior is not None:
+        if req.behavior and req.behavior not in ("full", "half", "head"):
+            raise HTTPException(status_code=400, detail="behavior 只能是 full / half / head")
+        new["behavior"] = req.behavior or ""
+    defs.upsert_option(dim_id, new)
     return {"ok": True}
 
 

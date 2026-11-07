@@ -12,9 +12,29 @@
   if (window.JobHub) return;
 
   const KIND_LABEL = {
+    // 图像
     pose_batch: '动作表情',
     appearance_render: '立绘生成',
+    scene_render: '场景出图',
+    compose_render: '场景合成',
     comic_cell: '漫画生图',
+    card_art: '卡面生成',
+    card_emotion: '情感表现',
+    story_cast: '剧本人物',
+    // 音频
+    voice_pack: '语音包',
+    voice_dialogue: '剧情配音',
+    tts_chapter: '整章配音',
+    // 文本
+    story_import: '剧情导入',
+  };
+  // 分类：出图（ComfyUI）和出声（TTS）混在一张列表里最难认，所以按分类分组过滤
+  const CAT = {
+    all:   { label: '全部', icon: '◍' },
+    audio: { label: '音频', icon: '🎙' },
+    image: { label: '图像', icon: '🖼' },
+    text:  { label: '文本', icon: '📄' },
+    other: { label: '其他', icon: '·' },
   };
   const STATUS_LABEL = {
     running: '进行中',
@@ -31,6 +51,7 @@
     open: false,
     filterStatus: 'all',
     filterKind: 'all',
+    filterCat: 'all',
     sort: 'queue',        // queue / old / status
     drawer: null,
     scroll: 0,
@@ -44,6 +65,20 @@
 
   function jobsOf() {
     return (window.JobMonitor && JobMonitor.jobs()) || [];
+  }
+
+  function catCounts() {
+    const m = (window.JobMonitor && JobMonitor.meta && JobMonitor.meta()) || {};
+    return m.by_category || {};
+  }
+
+  function catOf(j) {
+    return j.category || 'other';
+  }
+
+  function catLabel(j) {
+    const c = CAT[catOf(j)] || CAT.other;
+    return c.label;
   }
 
   function counts() {
@@ -150,6 +185,7 @@
           <button class="td-hbtn td-close" data-act="close" title="关闭">✕</button>
         </div>
       </div>
+      <div class="td-cats"></div>
       <div class="td-filters">
         <select class="td-sel" data-f="status">
           <option value="all">全部状态</option>
@@ -206,6 +242,13 @@
         render();
       });
     });
+    // 分类标签是每次 render 重画的，所以用委托，别逐次绑
+    d.querySelector('.td-cats').addEventListener('click', (e) => {
+      const b = e.target.closest('.td-cat');
+      if (!b) return;
+      S.filterCat = b.dataset.cat;
+      render();
+    });
     return d;
   }
 
@@ -213,6 +256,7 @@
     let list = jobsOf().slice();
     const st = S.filterStatus;
     const kd = S.filterKind;
+    if (S.filterCat !== 'all') list = list.filter((j) => catOf(j) === S.filterCat);
     if (st === 'live') list = list.filter((j) => ['running', 'queued', 'paused'].includes(j.status));
     else if (st !== 'all') list = list.filter((j) => j.status === st);
     if (kd !== 'all') list = list.filter((j) => j.kind === kd);
@@ -231,9 +275,16 @@
     const done = j.done + j.failed;
     const pct = j.total ? Math.min(100, Math.round(done / j.total * 100)) : 0;
     const sec = elapsed(j);
+    const cat = catOf(j);
     const bits = [];
-    if (j.total > 1 || done) bits.push(`${done}/${j.total}`);
-    if (sec > 0.5) bits.push(dur(sec));
+    // 后端 message 里已经带了「7/10」「全部完成：10/10」这类进度时不再重复显示
+    const msgHasProg = !!j.message && j.message.includes(`${done}/${j.total}`);
+    if ((j.total > 1 || done) && !msgHasProg) bits.push(`${done}/${j.total}`);
+    if (sec > 0.5) bits.push('已用 ' + dur(sec));
+    // 「还要等多久」：按已完成的平均耗时外推，一条都没完成时不猜
+    if ((live || paused) && j.eta_sec != null) {
+      bits.push(j.eta_sec > 1 ? '剩余约 ' + dur(Math.round(j.eta_sec)) : '快好了');
+    }
     if (paused) bits.push('已暂停');
     if (j.status === 'canceled') bits.push('已取消');
     if (j.canceling && j.status === 'running') bits.push('取消中…');
@@ -252,17 +303,22 @@
     if (canLocate(j)) {
       acts.push(`<button class="td-act" data-a="locate" data-id="${esc(j.id)}" title="跳到它所在的页面">↗</button>`);
     }
-    if ((j.images || []).length) {
+    if (cat === 'audio') {
+      if ((j.audio || []).length) {
+        acts.push(`<button class="td-act" data-a="play" data-id="${esc(j.id)}" title="试听最后生成的一条">♪</button>`);
+      }
+    } else if ((j.images || []).length) {
       acts.push(`<button class="td-act" data-a="view" data-id="${esc(j.id)}" title="看已出的图">🖼</button>`);
     }
     if (!live && !paused) {
       acts.push(`<button class="td-act danger" data-a="remove" data-id="${esc(j.id)}" title="从列表删除这条记录">🗑</button>`);
     }
 
-    return `<div class="td-row ${esc(j.status)}" data-id="${esc(j.id)}">
+    return `<div class="td-row ${esc(j.status)} ${esc(cat)}-row" data-id="${esc(j.id)}">
       <div class="td-dot"></div>
       <div class="td-main">
         <div class="td-line">
+          <span class="td-cat-tag ${esc(cat)}">${(CAT[cat] || CAT.other).icon} ${esc(catLabel(j))}</span>
           <span class="td-kind">${esc(KIND_LABEL[j.kind] || j.kind)}</span>
           <span class="td-name" title="${esc(j.title)}">${esc(j.title)}</span>
         </div>
@@ -274,6 +330,21 @@
       </div>
       <div class="td-acts">${acts.join('')}</div>
     </div>`;
+  }
+
+  function catBarHtml() {
+    const c = catCounts();
+    const liveTotal = Object.values(c).reduce((n, x) => n + (x.live || 0), 0);
+    const items = [`<button class="td-cat ${S.filterCat === 'all' ? 'on' : ''}" data-cat="all">
+        ${CAT.all.icon} ${CAT.all.label}<b>${liveTotal || ''}</b></button>`];
+    ['audio', 'image', 'text', 'other'].forEach((k) => {
+      const n = (c[k] || {}).live || 0;
+      const hasAny = jobsOf().some((j) => catOf(j) === k);
+      if (!n && !hasAny) return;      // 没这类任务就不占位置
+      items.push(`<button class="td-cat ${k} ${S.filterCat === k ? 'on' : ''}" data-cat="${k}">
+        ${CAT[k].icon} ${CAT[k].label}<b>${n || ''}</b></button>`);
+    });
+    return items.join('');
   }
 
   function render() {
@@ -293,11 +364,16 @@
     }
     d.querySelector('[data-f="status"]').value = S.filterStatus;
     d.querySelector('[data-f="sort"]').value = S.sort;
+    d.querySelector('.td-cats').innerHTML = catBarHtml();
 
     const live = (c.running || 0) + (c.queued || 0);
+    const cc = catCounts();
+    const audioLive = (cc.audio || {}).live || 0;
+    const imageLive = (cc.image || {}).live || 0;
     d.querySelector('.td-stat').textContent =
       `　运行 ${c.running || 0} · 暂停 ${c.paused || 0} · 完成 ${c.done || 0}` +
-      ((c.error || 0) ? ` · 失败 ${c.error}` : '');
+      ((c.error || 0) ? ` · 失败 ${c.error}` : '') +
+      (audioLive || imageLive ? `　(🎙${audioLive} / 🖼${imageLive})` : '');
 
     const box = d.querySelector('.td-list');
     S.scroll = box.scrollTop;
@@ -338,6 +414,18 @@
   async function act(a, id) {
     const j = jobsOf().find((x) => x.id === id);
     if (a === 'locate') { if (j) { toggle(false); PageFocus.run(j); } return; }
+    if (a === 'play') {
+      // 试听这个任务最后生成的一条（不用再去翻声音库）
+      const url = j && (j.audio || []).slice(-1)[0];
+      if (!url) return;
+      try {
+        const au = new Audio(url);
+        await au.play();
+      } catch (e) {
+        Admin.toast('试听失败：' + e.message, 'error');
+      }
+      return;
+    }
     if (a === 'view') {
       if (!j || !(j.images || []).length) return;
       const items = j.images.map((u) => {

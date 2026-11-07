@@ -32,19 +32,19 @@ const DialogueUI = {
     },
 
     // ===== 舞台焦点：说话者突出 / 其他人变暗 =====
-    // 默认 off：不做任何提亮 / 发光 / 变暗，立绘按原色调显示。
-    // 强度档位（subtle / normal / strong）可在游戏内「设置 → 画面特效」切换。
+    // 参数不再写死在这里，统一由 ShowSettings 提供（服务端默认 + 本机覆盖），
+    // 后台「设置 → 剧情管理」和前台「设置 → 剧情演出」改的是同一套。
+    // 下面的预设只作为兜底：ShowSettings 没加载出来时也不至于没有效果。
     FOCUS_PRESETS: {
-        // 关闭：无任何滤镜（原色调、无辉光、不变暗）
         off: { dim: '', speak: '' },
-        // 说明：只做「变暗」，不做透明（透明会让立绘和背景叠在一起，看不清边界）
-        subtle: { dim: 'brightness(.85) saturate(.9)', speak: 'brightness(1.06)' },
+        subtle: { dim: 'brightness(.84) saturate(.88)', speak: 'brightness(1.07) saturate(1.03)' },
         normal: { dim: 'brightness(.72) saturate(.8)', speak: 'brightness(1.12) saturate(1.05)' },
-        strong: { dim: 'brightness(.6) saturate(.72) blur(.5px)', speak: 'brightness(1.18) saturate(1.12) drop-shadow(0 0 16px rgba(212,175,55,.45))' },
+        strong: { dim: 'brightness(.6) saturate(.72)', speak: 'brightness(1.18) saturate(1.12) drop-shadow(0 0 16px rgba(212,175,55,.45))' },
     },
     get focusStyle() {
-        const key = (typeof localStorage !== 'undefined' && localStorage.getItem('rpg_stage_focus')) || 'off';
-        return this.FOCUS_PRESETS[key] || this.FOCUS_PRESETS.off;
+        if (window.ShowSettings) return ShowSettings.focusStyle();
+        const key = (typeof localStorage !== 'undefined' && localStorage.getItem('rpg_stage_focus')) || 'subtle';
+        return this.FOCUS_PRESETS[key] || this.FOCUS_PRESETS.subtle;
     },
 
     // 说完即消失：渐隐退场时长（ms），需与 CSS .stage-char.leaving 的 transition 保持一致
@@ -58,6 +58,14 @@ const DialogueUI = {
     _isTypingFinished: false,
     _resolveTyping: null,
     _typingMode: 'idle', // 'idle' | 'slow' | 'fast' | 'done'
+
+    // ===== 自动播放（右上角开关） =====
+    // 一句话「演完」= 打字完成 + 语音播完，两者取晚的那个，再等一个停顿，
+    // 然后替玩家点一次。短时间离开电脑时用它，回来点一下就暂停。
+    _autoPlay: false,
+    _autoTimer: null,        // 停顿计时器
+    _autoWatchdog: null,     // 语音还没播完时的兜底（防止 ended 事件丢了卡住）
+    _autoLineEnded: false,   // 本句语音是否已经播完
 
     // 显示对话节点
     async showNode(nodeId, callback) {
@@ -109,6 +117,12 @@ const DialogueUI = {
             this._removeQueue = [];
             this.clearStage();
 
+            // 逐句登场：不再进节点时把所有角色一次性上台（那样会「一进场全冒出来」）。
+            // 现在每句由 _playLine → renderStage 各自把当前说话者放上舞台并提亮，
+            // 非当前说话者变暗留台（_focusSpeaker 不透明度保持，只变暗），
+            // 下一位开口时自然接管焦点 —— 既不会开场全出现，三人同场也不会有人凭空消失。
+            // 勾了「说完消失」的角色仍会在下一句开头退场（_flushRemoveQueue）。
+
             // 语音第三层预取：进入节点就把整个节点的台词提交合成。
             // 不等它完成——先让画面和第一句起来，音频在后台陆续到位。
             // 但会显示装载进度，玩家知道「正在准备语音」而不是「卡住了」。
@@ -155,6 +169,9 @@ const DialogueUI = {
         if (node.node_type === 'choice' && full.choices.length > 0) {
             this.showChoices(full.choices);
         }
+
+        // 旧式单句节点同样支持自动播放（战斗 / 选项节点由 _autoTick 自己会停）
+        this._armAuto();
     },
 
     /**
@@ -168,15 +185,13 @@ const DialogueUI = {
     _prepareNodeVoice(nodeId) {
         if (typeof TTSManager === 'undefined') return;
 
-        // 自动播放：语音播完后替玩家点一次，间隔留够，避免句子贴脸相接
+        // 语音播完只做一件事：通知自动播放「这句的音频结束了」。
+        // 注意别在这里置 _autoLineEnded —— 那个标志是 onEnd 自己的去重开关，
+        // 提前置了会让 onEnd 一进来就 return，第 2 句起就再也推不动了。
         if (!TTSManager.onLineEnded) {
             TTSManager.onLineEnded = () => {
-                if (!TTSManager.autoAdvance) return;
-                setTimeout(() => {
-                    if (GameState.isInDialogue && !GameState.isInCombat) {
-                        try { this.handleClick(); } catch (e) { /* ignore */ }
-                    }
-                }, 450);
+                if (!this._autoPlay) return;
+                if (typeof this._onAutoLineEnded === 'function') this._onAutoLineEnded();
             };
         }
 
@@ -252,6 +267,9 @@ const DialogueUI = {
         if (line.disappear_after && line.speaker_id) {
             this._removeQueue.push(line.speaker_id);
         }
+
+        // 自动播放：这句演完了，按设定停顿后替玩家点一下
+        this._armAuto();
     },
 
     /**
@@ -269,6 +287,8 @@ const DialogueUI = {
         // ===== 第一优先：后台已经生成好的语音 =====
         // 故事节点对话列表里 🎙 批量/单句生成出的 voice 直接是成品 wav，
         // 进节点时已预下载。用它播放 = 音画同步（打字速度对齐音频真实时长）。
+        // 只播放「后台已生成 / 手工指定」过的语音；没有的句子保持静音，
+        // 不再实时合成（避免「整章配音」没勾选却给所有对话自动配默认音）。
         const v = line.voice ? String(line.voice) : '';
         if (v && !v.startsWith('ERR:') && /^https?:|^\//.test(v)) {
             const key = TTSManager.keyFor(line.id, this.currentNodeId);
@@ -282,21 +302,8 @@ const DialogueUI = {
             }
         }
 
-        const key = TTSManager.keyFor(line.id, this.currentNodeId);
-        this._currentLineKey = key;
-
-        let res = TTSManager.play(key);
-        if (!res.ok) {
-            // 这句没被批量预取到（节点刚进来还没预热完、或是新加的台词），现场补一次
-            const tmp = await TTSManager.synthNow(line.content || '', key, {
-                characterId: line.speaker_id,
-                speakerName: line.__speakerName || '',
-            });
-            if (tmp) res = TTSManager.play(key);
-        }
-        const text = line.content || '';
-        this._speechTypingSpeed =
-            TTSManager.typingSpeedFor(res.duration_ms, text.length) || 50;
+        // 没有生成过语音 → 静音，打字用默认速度
+        this._currentLineKey = null;
     },
 
     /** 提供给 _playLine 用：把说话人名字提前算出来，语音兜底时要用 */
@@ -348,6 +355,13 @@ const DialogueUI = {
         const node = this.pendingBattleNode;
         this.pendingBattleNode = null;
         if (!node) return false;
+        // 演示模式（后台「▶ 演示」）：不真的进战斗，停在原地，
+        // 免得在演示窗口里把玩家的战斗进度和角色状态搅乱。
+        if (this._demoMode) {
+            Utils.show('#dialogue-indicator');
+            Utils.toast('演示模式：战斗节点不进入战斗');
+            return true;
+        }
         Utils.hide('#dialogue-indicator');
         if (typeof App !== 'undefined' && typeof App.handleBattleNode === 'function') {
             await App.handleBattleNode(node);
@@ -420,8 +434,10 @@ const DialogueUI = {
         if (!layer) return;
 
         const speakerId = line?.speaker_id || null;
+        // 「无表情动作」：这句只显示台词、不显示该角色立绘（即便角色有肖像也不画）
+        const isNone = line?.expression === '__none__';
 
-        if (speakerId) {
+        if (speakerId && !isNone) {
             try {
                 const charData = await API.characters.get(speakerId);
                 const imgUrl = this._resolveExpressionUrl(charData, line.expression);
@@ -438,9 +454,11 @@ const DialogueUI = {
                     });
                 }
             } catch (e) {}
+            this._focusSpeaker(speakerId);
+        } else {
+            // 旁白 / 无表情动作行：不显示立绘，已上台的其它角色统一变暗留台
+            this._focusSpeaker(null);
         }
-
-        this._focusSpeaker(speakerId);
     },
 
     _num(v, def) {
@@ -449,6 +467,7 @@ const DialogueUI = {
     },
 
     _resolveExpressionUrl(charData, expression) {
+        if (expression === '__none__') return null;
         if (expression && charData?.expressions) {
             try {
                 const exprs = typeof charData.expressions === 'string'
@@ -637,11 +656,159 @@ const DialogueUI = {
         }
     },
 
+    // ===================== 自动播放 =====================
+    // 为什么不在语音结束时直接 handleClick：
+    //   1) 没语音的句子（TTS 关掉 / 旁白没配音）永远不会触发 ended，剧情就卡死；
+    //   2) 语音比文字短时，话还没打字完就翻页，看起来像抢话。
+    // 所以改成「打字完成」这一侧统一起算：本句演完（打字完 + 语音播完）再等一个停顿。
+
+    _autoDelay() {
+        const s = window.ShowSettings ? ShowSettings.get() : {};
+        const n = Number(s.auto_play_delay_ms);
+        return isNaN(n) ? 900 : Math.max(0, Math.min(8000, n));
+    },
+
+    /** 只清待执行的计时器 / 监听，不动「自动播放」开关本身 */
+    _cancelAutoPending() {
+        if (this._autoTimer) { clearTimeout(this._autoTimer); this._autoTimer = null; }
+        if (this._autoWatchdog) { clearTimeout(this._autoWatchdog); this._autoWatchdog = null; }
+        if (this._autoEndHandler && this._autoEndEl) {
+            try { this._autoEndEl.removeEventListener('ended', this._autoEndHandler); } catch (e) { /* ignore */ }
+        }
+        this._autoEndHandler = null;
+        this._autoEndEl = null;
+        this._onAutoLineEnded = null;
+    },
+
+    /** 本句演完后调用：决定是「等语音播完」还是「直接倒数」 */
+    _armAuto() {
+        this._cancelAutoPending();
+        if (!this._autoPlay) return;
+        if (typeof GameState !== 'undefined' && (!GameState.isInDialogue || GameState.isInCombat)) return;
+
+        const delay = this._autoDelay();
+        const startCountdown = () => {
+            this._autoTimer = setTimeout(() => this._autoTick(), delay);
+        };
+
+        // 语音还在响？等它。判断依据是真实 audio 元素，不是"配了语音"这个意图。
+        const cur = (typeof TTSManager !== 'undefined') ? TTSManager._cur : null;
+        const el = cur && cur.el;
+        const playing = el && !el.paused && !el.ended && !el.muted && el.currentTime >= 0
+            && (!isFinite(el.duration) || el.currentTime < el.duration - 0.02);
+
+        if (!playing) { startCountdown(); return; }
+
+        this._autoLineEnded = false;
+        const onEnd = () => {
+            if (this._autoLineEnded) return;   // ended 与兜底可能都触发，只认第一次
+            this._autoLineEnded = true;
+            if (this._autoWatchdog) { clearTimeout(this._autoWatchdog); this._autoWatchdog = null; }
+            if (this._autoEndEl && this._autoEndHandler) {
+                try { this._autoEndEl.removeEventListener('ended', this._autoEndHandler); } catch (e) { /* ignore */ }
+            }
+            this._autoEndHandler = null;
+            this._autoEndEl = null;
+            if (!this._autoPlay) return;
+            startCountdown();
+        };
+        this._onAutoLineEnded = onEnd;
+        this._autoEndHandler = onEnd;
+        this._autoEndEl = el;
+        try { el.addEventListener('ended', onEnd); } catch (e) { /* ignore */ }
+
+        // 兜底：切到后台、浏览器省电、音频被外部打断时 ended 可能不来。
+        // 按剩余时长 + 1.5s 强推，宁可早一点点也不能让玩家以为卡住了。
+        const remainMs = (isFinite(el.duration) && el.duration > 0)
+            ? (el.duration - el.currentTime) * 1000
+            : 12000;
+        this._autoWatchdog = setTimeout(onEnd, Math.max(2000, remainMs + 1500));
+    },
+
+    /** 计时到点：替玩家点一下 */
+    _autoTick() {
+        this._autoTimer = null;
+        if (!this._autoPlay) return;
+        if (typeof GameState !== 'undefined' && (!GameState.isInDialogue || GameState.isInCombat)) return;
+
+        // 有选项 / 战斗 / 面板打开 → 让玩家自己决定，别替他选
+        const ch = Utils.$('#choices-container');
+        if (ch && !ch.classList.contains('hidden')) return;
+        const po = Utils.$('#panel-overlay');
+        if (po && !po.classList.contains('hidden')) return;
+
+        try { this.handleClick(); } catch (e) { /* ignore */ }
+    },
+
+    isAutoPlaying() { return !!this._autoPlay; },
+
+    setAutoPlay(on, opts = {}) {
+        this._autoPlay = !!on;
+        this._cancelAutoPending();
+        try { localStorage.setItem('rpg_auto_play', this._autoPlay ? '1' : '0'); } catch (e) { /* ignore */ }
+        this.syncAutoUi();
+        if (this._autoPlay) {
+            // 玩家刚打开：如果这一句早就演完了，立刻起算，不用再等下一次点击
+            this._armAuto();
+            if (!opts.silent) {
+                const sec = (this._autoDelay() / 1000).toFixed(1);
+                Utils.toast('自动播放已开启 · 每句停 ' + sec + ' 秒');
+            }
+        } else if (!opts.silent) {
+            Utils.toast('自动播放已暂停');
+        }
+    },
+
+    toggleAutoPlay() { this.setAutoPlay(!this._autoPlay); },
+
+    /** 同步右上角按钮的视觉状态 */
+    syncAutoUi() {
+        const btn = document.getElementById('auto-play-toggle');
+        if (!btn) return;
+        btn.classList.toggle('on', !!this._autoPlay);
+        const t = btn.querySelector('.ap-label');
+        if (t) t.textContent = this._autoPlay ? '自动中' : '自动';
+        const ic = btn.querySelector('.ap-icon');
+        if (ic) ic.textContent = this._autoPlay ? '❚❚' : '▶';
+        btn.title = this._autoPlay
+            ? '自动播放中：每句演完自动继续，点一下暂停'
+            : '自动播放：开启后每句演完自动继续（适合暂时离开）';
+    },
+
+    /** 建右上角那颗按钮。只在页面里建一次。 */
+    initAutoPlayUi() {
+        if (document.getElementById('auto-play-toggle')) return;
+        const btn = document.createElement('button');
+        btn.id = 'auto-play-toggle';
+        btn.innerHTML = '<span class="ap-icon">▶</span><span class="ap-label">自动</span>';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.toggleAutoPlay();
+        });
+        document.body.appendChild(btn);
+
+        // 初始状态：本机记住的优先，没记住过就看服务端默认值
+        let init = false;
+        try {
+            const saved = localStorage.getItem('rpg_auto_play');
+            if (saved === '1') init = true;
+            else if (saved === '0') init = false;
+            else init = !!(window.ShowSettings && ShowSettings.get().auto_play_default);
+        } catch (e) { /* ignore */ }
+        this._autoPlay = init;
+        this.syncAutoUi();
+    },
+
     // 点击对话框
     async handleClick() {
         if (GameState.isInCombat) return;
         if (!Utils.$('#choices-container')?.classList.contains('hidden')) return;
         if (!GameState.isInDialogue) return;
+
+        // 不管是玩家点的还是自动播放替玩家点，先把待执行的自动推进取消：
+        // 否则刚点完、上一句的倒数也到点了，会连跳两句。
+        this._cancelAutoPending();
 
         if (!this._isTypingFinished) {
             if (this._typingMode === 'slow') {
@@ -931,6 +1098,10 @@ const DialogueUI = {
         });
     },
 };
+
+// 顶层 const 不会自动挂到 window 上，但菜单面板 / 启动脚本都按 window.DialogueUI 判存在，
+// 之前那些 `if (window.DialogueUI)` 一直是 false（设置里切高亮档位点了没反应就是这原因）。
+window.DialogueUI = DialogueUI;
 
 // 窗口尺寸变化 → 重新排版立绘（坐标是百分比，需按新尺寸换算）
 window.addEventListener('resize', () => {

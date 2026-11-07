@@ -506,59 +506,5 @@
     "relative_path": "scenes/cutscene/高圆圆卖内衣/d52ad05aa9d54c9b86913f38c3610c67.jpg",
     "size": 143598,
     "uploaded_at": "2026-06-23T23:58:37.051565"
-  },
-  "ee022eb137384bc49a2eb4e1d6ca92de.jpg": {
-    "original_name": "Gemini_Generated_Image_4mihuc4mihuc4mih.jpg",
-    "category": "test3",
-    "relative_path": "test3/ee022eb137384bc49a2eb4e1d6ca92de.jpg",
-    "size": 391916,
-    "uploaded_at": "2026-07-30T03:41:58.928671",
-    "is_deleted": 1,
-    "deleted_at": "2026-07-30T11:26:33.066801"
-  },
-  "fbfdb081b11444c1b234e7e3e5007c44.jpg": {
-    "original_name": "Gemini_Generated_Image_5ubjzj5ubjzj5ubj.jpg",
-    "category": "test3",
-    "relative_path": "test3/fbfdb081b11444c1b234e7e3e5007c44.jpg",
-    "size": 465394,
-    "uploaded_at": "2026-07-30T03:41:58.952364",
-    "is_deleted": 1,
-    "deleted_at": "2026-07-30T11:26:33.066801"
-  },
-  "9f58b7bc79df44228a3385f88bef5b74.jpg": {
-    "original_name": "Gemini_Generated_Image_6cl8e86cl8e86cl8.jpg",
-    "category": "test3",
-    "relative_path": "test3/9f58b7bc79df44228a3385f88bef5b74.jpg",
-    "size": 453581,
-    "uploaded_at": "2026-07-30T03:41:58.974245",
-    "is_deleted": 1,
-    "deleted_at": "2026-07-30T11:26:33.066801"
-  },
-  "b21d16e9824f44b9b050bdedce91023f.jpg": {
-    "original_name": "Gemini_Generated_Image_7j9wzs7j9wzs7j9w.jpg",
-    "category": "test3",
-    "relative_path": "test3/b21d16e9824f44b9b050bdedce91023f.jpg",
-    "size": 438728,
-    "uploaded_at": "2026-07-30T03:41:58.996487",
-    "is_deleted": 1,
-    "deleted_at": "2026-07-30T11:26:33.066801"
-  },
-  "663f5390936d44a7b2d2cd4154011481.jpg": {
-    "original_name": "Gemini_Generated_Image_1vh31h1vh31h1vh3.jpg",
-    "category": "test3",
-    "relative_path": "test3/663f5390936d44a7b2d2cd4154011481.jpg",
-    "size": 584955,
-    "uploaded_at": "2026-07-30T03:41:59.028655",
-    "is_deleted": 1,
-    "deleted_at": "2026-07-30T11:26:33.066801"
-  },
-  "6484bc005e2f454dbfb712dd450368ef.jpg": {
-    "original_name": "Gemini_Generated_Image_2fip4j2fip4j2fip.jpg",
-    "category": "test3",
-    "relative_path": "test3/6484bc005e2f454dbfb712dd450368ef.jpg",
-    "size": 539502,
-    "uploaded_at": "2026-07-30T03:41:59.172174",
-    "is_deleted": 1,
-    "deleted_at": "2026-07-30T11:26:33.066801"
   }
 }

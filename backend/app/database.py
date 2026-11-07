@@ -83,6 +83,11 @@ def _run_migrations():
                 conn.execute(text("ALTER TABLE story_node_dialogues ADD COLUMN disappear_after INTEGER DEFAULT 0"))
                 conn.commit()
                 print("[OK] story_node_dialogues 表已添加 disappear_after 列")
+            # 动作追加词（`台词 | 动作 xxx` 或预览里手填）
+            if "pose_extra" not in cols:
+                conn.execute(text("ALTER TABLE story_node_dialogues ADD COLUMN pose_extra TEXT"))
+                conn.commit()
+                print("[OK] story_node_dialogues 表已添加 pose_extra 列")
 
         # comic_cells 表添加 effects 列（漫画特效叠加层：符号/速度线/方向线）
         if "comic_cells" in insp.get_table_names():
@@ -172,6 +177,14 @@ def _run_migrations():
                 conn.execute(text("ALTER TABLE characters ADD COLUMN is_activated INTEGER DEFAULT 0"))
                 conn.commit()
                 print("[OK] characters 表已添加 is_activated 列")
+
+        # ===== games 表追加 protagonist_character_id 列（单主角制：本作唯一可扮演角色） =====
+        if "games" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("games")}
+            if "protagonist_character_id" not in cols:
+                conn.execute(text("ALTER TABLE games ADD COLUMN protagonist_character_id INTEGER"))
+                conn.commit()
+                print("[OK] games 表已添加 protagonist_character_id 列")
 
         # ===== character_equipments 表追加 slot_index 列（多槽位：配饰2/法器3） =====
         if "character_equipments" in insp.get_table_names():
@@ -289,6 +302,22 @@ def _run_migrations():
                 conn.execute(text("ALTER TABLE characters ADD COLUMN appearance_json TEXT"))
                 conn.commit()
                 print("[OK] characters 表已添加 appearance_json 列")
+
+        # ===== 动作表情的自定义追加词（只作用于这个人的动作 / 表情出图） =====
+        if "characters" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("characters")}
+            if "pose_extra_prompt" not in cols:
+                conn.execute(text("ALTER TABLE characters ADD COLUMN pose_extra_prompt TEXT"))
+                conn.commit()
+                print("[OK] characters 表已添加 pose_extra_prompt 列")
+
+        # ===== 导入留档：节点记住自己来自哪一次批量导入（便于回来改 / 整批替换） =====
+        if "story_nodes" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("story_nodes")}
+            if "import_batch_id" not in cols:
+                conn.execute(text("ALTER TABLE story_nodes ADD COLUMN import_batch_id INTEGER"))
+                conn.commit()
+                print("[OK] story_nodes 表已添加 import_batch_id 列")
 
         # ===== 动作表情图：追加实际像素尺寸（预览面板显示「高 × 宽」） =====
         if "character_pose_images" in insp.get_table_names():

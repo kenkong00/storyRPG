@@ -84,6 +84,8 @@ class CharacterUpdate(BaseModel):
     is_activated: Optional[int] = None
     join_condition: Optional[str] = None
     category_path: Optional[str] = None
+    appearance_json: Optional[str] = None
+    pose_extra_prompt: Optional[str] = None
 
     # ===== 语音配置 =====
     gender: Optional[str] = None
@@ -124,6 +126,7 @@ class CharacterResponse(BaseModel):
     join_condition: Optional[str] = None
     category_path: Optional[str] = None
     appearance_json: Optional[str] = None
+    pose_extra_prompt: Optional[str] = None
     gender: Optional[str] = "unknown"
     tts_engine: Optional[str] = "edge"
     tts_voice: Optional[str] = None

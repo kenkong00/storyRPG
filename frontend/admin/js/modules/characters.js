@@ -1,4 +1,16 @@
 // ========== 人物管理模块（网格/列表 + 图片 + 多选） ==========
+// 删除接口现在会顺手清理这个人名下的图，返回值里带张数 —— 让提示说清楚发生了什么
+function delMsg(r) {
+  const n = (r && r.images_removed) || 0;
+  const kept = (r && (r.kept_in_use || []).length) || 0;
+  const dlg = (r && r.dialogues_detached) || 0;
+  const bits = [];
+  if (n) bits.push(`一并清理 ${n} 张图片`);
+  if (kept) bits.push(`${kept} 张仍被剧情引用已保留`);
+  if (dlg) bits.push(`剧情里 ${dlg} 句台词转成旁白`);
+  return '人物已删除' + (bits.length ? '，' + bits.join('，') : '');
+}
+
 Admin.registerPage('characters', async (container) => {
   const TYPE_MAP = { player: '玩家', npc: 'NPC', enemy: '敌人', ally: '盟友' };
   // 9 个装备槽位中文标签（与前后台一致）
@@ -10,8 +22,8 @@ Admin.registerPage('characters', async (container) => {
   let allItemsCache = []; // 全部数据，用于分类计数
   let _runtimeChars = []; // 前台玩家运行时角色（user_characters），用于「看前台关联」
 
-  async function load() {
-    allItemsCache = await Admin.get('/characters');
+  async function load(opts = {}) {
+    allItemsCache = await Admin.get('/characters', { noCache: opts.noCache });
     // 一并拉取前台玩家运行时角色，让后台也能看到/管理前台实际装备
     try {
       _runtimeChars = await Admin.get('/admin/user-characters');
@@ -379,25 +391,16 @@ Admin.registerPage('characters', async (container) => {
       chars.forEach(c => {
         const checked = selectedIds.has(c.id) ? 'checked' : '';
         const isPlayer = c.character_type === 'player';
-        const powerSvg = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none"
-          stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-          <path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>`;
         const imgHtml = c.portrait_image
           ? `<img src="${c.portrait_image}" alt="${esc(c.name)}" loading="lazy"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
              <span class="ch-noimg" style="display:none">无立绘</span>`
           : `<span class="ch-noimg">无立绘</span>`;
-        const powerBtn = isPlayer
-          ? `<button type="button" class="ch-icon-btn ${c.is_activated ? 'on' : 'off'}"
-               data-act="${c.is_activated ? 'deactivate' : 'activate'}" data-id="${c.id}"
-               title="${c.is_activated ? '已激活 · 点击取消激活' : '未激活 · 点击激活'}">${powerSvg}</button>`
-          : '';
         bodyHtml += `
           <div class="ch-card" data-id="${c.id}">
             <input type="checkbox" class="ch-check item-checkbox" data-id="${c.id}" ${checked}
               title="多选">
             <div class="ch-card-actions">
-              ${powerBtn}
               <button type="button" class="ch-icon-btn ch-del" data-act="del" data-id="${c.id}"
                 title="删除这个人物">✕</button>
             </div>
@@ -409,7 +412,6 @@ Admin.registerPage('characters', async (container) => {
                 <span>Lv.${c.level}</span>
                 <span style="opacity:.5">·</span>
                 <span>境界 ${c.realm_level || 1}</span>
-                ${isPlayer ? `<span style="color:${c.is_activated ? 'var(--green)' : 'var(--text-muted)'}">${c.is_activated ? '● 已激活' : '○ 未激活'}</span>` : ''}
               </div>
               <div class="ch-card-line">
                 <span class="ch-hp">HP ${c.hp}/${c.max_hp}</span>
@@ -423,29 +425,13 @@ Admin.registerPage('characters', async (container) => {
     } else {
       bodyHtml = '<div class="table-container"><table><thead><tr>';
       bodyHtml += '<th style="width:40px"><input type="checkbox" id="select-all" title="全选"></th>';
-      bodyHtml += '<th style="width:60px">立绘</th><th>名称</th><th>类型</th><th>等级</th><th>HP/MP</th><th>称号</th><th>激活</th><th style="width:150px">操作</th>';
+      bodyHtml += '<th style="width:60px">立绘</th><th>名称</th><th>类型</th><th>等级</th><th>HP/MP</th><th>称号</th><th style="width:150px">操作</th>';
       bodyHtml += '</tr></thead><tbody>';
       chars.forEach(c => {
         const checked = selectedIds.has(c.id) ? 'checked' : '';
         const imgHtml = c.portrait_image
           ? `<img src="${c.portrait_image}" style="width:48px;height:48px;object-fit:cover;border-radius:4px">`
           : `<div style="width:48px;height:48px;background:var(--bg-input);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:10px">无</div>`;
-        // 激活状态（仅 player 类型显示）
-        let activateCell = '<span style="color:var(--text-muted)">-</span>';
-        if (c.character_type === 'player') {
-          if (c.is_activated) {
-            activateCell = '<span class="tag tag-ally" style="color:var(--green)">已激活</span>';
-          } else {
-            activateCell = '<span class="tag" style="color:var(--text-muted)">未激活</span>';
-          }
-        }
-        // 激活按钮（仅 player 类型）
-        let activateBtn = '';
-        if (c.character_type === 'player') {
-          activateBtn = c.is_activated
-            ? `<button class="btn-edit btn-deactivate" data-id="${c.id}" style="color:var(--red)">取消激活</button>`
-            : `<button class="btn-edit btn-activate" data-id="${c.id}" style="color:var(--green)">激活</button>`;
-        }
         bodyHtml += `
           <tr>
             <td><input type="checkbox" class="item-checkbox" data-id="${c.id}" ${checked} style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer"></td>
@@ -455,10 +441,8 @@ Admin.registerPage('characters', async (container) => {
             <td>Lv.${c.level}</td>
             <td>${c.hp}/${c.max_hp}</td>
             <td>${c.title || '-'}</td>
-            <td>${activateCell}</td>
             <td>
               <div class="action-btns">
-                ${activateBtn}
                 <button class="btn-edit" data-id="${c.id}">编辑</button>
                 <button class="btn-del" data-id="${c.id}" style="color:var(--red)">删除</button>
               </div>
@@ -525,7 +509,7 @@ Admin.registerPage('characters', async (container) => {
       });
     });
 
-    // ===== 人物卡片：点卡片进编辑，右上角小图标做激活 / 删除 =====
+    // ===== 人物卡片：点卡片进编辑，右上角小图标做删除 =====
     container.querySelectorAll('.ch-card').forEach(card => {
       card.addEventListener('click', (e) => {
         if (e.target.closest('[data-act]') || e.target.classList.contains('ch-check')) return;
@@ -540,46 +524,45 @@ Admin.registerPage('characters', async (container) => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = parseInt(btn.dataset.id);
-        const confirmed = await Admin.confirm('确定要删除该人物吗？此操作不可恢复。');
+        const confirmed = await Admin.confirm('确定要删除该人物吗？\n\n他名下的立绘、动作表情图、生成记录会一并删除；剧情里他说的台词会转成旁白（文字保留）。此操作不可恢复。');
         if (!confirmed) return;
         try {
-          await Admin.del(`/characters/${id}`);
+          const r = await Admin.del(`/characters/${id}`);
           selectedIds.delete(id);
-          Admin.toast('人物已删除', 'success');
-          await load();
+          // 立刻在本地移除并重渲染：不依赖列表 GET 的缓存/时序，避免人物还挂着
+          allItemsCache = allItemsCache.filter(c => c.id !== id);
+          applyClientFilter();
+          Admin.toast(delMsg(r), 'success');
+          // 后台静默重新拉取（no-store），同步计数与运行时角色，但不会把刚删的加回来
+          load({ noCache: true }).catch(() => {});
         } catch (err) { Admin.toast('删除失败: ' + err.message, 'error'); }
       });
     });
-    container.querySelectorAll('.ch-card [data-act="activate"], .ch-card [data-act="deactivate"]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const id = parseInt(btn.dataset.id);
-        const act = btn.dataset.act;
-        if (act === 'deactivate' && !await Admin.confirm('取消激活后该玩家角色将不再被前台用户选择，确定？')) return;
-        try {
-          await Admin.post(`/characters/${id}/${act}`);
-          Admin.toast(act === 'activate' ? '已激活，该玩家角色现在可被前台用户选择' : '已取消激活', 'success');
-          await load();
-        } catch (err) { Admin.toast('操作失败: ' + err.message, 'error'); }
-      });
-    });
-
     // 批量删除
     document.getElementById('btn-del-selected')?.addEventListener('click', async () => {
       if (selectedIds.size === 0) return;
-      const confirmed = await Admin.confirm(`确定要删除选中的 ${selectedIds.size} 个人物吗？`);
+      const confirmed = await Admin.confirm(
+          `确定要删除选中的 ${selectedIds.size} 个人物吗？\n\n他们的立绘与动作表情图会一并删除，此操作不可恢复。`);
       if (!confirmed) return;
       let success = 0, fail = 0;
+      const deletedIds = [];
       for (const id of selectedIds) {
         try {
           await Admin.del(`/characters/${id}`);
           success++;
+          deletedIds.push(id);
         } catch (e) {
           fail++;
         }
       }
-      Admin.toast(`删除完成: ${success} 个成功, ${fail} 个失败`, fail > 0 ? 'error' : 'success');
-      await load();
+      Admin.toast(`删除完成: ${success} 个成功, ${fail} 个失败`
+          + (imgs ? `，一并删除 ${imgs} 张图片` : ''), fail > 0 ? 'error' : 'success');
+      if (deletedIds.length) {
+        const ds = new Set(deletedIds.map(Number));
+        allItemsCache = allItemsCache.filter(c => !ds.has(c.id));
+        applyClientFilter();
+        load({ noCache: true }).catch(() => {});
+      }
     });
 
     // 取消选择
@@ -608,41 +591,23 @@ Admin.registerPage('characters', async (container) => {
     document.querySelectorAll('.btn-del').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = parseInt(btn.dataset.id);
-        const confirmed = await Admin.confirm('确定要删除该人物吗？此操作不可恢复。');
+        const confirmed = await Admin.confirm('确定要删除该人物吗？\n\n他名下的立绘、动作表情图、生成记录会一并删除；剧情里他说的台词会转成旁白（文字保留）。此操作不可恢复。');
         if (!confirmed) return;
         try {
-          await Admin.del(`/characters/${id}`);
+          const r = await Admin.del(`/characters/${id}`);
           selectedIds.delete(id);
-          Admin.toast('人物已删除', 'success');
-          await load();
+          // 立刻在本地移除并重渲染：不依赖列表 GET 的缓存/时序，避免人物还挂着
+          allItemsCache = allItemsCache.filter(c => c.id !== id);
+          applyClientFilter();
+          Admin.toast(delMsg(r), 'success');
+          // 后台静默重新拉取（no-store），同步计数与运行时角色，但不会把刚删的加回来
+          load({ noCache: true }).catch(() => {});
         } catch (e) {
           Admin.toast('删除失败: ' + e.message, 'error');
         }
       });
     });
 
-    // 激活/取消激活（仅 player 类型）
-    document.querySelectorAll('.btn-activate').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = parseInt(btn.dataset.id);
-        try {
-          await Admin.post(`/characters/${id}/activate`);
-          Admin.toast('已激活，该玩家角色现在可被前台用户选择', 'success');
-          await load();
-        } catch (e) { Admin.toast('激活失败: ' + e.message, 'error'); }
-      });
-    });
-    document.querySelectorAll('.btn-deactivate').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = parseInt(btn.dataset.id);
-        if (!await Admin.confirm('取消激活后该玩家角色将不再被前台用户选择，确定？')) return;
-        try {
-          await Admin.post(`/characters/${id}/deactivate`);
-          Admin.toast('已取消激活', 'success');
-          await load();
-        } catch (e) { Admin.toast('操作失败: ' + e.message, 'error'); }
-      });
-    });
   }
 
   function batchMoveToCategory() {

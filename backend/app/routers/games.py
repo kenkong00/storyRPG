@@ -75,10 +75,24 @@ def get_game(game_id: int, db: Session = Depends(get_db)):
     # 因为 game.player_options 是 ORM 关系对象列表，而 player_options 字段声明为 list[dict]，
     # 会触发 pydantic dict_type 校验错误导致 HTTP 500。这里改为先校验基础字段再组装。
     base = GameResponse.model_validate(game)
+    # 单主角制：附带本作主角的角色详情（供前台开局直接扮演、后台回显）
+    protagonist = None
+    if getattr(game, "protagonist_character_id", None):
+        pc = db.query(Character).filter(Character.id == game.protagonist_character_id).first()
+        if pc:
+            protagonist = {
+                "id": pc.id, "name": pc.name, "title": pc.title,
+                "portrait_image": pc.portrait_image, "level": pc.level,
+                "character_type": pc.character_type,
+                "max_hp": pc.max_hp, "max_mp": pc.max_mp, "attack": pc.attack,
+                "defense": pc.defense, "speed": pc.speed, "luck": pc.luck,
+                "background_story": pc.background_story, "personality": pc.personality,
+            }
     return GameDetailResponse(
         **base.model_dump(),
         buttons=[GameButtonResponse.model_validate(b) for b in buttons],
         player_options=player_options,
+        protagonist=protagonist,
     )
 
 
@@ -100,8 +114,11 @@ def update_game(game_id: int, data: GameUpdate, db: Session = Depends(get_db)):
     game = db.query(Game).filter(Game.id == game_id).first()
     if not game:
         raise HTTPException(status_code=404, detail="游戏不存在")
+    fields_set = getattr(data, "model_fields_set", set())
     for k, v in data.model_dump().items():
-        if v is not None:
+        # 普通字段：跳过 None（保持「不传不改」语义）；
+        # 主角字段：允许显式传 null 清空（取消指定本作主角）
+        if v is not None or (k == "protagonist_character_id" and k in fields_set):
             setattr(game, k, v)
     game.updated_at = datetime.now().isoformat()
     db.commit()
@@ -169,8 +186,8 @@ def add_game_player(game_id: int, data: GamePlayerOptionCreate, db: Session = De
     char = db.query(Character).filter(Character.id == data.character_id).first()
     if not char:
         raise HTTPException(status_code=404, detail="人物不存在")
-    if char.character_type != "player" or char.is_activated != 1:
-        raise HTTPException(status_code=400, detail="仅已激活的玩家角色可添加")
+    if char.character_type != "player":
+        raise HTTPException(status_code=400, detail="仅玩家角色(player 类型)可添加")
     existing = db.query(GamePlayerOption).filter(
         GamePlayerOption.game_id == game_id,
         GamePlayerOption.character_id == data.character_id,
@@ -215,7 +232,7 @@ def batch_set_game_players(game_id: int, data: dict, db: Session = Depends(get_d
     result = []
     for idx, cid in enumerate(character_ids):
         char = db.query(Character).filter(Character.id == cid).first()
-        if not char or char.character_type != "player" or char.is_activated != 1:
+        if not char or char.character_type != "player":
             continue
         opt = GamePlayerOption(game_id=game_id, character_id=cid, sort_order=idx)
         db.add(opt)

@@ -267,7 +267,8 @@ class ComfyUIClient:
         deadline = time.time() + timeout
         while True:
             if should_cancel and should_cancel():
-                self.interrupt()
+                # 只打断「自己这条」任务，绝不影响同实例上其他正在跑的任务
+                self.interrupt(prompt_id)
                 raise RuntimeError("已取消生成")
             try:
                 hist = self._request("GET", f"/history/{prompt_id}", as_json=True)
@@ -299,9 +300,16 @@ class ComfyUIClient:
         raw = self._request("GET", f"/view?{params}", as_json=False)
         return raw
 
-    def interrupt(self):
+    def interrupt(self, prompt_id=None):
+        """中断 ComfyUI 当前生成。
+
+        传入 prompt_id 时只打断那一条正在运行的任务；不传则走「全局中断」，
+        会把同实例上其他正在跑的任务也一起掐掉（曾导致取消一个任务、另一个被卡住）。
+        所以调用方务必带上自己这条任务的 prompt_id。
+        """
+        body = {"prompt_id": prompt_id} if prompt_id else {}
         try:
-            self._request("POST", "/interrupt", body={}, as_json=False)
+            self._request("POST", "/interrupt", body=body, as_json=False)
         except Exception:  # noqa: BLE001
             pass
 

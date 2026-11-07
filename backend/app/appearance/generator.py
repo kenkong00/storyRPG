@@ -701,6 +701,14 @@ def _join(parts):
     return "，".join([p for p in parts if p])
 
 
+# 负面词回落常量（仅当 JSON 缺键时使用；正常情况一律以 appearance_defs.json 为准）
+# 负面词回落表：默认全空（用户要求负面提示词留空即可）。
+# 只在 JSON 里连键都没有时才会用到 —— 空列表是合法配置，不会触发回落。
+NEG_BASE_FALLBACK = []
+NEG_HALF_FALLBACK = []
+NEG_HEAD_FALLBACK = []
+
+
 def _nationality_text(opt_id):
     """国族要真正写进提示词：既交代「哪国人」，也带上对应的面孔特征。
 
@@ -727,15 +735,28 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None,
     半身像不描写下半身穿着 —— 画面上根本看不到裙/裤/鞋袜/腰带，
     写进去反而会把模型往「全身」上带，导致构图变成缩小版全身。
 
-    include_pose / include_scene：
+    include_pose：
       · 外观配置的提示词只应包含「人物外观拼装」里的维度（人物/风格/体型/头部/身体/穿着）。
-        「动作表情」属于动作表情模块、「画面/取景」属于渲染指令，都不是外观参数，
-        所以外观配置面板（预览 / 立绘出图）调用时传 False，输出纯外观提示词。
-      · 动作表情批量出图仍需要 pose 与画面构图，调用时保持默认 True。
+        「动作表情」属于动作表情模块，不是外观参数，所以外观配置面板（预览 / 立绘出图）
+        调用时传 False，输出纯外观提示词；动作表情批量出图保持默认 True。
+    include_scene：立绘的「取景」渲染指令开关。为 True（出图）时追加【取景】一段
+      （内容来自「拼装外观 > 定义管理」的取景设置：renderTemplates[framing].sceneLine，
+      回落 framing 选项的 cn）；为 False（外观配置预览）时不追加。
+      注意：【画面】两段已按用户要求永久移除，本函数不再拼接，与该参数无关。
     """
     name = (c.get("name") or "").strip()
     mode = c.get("mode", "default")
     framing = (framing or c.get("framing") or "full")
+    # 取景行为（full/half/head）按选项的 behavior 字段判定：
+    # 内置 full/half/head 自带 behavior；用户在定义管理里新增的取景选项默认 full，
+    # 也可以给选项手动配 behavior 来复用半身/特写的裁剪逻辑。
+    _fb = None
+    _fo = defs.option_of("framing", framing) if framing else None
+    if _fo:
+        _fb = (_fo.get("behavior") or "").strip()
+    if _fb not in ("full", "half", "head"):
+        _fb = framing if framing in ("full", "half", "head") else "full"
+    framing = _fb
     # 自定义追加词：优先用显式参数，否则从外观字典（前端自定义文字框）里取。
     # 后端路由大多直接传 appearance 而不单独传 free_text，所以这里兜底读取。
     if free_text is None:
@@ -867,9 +888,10 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None,
     elif nudity == "full":
         # 明确选了「全裸」就必须写出来：以前半身构图时被改写成「半身赤裸」，
         # 卡牌这类固定半身构图里选全裸-> 提示词几乎没有变化，看起来像控件坏了。
-        cloth.append("全身赤裸，未着任何衣物")
+        # 文案来自定义库（外观状态选项 cn），可改。
+        cloth.append(_opt_cn("nudity", "full") or "全身赤裸")
     elif nudity == "upper":
-        cloth.append("上半身赤裸")
+        cloth.append(_opt_cn("nudity", "upper") or "上半身赤裸")
         cloth += ["" if is_half else bottom_txt,
                   "" if is_half else shoes_txt,
                   "" if is_half else _opt_cn("socks", c.get("socks")),
@@ -879,7 +901,7 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None,
     elif nudity == "lower":
         # 同上：半身构图本来就看不到下半身衣物，但「下半裸」这件事必须写进提示词，
         # 否则选了等于没选（卡牌/半身立绘都会踩这个坑）。
-        cloth.append("下半身赤裸")
+        cloth.append(_opt_cn("nudity", "lower") or "下半身赤裸")
         cloth += [top_txt, outer_txt,
                   ("" if is_half else shoes_txt),
                   _opt_cn("neckwear", c.get("neckwear")),
@@ -901,29 +923,28 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None,
     if include_pose and pose_txt and not is_head:
         lines.append("【动作表情】" + pose_txt)
 
-    # ---- 画面（渲染指令，不是外观参数） ----
-    # 外观配置的面板提示词不附带这一段（include_scene=False）；
-    # 动作表情批量等真正出图的场景保留，保证构图稳定。
+    # ---- 取景（渲染指令） ----
+    # 用户要求：【画面】两段彻底不再出现（已移除，本函数不再拼接 tags）；
+    # 【取景】保留——它调用「拼装外观 > 定义管理」里的取景设置
+    # （renderTemplates[framing].sceneLine，回落到 framing 选项的 cn），
+    # 在后台「定义管理」改取景文案即可生效，无需动代码。
     scene_lines = []
     if include_scene:
-        if is_head:
-            scene_lines.append("【画面】" + "、".join([
-                "头部特写", "面部特写", "肩部以上构图", "聚焦面部",
-            ] + [t for t in defs.SCENE_TAGS_CN if t not in ("全身像",)]))
-            scene_lines.append("【取景】只画头部与肩颈的面部特写，不画身体、四肢与衣物")
-        elif is_half:
-            scene_lines.append("【画面】" + "、".join([
-                "半身像", "腰部以上", "上半身构图", "画面下缘止于腰部",
-            ] + [t for t in defs.SCENE_TAGS_CN if t not in ("全身像",)]))
-            scene_lines.append("【取景】只表现腰部以上的上半身，不画裙摆、裤腿与鞋袜")
-        else:
-            scene_lines.append("【画面】" + "、".join(defs.SCENE_TAGS_CN))
+        rt = (defs.data().get("renderTemplates") or {})
+        tpl = rt.get(framing) or {}
+        scene_line = (tpl.get("sceneLine") or "").strip()
+        # 取景句双源：模板 sceneLine 优先；用户在定义管理里给取景选项写了 cn 时也生效。
+        if not scene_line:
+            fo = defs.option_of("framing", framing)
+            scene_line = (fo.get("cn") or "").strip() if fo else ""
+        if scene_line:
+            scene_lines.append("【取景】" + scene_line)
 
-    # 全默认：没有任何外观维度被选中 → 提示词为空（不再冒出「女性 22 岁」/「纯色背景」等噪声）
+    # 全默认：没有任何外观维度被选中 → 提示词为空（不再冒出「女性 22 岁」等噪声）
     content_lines = [x for x in lines if x and not x.endswith("】")]
     if not content_lines:
-        # 外观全为「无 / 填空」时，【画面】这类渲染指令也不该单独出现；
-        # 此时只有用户自己写的追加词才算内容。
+        # 外观全为「无 / 填空」时，只有用户自己写的追加词才算内容；
+        # 此时连【取景】也不单独出现（避免出现孤零零一段取景）。
         pos = free_text.strip() if (free_text and free_text.strip()) else ""
     else:
         pos = "\n".join(content_lines + scene_lines)
@@ -931,13 +952,15 @@ def build_prompt_blocks(c, include_sensitive=True, framing=None, free_text=None,
         if free_text and free_text.strip():
             pos = pos + "\n" + free_text.strip()
 
-    # 负面词按「，」拆开去重（模型方案自带的 neg 和基础表有重叠，否则会重复两遍）
-    neg_parts = ["低分辨率", "模糊", "多余肢体", "断肢", "畸变的手", "比例失调",
-                 "脸部扭曲", "文字", "水印", "签名", "复杂背景", "场景背景", "英文文字"]
+    # 负面词全部来自 appearance_defs.json 的 negativeWords（可改/删/增），
+    # 默认全空 —— 用户明确要求：负面提示词留空即可，不强行注入。
+    # 注意用「键存在与否」判断而不是真值判断，否则用户清空后又会回落到常量。
+    _nw = defs.data().get("negativeWords") or {}
+    neg_parts = list(_nw["base"]) if "base" in _nw else list(NEG_BASE_FALLBACK)
     if is_half:
-        neg_parts += ["全身照", "腿部", "脚", "鞋子", "裙摆", "裤腿", "远景全身"]
+        neg_parts += list(_nw["half"]) if "half" in _nw else list(NEG_HALF_FALLBACK)
     if is_head:
-        neg_parts += ["半身照", "全身照", "身体", "四肢", "手", "衣物", "服饰", "躯干"]
+        neg_parts += list(_nw["head"]) if "head" in _nw else list(NEG_HEAD_FALLBACK)
     if mode_obj and mode_obj.get("neg"):
         neg_parts.append(mode_obj["neg"])
     seen, neg_uniq = set(), []

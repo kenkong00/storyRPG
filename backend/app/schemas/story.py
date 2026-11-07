@@ -99,6 +99,7 @@ class StoryNodeCreate(BaseModel):
     tags: Optional[str] = None  # JSON: 标签ID数组
     category_path: Optional[str] = None
     battle_config: Optional[str] = None  # JSON: 战斗节点配置（敌人/台词/分支）
+    import_batch_id: Optional[int] = None  # 来自哪一次批量导入（列表上标「来源」用）
 
 
 class StoryNodeResponse(BaseModel):
@@ -121,6 +122,7 @@ class StoryNodeResponse(BaseModel):
     tags: Optional[str] = None  # JSON: 标签ID数组
     category_path: Optional[str] = None
     battle_config: Optional[str] = None  # JSON: 战斗节点配置（敌人/台词/分支）
+    import_batch_id: Optional[int] = None  # 来自哪一次批量导入（列表上标「来源」用）
     # 该节点「对话列表」里出现过的人物名（按首次发言顺序，仅列表接口填充）
     speaker_names: list[str] = Field(default_factory=list)
 
@@ -135,6 +137,7 @@ class StoryNodeDialogueCreate(BaseModel):
     speaker_id: Optional[int] = None
     content: Optional[str] = None
     expression: Optional[str] = None
+    pose_extra: Optional[str] = None
     pos_x: Optional[float] = 50.0
     pos_y: Optional[float] = 0.0
     scale: Optional[float] = 1.0
@@ -155,6 +158,7 @@ class StoryNodeDialogueUpdate(BaseModel):
     speaker_id: Optional[int] = None
     content: Optional[str] = None
     expression: Optional[str] = None
+    pose_extra: Optional[str] = None
     pos_x: Optional[float] = None
     pos_y: Optional[float] = None
     scale: Optional[float] = None
@@ -176,6 +180,7 @@ class StoryNodeDialogueResponse(BaseModel):
     speaker_id: Optional[int] = None
     content: Optional[str] = None
     expression: Optional[str] = None
+    pose_extra: Optional[str] = None
     pos_x: Optional[float] = None
     pos_y: Optional[float] = None
     scale: Optional[float] = None

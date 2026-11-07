@@ -40,8 +40,10 @@ class RenderAppearanceReq(BaseModel):
 
 # ===================== 查询 =====================
 @router.get("/jobs")
-def list_jobs(only_active: bool = False):
+def list_jobs(only_active: bool = False, category: Optional[str] = None):
     items = jobs.active() if only_active else jobs.list_jobs()
+    if category and category not in ("", "all"):
+        items = [j for j in items if j.get("category") == category]
     c = jobs.counts()
     return {
         "jobs": items,
@@ -50,6 +52,10 @@ def list_jobs(only_active: bool = False):
         "paused": c.get("paused", 0),
         "queued": c.get("queued", 0),
         "counts": c,
+        # 分类标签上的小数字：{audio: {live:2, running:1, paused:1}, image: {...}}
+        "by_category": jobs.category_counts(),
+        "category_labels": jobs.CATEGORY_LABEL,
+        "category_order": list(jobs.CATEGORY_ORDER),
     }
 
 

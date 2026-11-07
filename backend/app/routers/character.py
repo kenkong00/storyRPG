@@ -53,10 +53,12 @@ def get_party(db: Session = Depends(get_db)):
 
 @router.get("/activated/players", response_model=list[CharacterResponse])
 def list_activated_players(db: Session = Depends(get_db)):
-    """获取所有已激活的玩家角色（供游戏设置选择可选玩家组合）"""
+    """获取所有玩家角色（单主角制：以 character_type='player' 为标记，不再依赖激活开关）。
+
+    保留原路由名以兼容前端调用；返回全部 player 类型角色，供游戏设置选择「主角」。
+    """
     return db.query(Character).filter(
         Character.character_type == "player",
-        Character.is_activated == 1,
     ).all()
 
 
@@ -102,18 +104,19 @@ def update_character(character_id: int, data: CharacterUpdate, db: Session = Dep
     return char
 
 
-@router.delete("/{character_id}", status_code=204)
+@router.delete("/{character_id}")
 def delete_character(character_id: int, db: Session = Depends(get_db)):
-    char = db.query(Character).filter(Character.id == character_id).first()
-    if not char:
-        raise HTTPException(status_code=404, detail="人物不存在")
-    # 删除对应的人物名称标签
-    try:
-        delete_character_tag(db, character_id)
-    except Exception:
-        pass
-    db.delete(char)
-    db.commit()
+    """删除人物，并连同他名下的动作表情图 / 立绘 / 素材与生成记录一起清掉。
+
+    图片被别处引用（例如某段剧情拿它当背景）时只删记录、保留文件，
+    返回值里会列出这些 url，前端可以提示「有几张图仍被剧情使用」。
+    """
+    from ..services.character_cleanup import delete_character_bundle
+
+    res = delete_character_bundle(db, character_id)
+    if not res.get("ok"):
+        raise HTTPException(status_code=404, detail=res.get("error") or "人物不存在")
+    return res
 
 
 # --- 玩家激活（仅 player 类型，激活后才能被前台用户选择） ---

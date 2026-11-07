@@ -64,6 +64,7 @@ class GameUpdate(BaseModel):
     is_carousel: Optional[int] = None
     is_coming_soon: Optional[int] = None
     sort_order: Optional[int] = None
+    protagonist_character_id: Optional[int] = None
 
 
 class GameResponse(BaseModel):
@@ -76,6 +77,7 @@ class GameResponse(BaseModel):
     is_carousel: int
     is_coming_soon: int
     sort_order: int
+    protagonist_character_id: Optional[int] = None
     created_at: str
     updated_at: str
 
@@ -85,6 +87,7 @@ class GameResponse(BaseModel):
 class GameDetailResponse(GameResponse):
     buttons: list[GameButtonResponse] = []
     player_options: list[dict] = []  # [{character_id, sort_order, character:{...}}]
+    protagonist: Optional[dict] = None  # 单主角制：本作唯一主角的角色详情
 
 
 # ===== 游戏可选玩家 =====

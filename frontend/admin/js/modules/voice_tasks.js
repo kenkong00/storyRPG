@@ -13,6 +13,7 @@
     list: [], curId: 0, detail: null,
     chars: [], groups: [], picked: new Set(),
     timer: 0, audio: null, modalOpen: false,
+    jobId: '',          // 本轮在「任务中心」里的记录（右上角面板能看到进度与剩余时间）
   };
 
   const esc = (s) => String(s == null ? '' : s)
@@ -147,6 +148,7 @@
     S.curId = id;
     S.picked.clear();
     S.detail = await Admin.get(`/voice-tasks/${id}`);
+    S.jobId = S.detail.job_id || '';
     S.modalOpen = true;
     renderModal();
     if (S.detail.running) startPoll();
@@ -225,10 +227,12 @@
           <button class="btn btn-outline btn-sm" id="vt-stop" ${d.running ? '' : 'disabled'}>⏹ 停止</button>
           <div class="vt-prog"><i style="width:${pct}%"></i></div>
           <span style="font-size:12px;color:var(--text-muted)" id="vt-msg">${esc(d.message || '')}</span>
+          <span style="font-size:11.5px;color:#7fd6ff" id="vt-eta"></span>
         </div>
         <div class="vt-hint">
           运行前会把「添加内容」输入框里还没进列表的台词自动加进来。
           只想换几条的声音：勾选那几条 → 点「↻ 重跑选中」；整包用新配置重来一遍就点「⟳ 全部重新生成」（不用勾选）。
+          <b style="color:var(--text-primary)">提交后可以去右上角「任务中心 → 🎙 音频」看总进度和剩余时间，关掉这个窗口也不会中断。</b>
         </div>
       </div>
 
@@ -393,6 +397,28 @@
   // ---------------------------------------------------------------- 轮询
   function stopPoll() { if (S.timer) { clearTimeout(S.timer); S.timer = 0; } }
 
+  function fmtSec(sec) {
+    sec = Math.max(0, Math.round(sec || 0));
+    if (sec < 60) return sec + ' 秒';
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m + ' 分' + (s ? ' ' + s + ' 秒' : '');
+  }
+
+  // 剩余时间直接读全局 JobMonitor 的缓存（它本来就在轮询 /api/jobs），
+  // 不再多发一个请求——两套轮询打架是以前跳进度条的元凶。
+  function paintEta() {
+    const el = document.getElementById('vt-eta');
+    if (!el) return;
+    if (!S.jobId || !window.JobMonitor) { el.textContent = ''; return; }
+    const j = JobMonitor.jobs().find((x) => x.id === S.jobId);
+    if (!j) { el.textContent = ''; return; }
+    const parts = [];
+    if (j.status === 'running' && j.eta_sec != null) parts.push('剩余约 ' + fmtSec(j.eta_sec));
+    if (j.elapsed_sec) parts.push('已用 ' + fmtSec(j.elapsed_sec));
+    if (j.status === 'paused') parts.push('已暂停（右上角任务中心可继续）');
+    el.textContent = parts.join(' · ');
+  }
+
   function startPoll() {
     stopPoll();
     const tick = async () => {
@@ -405,6 +431,8 @@
           S.detail.done = p.done;
           S.detail.total = p.total;
           S.detail.message = p.message;
+          S.detail.job_id = p.job_id || S.detail.job_id || '';
+          if (p.job_id) S.jobId = p.job_id;
           S.detail.lines = p.lines.map((nl) => {
             const old = (S.detail.lines || []).find((x) => x.id === nl.id) || {};
             return Object.assign({}, old, nl);
@@ -415,6 +443,7 @@
             if (bar) bar.style.width = pct + '%';
             const msg = document.getElementById('vt-msg');
             if (msg) msg.textContent = p.message || '';
+            paintEta();
             renderRows();
           }
         }
@@ -530,9 +559,12 @@
       try {
         const added = await addPendingText();
         if (added) Admin.toast(`先把输入框的 ${added} 条加进了列表`, 'info');
-        await Admin.post(`/voice-tasks/${S.curId}/run`, {});
+        const r = await Admin.post(`/voice-tasks/${S.curId}/run`, {});
+        S.jobId = r.job_id || '';
         S.detail.running = true;
-        Admin.toast(added ? '已开始：新加的台词与待处理的一起合成' : '已开始，正在逐条处理', 'success');
+        Admin.toast(added
+          ? '已提交任务：新加的台词与待处理的一起合成，右上角「任务中心 → 🎙 音频」可看总进度'
+          : '已提交任务，右上角「任务中心 → 🎙 音频」可看进度和剩余时间（关窗口不中断）', 'success');
         startPoll();
       } catch (e) { Admin.toast(e.message, 'error'); }
     });
@@ -544,8 +576,9 @@
       try {
         const added = await addPendingText();
         if (added) Admin.toast(`先把输入框的 ${added} 条加进了列表`, 'info');
-        await Admin.post(`/voice-tasks/${S.curId}/run`, { rerun_failed: true });
-        Admin.toast('正在重跑失败的条目', 'success');
+        const r = await Admin.post(`/voice-tasks/${S.curId}/run`, { rerun_failed: true });
+        S.jobId = r.job_id || '';
+        Admin.toast('已提交：正在重跑失败的条目（任务中心 🎙 音频可看）', 'success');
         startPoll();
       } catch (e) { Admin.toast(e.message, 'error'); }
     });
@@ -555,10 +588,11 @@
       try {
         const added = await addPendingText();
         if (added) Admin.toast(`先把输入框的 ${added} 条加进了列表`, 'info');
-        await Admin.post(`/voice-tasks/${S.curId}/run`, { only_ids: ids });
+        const r = await Admin.post(`/voice-tasks/${S.curId}/run`, { only_ids: ids });
+        S.jobId = r.job_id || '';
         S.picked.clear();
         updatePicked();
-        Admin.toast(`开始重跑选中的 ${ids.length} 条`, 'success');
+        Admin.toast(`已提交：重跑选中的 ${ids.length} 条（任务中心 🎙 音频可看）`, 'success');
         startPoll();
       } catch (e) { Admin.toast(e.message, 'error'); }
     });
@@ -569,9 +603,10 @@
       try {
         const added = await addPendingText();
         if (added) Admin.toast(`先把输入框的 ${added} 条加进了列表`, 'info');
-        await Admin.post(`/voice-tasks/${S.curId}/run`, { rerun_all: true });
+        const r = await Admin.post(`/voice-tasks/${S.curId}/run`, { rerun_all: true });
+        S.jobId = r.job_id || '';
         S.detail.running = true;
-        Admin.toast('已开始：全部按新配置重新生成', 'success');
+        Admin.toast('已提交：全部按新配置重新生成（任务中心 🎙 音频可看）', 'success');
         startPoll();
       } catch (e) { Admin.toast(e.message, 'error'); }
     });
@@ -659,6 +694,16 @@
   // 供「声音管理 → 语音包」页复用
   window.OpenVoiceTask = (id) => openTask(id);
   window.RefreshVoiceTaskList = () => loadList();
+
+  // 任务中心那边跑完了（哪怕弹窗早就关了）→ 列表 / 弹窗的进度立刻对齐
+  document.addEventListener('job:finished', (e) => {
+    const j = (e && e.detail) || {};
+    if (j.kind !== 'voice_pack') return;
+    const tid = (j.focus || {}).task_id;
+    if (!tid) return;
+    if (S.modalOpen && S.curId === tid) openTask(tid);
+    else if (document.getElementById('vt-list')) loadList();
+  });
 
   // ---------------------------------------------------------------- 页面挂载
   Admin.registerPage('voice_tasks', async (container) => {

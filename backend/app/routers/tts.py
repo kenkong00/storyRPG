@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models.character import Character
+from ..models.narration_voice import NarrationVoice
 from ..models.story import StoryChapter, StoryNode, StoryNodeDialogue
 from ..services.tts import service as tts
 from ..services.tts.base import SynthRequest
@@ -64,6 +65,27 @@ class NodesIn(BaseModel):
 
 
 # ---------------------------------------------------------------- 辅助
+def _narration_cfg(db: Session) -> dict[str, Any]:
+    """旁白（没有说话人的句子）的语音配置。
+
+    单行表 narration_voice，没配置过就返回一份空配置（= 引擎默认音色），
+    保持和以前完全一样的行为。
+    """
+    row = db.query(NarrationVoice).filter(NarrationVoice.id == 1).first()
+    if row is None:
+        return {"voice_id": "", "engine_id": "", "rate": 0, "pitch": 0,
+                "volume": 0, "gender": "unknown", "enabled": True}
+    return {
+        "voice_id": row.voice_id or "",
+        "engine_id": row.engine or "",
+        "rate": row.rate or 0,
+        "pitch": row.pitch or 0,
+        "volume": row.volume or 0,
+        "gender": "unknown",
+        "enabled": bool(row.enabled),
+    }
+
+
 def _apply_character(cfg: dict[str, Any], ch: Character | None) -> dict[str, Any]:
     """角色存在且前端没显式覆盖时，用角色身上配好的语音参数。"""
     if ch is None:
@@ -141,6 +163,7 @@ def _build_node_items(db: Session, node_ids: list[int],
     char_ids = {(d.speaker_id or 0) for d in dlgs} | {(n.speaker_id or 0) for n in nodes}
     char_ids.discard(0)
     chars = _char_map(db, char_ids)
+    narr = _narration_cfg(db)
 
     covered_nodes: set[int] = set()
     for d in dlgs:
@@ -149,9 +172,15 @@ def _build_node_items(db: Session, node_ids: list[int],
         if not text:
             continue
         ch = chars.get(d.speaker_id or 0)
+        manual = (d.voice or "").strip()
+        # 旁白：没有说话人 → 用「角色语音配置 → 旁白」那一套；关掉了且没有成品音频就跳过
+        if ch is None and not narr["enabled"] and not manual:
+            continue
         cfg = _apply_character({
             "voice_id": "", "engine_id": "", "rate": 0, "pitch": 0, "volume": 0,
         }, ch)
+        if ch is None:
+            cfg.update({k: narr[k] for k in ("voice_id", "engine_id", "rate", "pitch", "volume")})
         items.append({
             "key": f"dialogue-{d.id}",
             "node_id": d.node_id,
@@ -160,7 +189,7 @@ def _build_node_items(db: Session, node_ids: list[int],
             "speaker_id": d.speaker_id,
             "speaker_name": ch.name if ch else "旁白",
             "text": text,
-            "manual_voice": (d.voice or "").strip(),  # 后台手工指定的音频优先
+            "manual_voice": manual,  # 后台手工指定的音频优先
             **cfg,
         })
 
@@ -173,9 +202,13 @@ def _build_node_items(db: Session, node_ids: list[int],
             if not n or not (n.content or "").strip():
                 continue
             ch = chars.get(n.speaker_id or 0)
+            if ch is None and not narr["enabled"]:
+                continue
             cfg = _apply_character({
                 "voice_id": "", "engine_id": "", "rate": 0, "pitch": 0, "volume": 0,
             }, ch)
+            if ch is None:
+                cfg.update({k: narr[k] for k in ("voice_id", "engine_id", "rate", "pitch", "volume")})
             items.append({
                 "key": f"node-{nid}",
                 "node_id": nid,
@@ -207,6 +240,41 @@ def get_voices(
     if grouped:
         return {"groups": tts.list_all_voices_grouped()}
     return {"voices": [v.to_dict() for v in tts.list_voices(engine_id, refresh=refresh)]}
+
+
+@router.get("/narration")
+def get_narration(db: Session = Depends(get_db)):
+    """旁白（叙述）的语音配置。"""
+    row = db.query(NarrationVoice).filter(NarrationVoice.id == 1).first()
+    cfg = _narration_cfg(db)
+    cfg["configured"] = row is not None
+    return cfg
+
+
+@router.put("/narration")
+def put_narration(body: dict, db: Session = Depends(get_db)):
+    """保存旁白语音配置（整行 upsert，id 固定 1）。"""
+    row = db.query(NarrationVoice).filter(NarrationVoice.id == 1).first()
+    if row is None:
+        row = NarrationVoice(id=1)
+        db.add(row)
+    if "engine" in body:
+        row.engine = (body.get("engine") or "").strip()
+    if "voice_id" in body:
+        row.voice_id = (body.get("voice_id") or "").strip()
+    for k in ("rate", "pitch", "volume"):
+        if k in body:
+            try:
+                setattr(row, k, max(-100, min(100, int(body.get(k) or 0))))
+            except (TypeError, ValueError):
+                setattr(row, k, 0)
+    if "enabled" in body:
+        row.enabled = 1 if body.get("enabled") else 0
+    db.commit()
+    db.refresh(row)
+    cfg = _narration_cfg(db)
+    cfg["configured"] = True
+    return cfg
 
 
 @router.post("/synth")
@@ -266,6 +334,9 @@ async def synth_nodes(body: NodesIn, db: Session = Depends(get_db)):
     if not body.node_ids:
         return {"items": []}
     prepared = _build_node_items(db, body.node_ids, body.include_single_line_nodes)
+    # 只合成 / 返回「后台已生成过、或手工指定过音频」的句子；
+    # 其余一律静音，不再实时合成（否则「整章配音」不勾选时所有对话仍会被默认音色配音）。
+    prepared = [p for p in prepared if (p.get("manual_voice") or "").strip()]
     if not prepared:
         return {"items": []}
 

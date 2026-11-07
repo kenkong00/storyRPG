@@ -7,7 +7,7 @@
 Admin.registerPage('scenes', async (container) => {
   let defs = null, themes = [];
   // appearance = 当前这套拼装；theme = 题材预设（一键套用限定项）
-  const state = { appearance: {}, theme: '' };
+  const state = { appearance: {}, theme: '', freePrompt: '', freeOnly: false };
   let promptTimer = null;
   let promptPos = '', promptNeg = '';
   let promptEdited = false;
@@ -25,6 +25,7 @@ Admin.registerPage('scenes', async (container) => {
     <div class="sc-wrap">
       <div class="sc-tabs">
         <button class="sc-tab active" data-tab="assembly">场景拼装</button>
+        <button class="sc-tab" data-tab="archives">场景档案</button>
         <button class="sc-tab" data-tab="manage">定义管理</button>
       </div>
 
@@ -49,6 +50,19 @@ Admin.registerPage('scenes', async (container) => {
 
           <div class="sc-side">
             <div class="sc-panel">
+              <div class="sc-panel-h"><span>自定义场景追加词</span>
+                <span class="sp">
+                  <label class="sc-freeck" title="勾上后只按这段话出图，不叠加随机拼装维度">
+                    <input type="checkbox" id="sc-free-only"> 只用追加词
+                  </label>
+                  <button class="sc-btn" id="sc-free-clear" style="font-size:11.5px;padding:3px 9px">清空</button>
+                </span>
+              </div>
+              <textarea class="sc-free" id="sc-free" spellcheck="false"
+                placeholder="写这个场景「长什么样」，会接在拼装提示词末尾。例：塌了半边的古庙，雨水从屋顶漏下，佛像蒙尘，火光摇晃"></textarea>
+              <div class="sc-free-tip">这段跟着浏览器记住；导入剧情时写的 <code>@场景 名字 | 描述</code> 会存进场景档案里。</div>
+            </div>
+            <div class="sc-panel">
               <div class="sc-panel-h"><span>场景提示词</span>
                 <span class="sp">
                   <button class="sc-btn" id="sc-reset-prompt" style="font-size:11.5px;padding:3px 9px"
@@ -70,6 +84,16 @@ Admin.registerPage('scenes', async (container) => {
           <span class="sc-h-tip">单击选中 · 双击看大图 · 右键菜单</span>
         </div>
         <div class="sc-gallery" id="sc-gallery"></div>
+      </div>
+
+      <div class="sc-pane" id="sc-pane-archives">
+        <div class="sc-toolbar">
+          <button class="sc-btn" id="sc-arch-reload">↻ 刷新</button>
+          <span style="font-size:12.5px;color:var(--text-muted)">
+            场景档案 = 剧情导入 / 人物场景合成里按名字匹配到的「场景」记录。删掉档案后，导入剧情时这个名字就不再显示「已存在」。
+          </span>
+        </div>
+        <div id="sc-arch-list" style="padding:6px"></div>
       </div>
 
       <div class="sc-pane" id="sc-pane-manage">
@@ -126,10 +150,47 @@ Admin.registerPage('scenes', async (container) => {
     container.querySelectorAll('.sc-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     container.querySelectorAll('.sc-pane').forEach(p => p.classList.toggle('active', p.id === 'sc-pane-' + name));
     if (name === 'manage') loadManage();
+    if (name === 'archives') loadArchives();
   }
   container.querySelectorAll('.sc-tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+
+  // ==================== 场景档案（剧情导入 / 人物场景合成按名字匹配的记录） ====================
+  async function loadArchives() {
+    const host = $('sc-arch-list');
+    if (!host) return;
+    let list = [];
+    try { list = await Admin.get('/scenes/'); } catch (_) { list = []; }
+    if (!list.length) {
+      host.innerHTML = '<div class="sc-empty">还没有场景档案。剧情导入里写 <code>@场景 名字 | 描述</code> 会自动建一条。</div>';
+      return;
+    }
+    host.innerHTML = list.map(s => `
+      <div class="sc-arch-row" style="display:flex;gap:10px;align-items:center;padding:9px 11px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px">
+        <div style="width:64px;height:42px;flex:none;border-radius:4px;overflow:hidden;background:var(--bg-input);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:10px">
+          ${s.background_image ? `<img src="${esc(s.background_image)}" style="width:100%;height:100%;object-fit:cover">` : '无封面'}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:var(--text-primary)">${esc(s.name)}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.description || s.prompt_text || '')}</div>
+        </div>
+        <button class="sc-btn" data-arch-del="${s.id}" style="color:var(--red);font-size:12px;padding:4px 12px;flex:none">删除</button>
+      </div>`).join('');
+    host.querySelectorAll('[data-arch-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.dataset.archDel);
+        const name = list.find(s => s.id === id)?.name || '';
+        if (!await Admin.confirm(`删除场景档案「${name}」？\n\n之后导入剧情时这个名字就不再显示「已存在」，会按描述重新新建。`)) return;
+        try {
+          await Admin.del(`/scenes/${id}`);
+          Admin.toast('场景档案已删除', 'success');
+          await loadArchives();
+        } catch (e) { Admin.toast('删除失败：' + e.message, 'error'); }
+      });
+    });
+  }
+  $('sc-arch-reload')?.addEventListener('click', loadArchives);
 
   // ==================== 场景拼装（限定项手选 + 细节元素随地点） ====================
   const LIMIT_HINT = {
@@ -318,12 +379,19 @@ Admin.registerPage('scenes', async (container) => {
     clearTimeout(promptTimer);
     promptTimer = setTimeout(async () => {
       try {
-        const r = await Admin.post('/scene-gen/prompt', { scene: state.appearance, free_prompt: '' });
+        const r = await Admin.post('/scene-gen/prompt', {
+          scene: state.appearance,
+          free_prompt: state.freeOnly ? '' : state.freePrompt,
+        });
         promptPos = r.prompt?.posCn || '';
         promptNeg = r.prompt?.negCn || '';
         promptEdited = false;
         const el = $('sc-prompt');
-        if (el) el.value = promptPos || '（还没有选择任何维度）';
+        if (el) {
+          el.value = state.freeOnly
+            ? (state.freePrompt || '（勾了「只用追加词」，但还没写内容）')
+            : (promptPos || '（还没有选择任何维度）');
+        }
       } catch (e) {
         const el = $('sc-prompt');
         if (el) el.value = '提示词生成失败：' + e.message;
@@ -343,8 +411,11 @@ Admin.registerPage('scenes', async (container) => {
       const r = await Admin.post('/scene-gen/generate', {
         scene_id: null,
         appearance: state.appearance,
-        // 提示词框手改过就用改后的这段出图
-        prompt_override: promptEdited ? ($('sc-prompt')?.value || '') : null,
+        // 提示词框手改过就用改后的这段；勾了「只用追加词」就只按那段出图
+        prompt_override: state.freeOnly
+          ? (state.freePrompt || '')
+          : (promptEdited ? ($('sc-prompt')?.value || '') : null),
+        free_prompt: state.freePrompt || null,
         width, height,
         model_preset: gp.model_preset || null,
         use_active_model_preset: !gp.model_preset,
@@ -541,6 +612,44 @@ Admin.registerPage('scenes', async (container) => {
   });
   $('sc-prompt').addEventListener('input', (e) => {
     promptEdited = e.target.value !== (promptPos || '');
+  });
+
+  // ---- 自定义场景追加词：记在本机，重进页面还在；改了就重算提示词 ----
+  const FREE_KEY = 'rpg_scene_free_prompt';
+  function saveFree() {
+    try {
+      localStorage.setItem(FREE_KEY, JSON.stringify({
+        text: state.freePrompt, only: state.freeOnly,
+      }));
+    } catch (_) {}
+  }
+  function loadFree() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(FREE_KEY) || '{}');
+      state.freePrompt = (raw && raw.text) || '';
+      state.freeOnly = !!(raw && raw.only);
+    } catch (_) {}
+    const ta = $('sc-free');
+    const ck = $('sc-free-only');
+    if (ta) ta.value = state.freePrompt;
+    if (ck) ck.checked = state.freeOnly;
+  }
+  $('sc-free')?.addEventListener('input', (e) => {
+    state.freePrompt = e.target.value;
+    saveFree();
+    refreshPrompt();
+  });
+  $('sc-free-only')?.addEventListener('change', (e) => {
+    state.freeOnly = e.target.checked;
+    saveFree();
+    refreshPrompt();
+  });
+  $('sc-free-clear')?.addEventListener('click', () => {
+    state.freePrompt = '';
+    const ta = $('sc-free');
+    if (ta) ta.value = '';
+    saveFree();
+    refreshPrompt();
   });
 
   // 出图参数：进页面就挂出来，和别处是同一套「场景出图参数」
@@ -775,6 +884,7 @@ Admin.registerPage('scenes', async (container) => {
     await ensureDefs();
     await ensureGenPanel();
     await loadGallery();
+    loadFree();
     renderGroups();
     // 空手进来先给一套起点，用户在这基础上改
     if (needFill()) await randomAll(true);

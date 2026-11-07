@@ -472,6 +472,18 @@ const Platform = {
 
     // ===== 新建人物 =====
     async showNewCharModal(game) {
+        // 单主角制：本作已指定主角 → 直接以主角进入，不再弹选角面板
+        if (game.protagonist_character_id) {
+            const libIds0 = new Set(this.myLibrary.map(l => l.game_id));
+            if (!libIds0.has(game.id)) {
+                try {
+                    await API.games.addLibrary(game.id);
+                    this.myLibrary = await API.games.myLibrary();
+                } catch (e) { /* 忽略，后面进入时再处理 */ }
+            }
+            await this._ensureProtagonistAndEnter(game, null);
+            return;
+        }
         // 必须先把游戏加入清单
         const libIds = new Set(this.myLibrary.map(l => l.game_id));
         if (!libIds.has(game.id)) {
@@ -631,6 +643,11 @@ const Platform = {
                 return;
             }
         }
+        // 单主角制：本作指定了唯一主角 → 直接以该主角进入，不再让玩家选角
+        if (game.protagonist_character_id) {
+            await this._ensureProtagonistAndEnter(game, targetChapterId);
+            return;
+        }
         // 检查是否有存档
         let chars = [];
         try {
@@ -647,6 +664,28 @@ const Platform = {
         }
         // 多存档，弹出选择
         this.showLoadSaveModal(game);
+    },
+
+    // 单主角：优先进入已有存档；没有则用本作主角模板创建一个再进入
+    async _ensureProtagonistAndEnter(game, targetChapterId) {
+        let chars = [];
+        try { chars = await API.games.myCharacters(game.id); } catch {}
+        if (chars.length > 0) {
+            await this._enterGame(chars[0].id, targetChapterId);
+            return;
+        }
+        try {
+            const pname = (game.protagonist && game.protagonist.name) || undefined;
+            const uc = await API.games.createCharacter({
+                game_id: game.id,
+                base_character_id: game.protagonist_character_id,
+                custom_name: pname,
+            });
+            Utils.toast('已以主角身份进入');
+            await this._enterGame(uc.id, targetChapterId);
+        } catch (e) {
+            Utils.toast('进入失败: ' + (e.message || e));
+        }
     },
 
     // ===== 进入游戏（切换到游戏容器） =====

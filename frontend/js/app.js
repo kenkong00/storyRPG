@@ -57,6 +57,71 @@ const App = {
         await this.loadStory(targetChapterId, userCharacter.last_story_node_id);
     },
 
+    // ===== 演示模式：后台「▶ 演示」按钮用 =====
+    // 只播这一个节点，不读存档、不写存档、不进战斗，播完停在原地。
+    // 走的是和正式游玩完全同一套演出（背景 / 立绘 / 表情 / 语音 / 打字机），
+    // 所以看到的效果就是玩家看到的效果。
+    async startDemo(nodeId) {
+        const node = await API.story.getNode(nodeId);
+        if (!node) { Utils.toast('节点不存在'); return; }
+        DialogueUI._demoMode = true;
+        // 点击画面推进 / 空格推进 / 快捷键都在 bindEvents 里绑，
+        // 走演示入口时同样要绑，否则演示只能看第一句。
+        this.bindEvents();
+
+        let chapter = null;
+        try {
+            const chapters = await API.story.getChapters();
+            chapter = chapters.find(c => c.id === node.chapter_id) || null;
+        } catch (e) { /* 没有章节也能演示单节点 */ }
+        GameState.currentChapter = chapter;
+
+        // 撑住 HUD 的假玩家：演示不碰任何用户数据
+        GameState.player = {
+            id: 0, uc_id: 0, base_id: 0,
+            name: '演示', title: '', level: 1, exp: 0,
+            hp: 100, max_hp: 100, mp: 50, max_mp: 50,
+            portrait_image: '', character_type: 'npc',
+            personality: '', background_story: '',
+        };
+        GameState.updatePlayerUI();
+
+        document.querySelector('#platform-layer')?.classList.add('hidden');
+        Utils.hide('#game-start-modal');
+        Utils.hide('#chapter-cover');
+        const gc = document.querySelector('#game-container');
+        if (gc) gc.style.display = '';
+        document.querySelector('#background-layer')?.classList.remove('hidden');
+        document.querySelector('#ui-layer')?.classList.remove('hidden');
+        document.querySelector('#dialogue-overlay')?.classList.remove('hidden');
+
+        this._showDemoBadge(chapter, node);
+        await DialogueUI.showNode(nodeId, () => this._demoDone());
+    },
+
+    _showDemoBadge(chapter, node) {
+        let el = document.getElementById('demo-badge');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'demo-badge';
+            document.body.appendChild(el);
+        }
+        el.classList.remove('demo-done');
+        const part = [(chapter && chapter.title) || '', node.title || ('节点 ' + node.id)]
+            .filter(Boolean).join(' · ');
+        el.innerHTML = `<b>▶ 演示模式</b><span class="demo-part">${part}</span>` +
+            `<span class="demo-dim">只播这一段 · 不写存档</span>`;
+    },
+
+    _demoDone() {
+        const el = document.getElementById('demo-badge');
+        if (el) {
+            el.classList.add('demo-done');
+            el.innerHTML = `<b>▶ 演示结束</b><span class="demo-dim">这一段播完了 · 关掉窗口即可</span>`;
+        }
+        Utils.toast('演示结束：这一段播完了');
+    },
+
     // 彻底清空背景层
     _resetBackground() {
         const bgImg = document.querySelector('#bg-image');
@@ -239,16 +304,20 @@ const App = {
             const uiLayer = document.querySelector('#ui-layer');
             const dialogueOverlay = document.querySelector('#dialogue-overlay');
             const toggle = document.querySelector('#ui-toggle');
+            const autoBtn = document.querySelector('#auto-play-toggle');
             if (this._uiVisible) {
                 uiLayer.classList.remove('hidden');
                 dialogueOverlay.classList.remove('hidden');
                 toggle.textContent = '•';
                 toggle.title = '隐藏界面';
+                if (autoBtn) autoBtn.classList.remove('ap-hidden');
             } else {
                 uiLayer.classList.add('hidden');
                 dialogueOverlay.classList.add('hidden');
                 toggle.textContent = '○';
                 toggle.title = '显示界面';
+                // 自动播放按钮属于界面的一部分，纯看画面时不该露出来
+                if (autoBtn) autoBtn.classList.add('ap-hidden');
             }
         });
 
@@ -408,7 +477,27 @@ const App = {
 };
 
 // 启动入口：兼容 DOMContentLoaded 已触发的情况
-function bootApp() {
+async function bootApp() {
+    // 剧情演出设置先落地：高亮参数 / 自动播放默认值都从这份取。
+    // 后端没起来也不等死——ShowSettings 内部有内置兜底。
+    if (window.ShowSettings) {
+        try {
+            await ShowSettings.load();
+            ShowSettings.applyCss();
+        } catch (e) { /* 用兜底值继续 */ }
+    }
+    // 右上角自动播放开关：进页面就建好，两种入口（正常/演示）都要有
+    if (window.DialogueUI && DialogueUI.initAutoPlayUi) DialogueUI.initAutoPlayUi();
+
+    // ?demo_node=<id> —— 后台「▶ 演示」打开的演示页，跳过平台层直接播这一段
+    const demoNode = parseInt(new URLSearchParams(location.search).get('demo_node') || '', 10);
+    if (demoNode) {
+        App.startDemo(demoNode).catch((e) => {
+            console.error('演示启动失败:', e);
+            Utils.toast('演示启动失败：' + e.message);
+        });
+        return;
+    }
     App.init().catch(e => {
         console.error('App.init 失败:', e);
         // 在页面上显示错误，便于排查

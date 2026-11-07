@@ -61,6 +61,8 @@ class StoryNode(Base):
     order_index: Mapped[int] = mapped_column(Integer, default=0)
     tags: Mapped[str | None] = mapped_column(Text)  # JSON: 标签ID数组
     category_path: Mapped[str | None] = mapped_column(String(300))  # 自定义分类路径
+    # 这个节点来自哪一次批量导入（story_import_batches.id），用于「重新编辑 / 整批替换」
+    import_batch_id: Mapped[int | None] = mapped_column(Integer, index=True)
     # 战斗节点配置（JSON，node_type='battle' 时生效）
     # {
     #   "enemies":[{"character_id":2,"level":5,"ai":"aggressive","skills":[11,12],
@@ -93,6 +95,8 @@ class StoryNodeDialogue(Base):
     speaker_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("characters.id"))
     content: Mapped[str | None] = mapped_column(Text)
     expression: Mapped[str | None] = mapped_column(String(30))
+    # 动作追加词：只作用于这一句的姿态 / 动作，接在出图提示词末尾
+    pose_extra: Mapped[str | None] = mapped_column(Text)
     # 立绘坐标（屏幕百分比）
     pos_x: Mapped[float | None] = mapped_column(Float, default=50.0)     # 水平中心 0~100
     pos_y: Mapped[float | None] = mapped_column(Float, default=0.0)      # 底边离屏幕底部的百分比（可负：下沉）

@@ -19,7 +19,7 @@ import threading
 from ..config import DATA_DIR
 
 DEFS_PATH = os.path.join(DATA_DIR, "appearance_defs.json")
-DEFS_VERSION = 8
+DEFS_VERSION = 10  # v10：修复 renderTemplates 只补 half 导致 full/head 缺失的问题（逐子键补齐）
 
 # v7：4 个题材各补了一批专属款式（明光铠 / 畳甲 / 鳞甲 / 板钉甲 等），
 #     每个职业的上装 5~6 款、下装 3~4 款；THEME_REV 3 会带着新池重装。
@@ -104,6 +104,39 @@ def _migrate(data):
         for o in add:
             if o["id"] not in have:
                 opts.append(dict(o))
+                changed = True
+
+    # 5) 画面/取景模板 + 负面词：旧 JSON 没有这两个键时补种子值；
+    #    已有键（用户编辑过）绝不覆盖 —— 红线：提示词可改/删/增，以 JSON 为准。
+    #    注意：必须「逐子键补齐」，不能只看 renderTemplates 整体是否存在 ——
+    #    历史上某次整体保存曾把 full/head 冲掉，只剩 half；若按整体判断就会永远缺这两个模板，
+    #    导致全身/头部特写出图时【画面】【取景】段落凭空消失（用户误以为又写死/丢提示词）。
+    from . import seed_defs
+    rt = data.get("renderTemplates")
+    if not isinstance(rt, dict):
+        rt = {}
+    for key, tpl in seed_defs.RENDER_TEMPLATES_SEED.items():
+        if key not in rt:          # 只补缺失的键，绝不覆盖用户已编辑过的同名模板
+            rt[key] = {**tpl}
+            changed = True
+    data["renderTemplates"] = rt
+
+    nw = data.get("negativeWords")
+    if not isinstance(nw, dict):
+        nw = {}
+    for key, words in seed_defs.NEGATIVE_WORDS_SEED.items():
+        if key not in nw:          # 只补缺失的键，绝不覆盖用户已编辑过的同名负面词
+            nw[key] = list(words)
+            changed = True
+    data["negativeWords"] = nw
+
+    # 6) 立绘取景选项补 behavior（full/half/head 内置项），用户自建选项默认 full
+    for d in dims:
+        if d.get("id") != "framing":
+            continue
+        for o in d.setdefault("options", []):
+            if o.get("id") in ("full", "half", "head") and not o.get("behavior"):
+                o["behavior"] = o["id"]
                 changed = True
 
     if changed:

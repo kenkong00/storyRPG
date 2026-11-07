@@ -269,8 +269,8 @@ def create_my_character(data: UserCharacterCreate, user: User = Depends(require_
     base = db.query(Character).filter(Character.id == data.base_character_id).first()
     if not base:
         raise HTTPException(status_code=404, detail="人物模板不存在")
-    # 不传自定义名称时，直接用模板人物的名字（"直接扮演这个角色"）
-    custom_name = (data.custom_name or "").strip() or base.name or "玩家"
+    # 扮演角色必须使用角色模板的名字，不允许自定义改名（避免与剧情/称呼混乱）
+    custom_name = base.name or "玩家"
 
     uc = UserCharacter(
         user_id=user.id, game_id=data.game_id,
@@ -310,9 +310,14 @@ def update_my_character(uc_id: int, data: UserCharacterUpdate, user: User = Depe
     uc = db.query(UserCharacter).filter(UserCharacter.id == uc_id, UserCharacter.user_id == user.id).first()
     if not uc:
         raise HTTPException(status_code=404, detail="角色不存在")
+    # 角色名强制等于模板人物名字，不允许玩家改名（避免与剧情/称呼混乱）
     for k, v in data.model_dump().items():
-        if v is not None:
-            setattr(uc, k, v)
+        if v is None or k == "custom_name":
+            continue
+        setattr(uc, k, v)
+    base = db.query(Character).filter(Character.id == uc.base_character_id).first()
+    if base and base.name:
+        uc.custom_name = base.name
     uc.updated_at = datetime.now().isoformat()
     db.commit()
     db.refresh(uc)

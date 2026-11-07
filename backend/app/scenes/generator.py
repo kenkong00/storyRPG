@@ -18,14 +18,12 @@ LIMIT_DIMS = ["sceneType", "era", "depthOfField", "camera", "light", "color", "s
 # 兼容旧调用方（场景合成那边还 import 过 DIM_ORDER）
 DIM_ORDER = list(LIMIT_DIMS)
 
-SCENE_NEG = ["低分辨率", "模糊", "畸变", "透视错误", "文字", "水印", "签名",
-             "界面元素", "人物", "人体", "角色", "多人", "多余结构", "拼接痕迹",
-             "过曝", "欠曝"]
+# 负面词默认全空（用户要求：CFG 不需要负面提示词，留空即可）。
+# 需要时在「场景出图配置」的负面词输入框里自己填，那里填写的永远优先。
+SCENE_NEG = []
 
-# 合成时不能把「人物」写进负面，否则人物会被抹掉
-COMPOSE_NEG = ["低分辨率", "模糊", "畸形", "比例失调", "多余肢体", "断肢",
-               "脸部扭曲", "文字", "水印", "签名", "界面元素",
-               "人物与背景割裂", "贴纸感", "过曝", "欠曝"]
+# 合成时同理：不再注入任何默认负面词
+COMPOSE_NEG = []
 
 
 def _opt_cn(dim_id, opt_id):
@@ -283,10 +281,8 @@ def compose_prompt(char_appearance, scene_appearance, free_prompt=None,
         lines.append("【场景补充】" + free_prompt.strip())
     lines.append("【画面】电影感构图，高清细节，人物与场景融为一体，非贴图合成")
 
-    neg = list(COMPOSE_NEG)
-    if shot in ("half", "close"):
-        neg += ["全身照", "腿部", "脚"]
-    return {"posCn": "\n".join(lines), "negCn": "，".join(neg)}
+    # 负面词不再注入（SCENE_NEG/COMPOSE_NEG 已清空，取景裁剪也不追加）
+    return {"posCn": "\n".join(lines), "negCn": ""}
 
 
 # 单个/多个人物的站位说法（合成用，措辞比场景描述更强调「相对位置」）
@@ -387,14 +383,8 @@ def compose_prompt_multi(characters, scene_appearance, free_prompt=None,
         lines.append("【场景补充】" + free_prompt.strip())
     lines.append("【画面】电影感构图，高清细节，人物与场景融为一体，非贴图合成")
 
-    neg = list(COMPOSE_NEG)
-    if shot in ("half", "close"):
-        neg += ["全身照", "腿部", "脚"]
-    if n > 1:
-        neg += ["单人", "只有一个人", "人物融合", "多余的人", "多余的身体", "重复的脸"]
-    else:
-        neg += ["多人", "两个人", "重影"]
-    return {"posCn": "\n".join(lines), "negCn": "，".join(neg),
+    # 负面词不再注入（含多人/单人裁剪，全部清空 —— 负面词一律由用户自行填写）
+    return {"posCn": "\n".join(lines), "negCn": "",
             "character_count": n}
 
 

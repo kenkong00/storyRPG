@@ -71,6 +71,7 @@ Admin.registerPage('story', async (container) => {
 
   function expressionLabel(exp) {
     if (!exp) return '无表情';
+    if (exp === '__none__') return '无表情动作';
     if (poseNameMap[exp]) return poseNameMap[exp];
     return (nodeFormExpTypes.find(e => e.key === exp) || { label: exp }).label;
   }
@@ -141,6 +142,18 @@ Admin.registerPage('story', async (container) => {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
   }
+
+  // ===== 剧情配音任务跑完后，把结果刷回当前对话行 =====
+  // 配音现在是后台任务（右上角任务中心 → 🎙 音频）：关掉节点弹窗也不会中断，
+  // 结果由后端直接写进数据库的 voice 字段。这里只负责「弹窗还开着时顺手刷新一下」。
+  let _dlgVoiceHook = null;
+  document.addEventListener('job:finished', (e) => {
+    const j = (e && e.detail) || {};
+    if (j.kind !== 'voice_dialogue' || !_dlgVoiceHook) return;
+    if ((j.focus || {}).node_id !== _dlgVoiceHook.nodeId) return;
+    if (!document.getElementById('dialogue-list')) return;   // 弹窗已关：库里已经是最终结果
+    try { _dlgVoiceHook.onDone(j); } catch (err) { console.warn(err); }
+  });
 
   // ===== 数据加载 =====
   async function loadArcs() {
@@ -418,6 +431,8 @@ Admin.registerPage('story', async (container) => {
         <button class="btn btn-danger btn-sm" id="btn-ch-del-sel" ${batchAttr}>删除选中</button>
         <button class="btn btn-outline btn-sm" id="btn-ch-clear-sel" ${batchAttr}>取消选择</button>
         <div style="flex:1"></div>
+        <button class="btn btn-outline btn-sm" id="btn-ch-import"
+          title="粘贴一段故事 / 剧本 / AI 生成的 JSON，自动拆成节点和对话，直接生成本章">↥ 批量导入剧情</button>
         <button class="btn btn-primary btn-sm" id="btn-add-chapter">+ 新章节</button>
       </div>
     `;
@@ -455,6 +470,9 @@ Admin.registerPage('story', async (container) => {
                 ${conditionHtml}
               </div>
               <div style="display:flex;gap:4px">
+                <button class="btn btn-outline btn-sm btn-gen-ch" data-id="${ch.id}"
+                  title="按这一章的标题和梗概生成剧本指令，AI 写完直接导进来"
+                  style="font-size:10px;padding:2px 8px;color:var(--gold);border-color:rgba(201,168,76,.55)">生成</button>
                 <button class="btn btn-outline btn-sm btn-edit-ch" data-id="${ch.id}" style="font-size:10px;padding:2px 8px">编辑</button>
                 <button class="btn btn-outline btn-sm btn-del-ch" data-id="${ch.id}" style="font-size:10px;padding:2px 8px;color:var(--red);border-color:var(--red)">删除</button>
               </div>
@@ -531,10 +549,27 @@ Admin.registerPage('story', async (container) => {
       renderChapters();
     });
 
+    document.getElementById('btn-ch-import')?.addEventListener('click',
+      () => openImportDialog({ arcId: currentArcId, chapterId: null }));
+
     container.querySelectorAll('[data-chapter-id]').forEach(el => {
       el.addEventListener('click', (e) => {
         if (e.target.closest('.action-btns, button, input')) return;
         loadNodes(parseInt(el.dataset.chapterId));
+      });
+    });
+
+    // 章节 → 按章节生成：把标题与梗概带进弹窗的「按章节生成」页
+    container.querySelectorAll('.btn-gen-ch').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const ch = chapters.find(c => c.id === parseInt(btn.dataset.id));
+        if (!ch) return;
+        openImportDialog({
+          chapterId: ch.id,
+          chapterTitle: ch.title || '',
+          chapterBrief: ch.description || '',
+        });
       });
     });
 
@@ -674,6 +709,8 @@ Admin.registerPage('story', async (container) => {
         <select id="chapter-select" style="padding:6px 10px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:12px">${chapterOptions}</select>
         <span style="color:var(--text-muted);line-height:2;margin-left:8px">共 ${sorted.length} 个节点</span>
         <div style="flex:1"></div>
+        <button class="btn btn-outline btn-sm" id="btn-node-import" title="粘贴一段故事 / 剧本 / AI 生成的 JSON，自动拆成节点和对话">↥ 批量导入剧情</button>
+        <button class="btn btn-outline btn-sm" id="btn-node-batches" title="这个章节导入过什么，可以重新编辑那批节点">🗂 导入记录</button>
         <button class="btn btn-gold btn-sm" id="btn-add-node" title="直接在列表底部新增一个节点">+ 新节点</button>
       </div>
       <!-- 批量管理栏始终显示，未选时禁用 -->
@@ -787,6 +824,8 @@ Admin.registerPage('story', async (container) => {
         <td>${tagsHtml}</td>
         <td>
           <div class="action-btns">
+            <button class="btn-demo" data-id="${node.id}" data-action="demo"
+              title="用游戏里的真实演出播这一段（背景/立绘/表情/语音全走一遍，不写存档）">▶ 演示</button>
             <button class="btn-edit" data-id="${node.id}" data-action="edit">编辑</button>
             <button class="btn-edit" data-id="${node.id}" data-action="choices">选项</button>
             <button class="btn-del" data-id="${node.id}" data-action="delete">删除</button>
@@ -794,6 +833,65 @@ Admin.registerPage('story', async (container) => {
         </td>
       </tr>
     `;
+  }
+
+  // ===== 演示这一段：用游戏里的真实演出播一次，不碰任何数据 =====
+  // 走游戏自己的对话系统（背景/立绘/表情/语音/打字机全是真的），
+  // 所以「演示看到什么」= 「玩家看到什么」。
+  let _demoKeyHandler = null;
+
+  function demoUrl(nodeId) {
+    // 游戏页面挂在站点根路径（/admin 才是后台），别写成 /index.html
+    return `/?demo_node=${nodeId}&_t=${Date.now()}`;
+  }
+
+  function stopDemo() {
+    const host = document.getElementById('demo-layer');
+    if (host) { host.style.display = 'none'; host.innerHTML = ''; }
+    if (_demoKeyHandler) {
+      document.removeEventListener('keydown', _demoKeyHandler);
+      _demoKeyHandler = null;
+    }
+  }
+
+  function demoNode(nodeId, nodeTitle) {
+    if (!nodeId) { Admin.toast('请先保存节点，再演示', 'info'); return; }
+    const n = nodes.find(x => x.id === nodeId) || {};
+    const title = nodeTitle || n.title || `节点 ${nodeId}`;
+
+    let host = document.getElementById('demo-layer');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'demo-layer';
+      document.body.appendChild(host);
+    }
+    host.innerHTML = `
+      <div class="demo-box">
+        <div class="demo-head">
+          <b>▶ 演示 · ${esc(title)}</b>
+          <span class="demo-sub">这就是玩家看到的画面 · 点画面或按空格推进 · 不写存档</span>
+          <span style="flex:1"></span>
+          <button class="btn btn-outline btn-sm" id="demo-reload" title="从头再播一遍">↻ 重播</button>
+          <button class="btn btn-outline btn-sm" id="demo-newtab" title="在新窗口打开（可以按 F11 全屏看）">↗ 新窗口</button>
+          <button class="btn btn-primary btn-sm" id="demo-close">关闭</button>
+        </div>
+        <iframe class="demo-frame" id="demo-frame" src="${demoUrl(nodeId)}" allow="autoplay"></iframe>
+      </div>`;
+    host.style.display = 'flex';
+
+    host.querySelector('#demo-close').addEventListener('click', stopDemo);
+    host.querySelector('#demo-reload').addEventListener('click', () => {
+      host.querySelector('#demo-frame').src = demoUrl(nodeId);
+    });
+    host.querySelector('#demo-newtab').addEventListener('click', () => {
+      window.open(demoUrl(nodeId), '_blank');
+    });
+    // 点遮罩空白处关闭（用 onclick 覆盖，避免多次打开累积监听）
+    host.onclick = (e) => { if (e.target === host) stopDemo(); };
+
+    if (_demoKeyHandler) document.removeEventListener('keydown', _demoKeyHandler);
+    _demoKeyHandler = (e) => { if (e.key === 'Escape') stopDemo(); };
+    document.addEventListener('keydown', _demoKeyHandler);
   }
 
   // 快捷修改：立即保存单个字段到数据库
@@ -829,8 +927,1265 @@ Admin.registerPage('story', async (container) => {
       : '<span style="color:var(--text-muted)">—</span>';
   }
 
+  // ===== 批量导入剧情（输入 → 输出） =====
+  // 版面分两栏：左边贴内容，右边核对/微调。
+  // 之所以要「输出」这一栏：解析出来的东西必须能改 —— 表情、人物外观约束、
+  // 自定义追加词、背景，全都在这栏里定完，再一键执行。
+  // 对话很多时靠「节点折叠 + 人物折叠」压住，不会堆成一坨。
+  const IMPORT_SAMPLE = `# 破庙雨夜
+@场景 破庙 | 塌了半边的古庙，雨水从屋顶漏下，佛像蒙尘，火光摇晃
+@背景 破庙
+@音乐 雨声
+@人物 李慕白 | 三十岁上下的男子，青衫长剑，长发束起，眉目冷峻，衣襟带雨
+@人物 苏小小 | 二十出头的白衣女子，素白衣裙，鬓边一支银簪，眼神倔强
+旁白：雨点砸在破庙的瓦上，火堆快熄了。
+李慕白（冷漠）：你终于肯露面了。 | 抬剑指着门口
+苏小小（平静）：我不是来跟你打的。 | 背过身去，握紧袖口
+李慕白（愤怒）：三年前那一剑，你忘了？
+苏小小（悲伤）：我没忘……我只是没有选择。
+
+# 火堆将熄
+@背景 破庙 | 火光将熄，梁上滴水，佛像的脸被照得忽明忽暗
+旁白：火光一跳，照出两个人各不相同的脸色。
+李慕白（震惊）：你身上怎么会有那道印记？`;
+
+  const IMPORT_THEMES = [
+    ['wuxia', '中国武侠'], ['bushido', '日本武士'], ['warcraft', '魔兽'],
+    ['medieval', '欧洲中世纪'],
+  ];
+
+  const IMP_FRAMING = [['full', '全身'], ['half', '半身'], ['head', '头部特写']];
+
+  // 一次导入会话的全部状态。关掉层就置 null。
+  let IMP = null;
+
+  function impEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /** 一句对话的「锁定签名」：角色+表情+追加动作。
+   *  追加动作空 → 多个同角色+同表情的句子共享一把锁（整组同步）；
+   *  有追加动作 → 每句独立。旁白（无角色）不锁（不产生立绘）。 */
+  function impDlgSig(d) {
+    const sp = (d && d.speaker || '').trim();
+    if (!sp) return null;
+    const ex = (d.expression || '').trim();
+    const pe = (d.pose_extra || '').trim();
+    return sp + '||' + ex + '||' + pe;
+  }
+
+  // 音色清单（按引擎分组）缓存在模块级
+  let _impVoices = null;
+  let _impSysNarrVoice = '';
+  async function impLoadVoices() {
+    if (_impVoices) return _impVoices;
+    try {
+      const res = await Admin.get('/tts/voices?grouped=true');
+      _impVoices = res.groups || [];
+    } catch (e) { _impVoices = []; }
+    try {
+      const nr = await Admin.get('/tts/narration');
+      _impSysNarrVoice = (nr && nr.voice_id) || '';
+    } catch (e) { _impSysNarrVoice = ''; }
+    return _impVoices;
+  }
+  function impVoiceOptionsHtml(groups, current, kw) {
+    const all = (groups || []).filter(g => (g.voices || []).length);
+    const k = (kw || '').trim().toLowerCase();
+    if (!all.length && !current) return '';
+    let html = '';
+    all.forEach(g => {
+      const list = (g.voices || []).filter(v =>
+        !k || (v.name || '').toLowerCase().includes(k) ||
+        (v.gender === 'male' ? '男' : v.gender === 'female' ? '女' : '').includes(k));
+      if (!list.length) return;
+      html += `<optgroup label="${esc(g.name || g.id)}">`;
+      list.forEach(v => {
+        const sel = (v.voice_id === current) ? ' selected' : '';
+        const gen = v.gender === 'male' ? '男' : v.gender === 'female' ? '女' : '?';
+        const name = [gen, v.name, v.style ? '·' + v.style : '',
+          v.age === 'child' ? '[童]' : v.age === 'elder' ? '[老]' : ''].filter(Boolean).join(' ');
+        html += `<option value="${esc(v.voice_id)}"${sel}>${esc(name)}</option>`;
+      });
+      html += '</optgroup>';
+    });
+    if (current && !all.some(g => (g.voices || []).some(v => v.voice_id === current))) {
+      html = `<option value="${esc(current)}">${esc(current)}（当前）</option>` + html;
+    }
+    return html;
+  }
+  function impVoiceLabel(voiceId) {
+    if (!voiceId) return '';
+    for (const g of (_impVoices || [])) {
+      const v = (g.voices || []).find(x => x.voice_id === voiceId);
+      if (v) {
+        const gen = v.gender === 'male' ? '男' : v.gender === 'female' ? '女' : '?';
+        return [gen, v.name].filter(Boolean).join(' ');
+      }
+    }
+    return voiceId;
+  }
+  async function openVoicePicker(btn, kind, index) {
+    closeVoicePicker();
+    const groups = await impLoadVoices();
+    let current = kind === 'narr'
+      ? (IMP.narration ? (IMP.narration.voice || '') : '')
+      : (IMP.chars[index] ? (IMP.chars[index].voice || '') : '');
+    // 旁白没选过时，下拉里预选系统旁白音色（让使用者看清默认会用什么），但落库仍记空=用系统
+    const displayCurrent = (kind === 'narr' && !current) ? _impSysNarrVoice : current;
+    const title = kind === 'narr' ? '📢 旁白音色' : ('🔊 角色音色 · ' + (IMP.chars[index] ? IMP.chars[index].name : ''));
+    const pop = document.createElement('div');
+    pop.className = 'imp-voice-pop';
+    pop.id = 'imp-voice-pop';
+    pop.innerHTML = `
+      <div class="imp-vp-head"><span>${esc(title)}</span><button type="button" class="imp-vp-close">&times;</button></div>
+      <div class="imp-vp-search"><input type="text" id="imp-vp-kw" placeholder="搜索音色名 / 性别…" autocomplete="off"></div>
+      <select class="imp-vp-sel" id="imp-vp-sel" size="12">${impVoiceOptionsHtml(groups, displayCurrent)}</select>
+      <div class="imp-vp-foot">
+        <button type="button" class="btn btn-outline btn-sm" id="imp-vp-clear">用默认（系统旁白 / 角色档案）</button>
+        <span class="sp"></span>
+        <button type="button" class="btn btn-gold btn-sm" id="imp-vp-ok">确定</button>
+      </div>`;
+    document.body.appendChild(pop);
+    const selEl = pop.querySelector('#imp-vp-sel');
+    const kwEl = pop.querySelector('#imp-vp-kw');
+    function filterList() { selEl.innerHTML = impVoiceOptionsHtml(groups, displayCurrent, kwEl.value); }
+    kwEl.addEventListener('input', filterList);
+    function commit(voiceId) {
+      // 旁白选了系统默认音色 → 落库空（=用系统）；否则记具体音色
+      if (kind === 'narr') {
+        if (IMP.narration) IMP.narration.voice = (voiceId && voiceId !== _impSysNarrVoice) ? voiceId : '';
+      } else if (IMP.chars[index]) {
+        IMP.chars[index].voice = voiceId || '';
+      }
+      impRenderOut();
+      closeVoicePicker();
+    }
+    selEl.addEventListener('dblclick', () => commit(selEl.value || ''));
+    pop.querySelector('#imp-vp-ok').addEventListener('click', () => commit(selEl.value || ''));
+    pop.querySelector('#imp-vp-clear').addEventListener('click', () => commit(''));
+    pop.querySelector('.imp-vp-close').addEventListener('click', closeVoicePicker);
+    const r = btn.getBoundingClientRect();
+    const pw = 300, ph = 400;
+    let left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
+    let top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - ph - 8));
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    setTimeout(() => document.addEventListener('mousedown', voicePopOutsideHandler, true), 0);
+    setTimeout(() => kwEl.focus(), 0);
+  }
+  function closeVoicePicker() {
+    const p = document.getElementById('imp-voice-pop');
+    if (p) p.remove();
+    document.removeEventListener('mousedown', voicePopOutsideHandler, true);
+  }
+  function voicePopOutsideHandler(e) {
+    const p = document.getElementById('imp-voice-pop');
+    if (p && !p.contains(e.target)) closeVoicePicker();
+  }
+
+  /** 输出区：人物卡 + 节点对话 */
+  function impRenderOut() {
+    const out = IMP.el.querySelector('#imp-out');
+    if (!out) return;
+    const p = IMP.parsed;
+    // 是否「导入记录 > 重新编辑」模式：只有这个模式才有锁定按钮，
+    // 新建导入（相当于新建剧情）不显示锁定。
+    const isReEdit = !!IMP.batchId;
+    if (!p) { out.hidden = true; return; }
+    const st = p.stats || {};
+    const missN = (IMP.chars || []).filter(c => !c.exists).length;
+
+    const charCards = (IMP.chars || []).map((c, i) => {
+      const sp = c.spec;
+      const tags = [];
+      if (c.exists) tags.push('<span class="imp-tag ok">已存在</span>');
+      else tags.push('<span class="imp-tag new">将新建</span>');
+      if (sp.random === false) tags.push('<span class="imp-tag mx">只用追加词</span>');
+      if ((sp.free_text || '').trim()) tags.push('<span class="imp-tag mx">自定义词</span>');
+
+      const meta = c.exists
+        ? `<span class="imp-cmeta">${c.locked ? '已锁定 · 保持原样' : '按名字套用现有人物，可改外观'}</span>`
+        : (sp.reset
+          ? `<span class="imp-cmeta">外观全默认 · 只用追加词</span>`
+          : `<span class="imp-cmeta">${impEsc(impThemeName(sp.theme))} · ${impEsc(sp.gender === 'male' ? '男' : sp.gender === 'female' ? '女' : '性别随机')} · ${impEsc(impFramingName(sp.framing))}</span>`);
+
+      // 锁定时不渲染 body（折叠变灰）；未锁定才允许展开编辑。
+      const body = c.locked ? '' : `
+        <div class="imp-char-body" ${IMP.openChar === c.name || IMP.openChar === '__all__' ? '' : 'hidden'}>
+          <div class="imp-fg">
+            <label>题材
+              <select data-cf="theme" data-i="${i}">
+                ${sp.reset ? `<option value="" selected>默认（不指定）</option>` : ''}
+                ${IMPORT_THEMES.map(([v, l]) => `<option value="${v}"${v === sp.theme ? ' selected' : ''}>${l}</option>`).join('')}
+              </select>
+            </label>
+            <label>性别
+              <select data-cf="gender" data-i="${i}">
+                <option value=""${!sp.gender ? ' selected' : ''}>${sp.reset ? '默认（不指定）' : '随机'}</option>
+                <option value="male"${sp.gender === 'male' ? ' selected' : ''}>男</option>
+                <option value="female"${sp.gender === 'female' ? ' selected' : ''}>女</option>
+              </select>
+            </label>
+            <label>年龄
+              <select data-cf="age" data-i="${i}">
+                ${impOpts(IMP.dims.age, sp.age, sp.reset ? '默认' : '随机')}
+              </select>
+            </label>
+            <label>国族
+              <select data-cf="nationality" data-i="${i}">
+                ${impOpts(IMP.dims.nationality, sp.nationality, sp.reset ? '默认' : '随机')}
+              </select>
+            </label>
+            <label>外观状态
+              <select data-cf="nudity" data-i="${i}">
+                ${impOpts(IMP.dims.nudity, sp.nudity, null)}
+              </select>
+            </label>
+            <label>立绘取景
+              <select data-cf="framing" data-i="${i}">
+                ${IMP_FRAMING.map(([v, l]) => `<option value="${v}"${v === sp.framing ? ' selected' : ''}>${l}</option>`).join('')}
+              </select>
+            </label>
+          </div>
+          <label class="imp-free">自定义追加词
+            <textarea data-cf="free_text" data-i="${i}" rows="2"
+              placeholder="接在提示词末尾，例如：青衫长剑，眉目冷峻，衣襟带雨">${impEsc(sp.free_text)}</textarea>
+          </label>
+          <div class="imp-char-foot">
+            <label class="imp-ck"><input type="checkbox" data-cf="random" data-i="${i}" ${sp.random === false ? 'checked' : ''}>
+              只用追加词，不随机其他外观细节</label>
+            <span class="imp-dim">${sp.reset ? '各维度都留空 = 默认，提示词里只有名字和你写的这段' : '勾上后只保留题材/性别/年龄，其余交给追加词'}</span>
+          </div>
+        </div>`;
+
+      return `<div class="imp-char${c.locked ? ' locked' : ''}" data-char-i="${i}">
+        <div class="imp-char-h" data-act="toggle-char" data-i="${i}">
+          <span class="imp-arrow">${c.locked ? '' : (IMP.openChar === c.name || IMP.openChar === '__all__' ? '▾' : '▸')}</span>
+          <span class="imp-cname">${impEsc(c.name)}</span>
+          ${tags.join('')}
+          <button type="button" class="imp-voice-btn${c.voice ? ' set' : ''}" data-act="pick-voice" data-kind="char" data-i="${i}"
+            title="选这个角色在本批「整章配音」里用的音色（默认用角色档案音色）">🔊 ${c.voice ? impVoiceLabel(c.voice) : '音色'}</button>
+          ${isReEdit ? `<button type="button" class="imp-lock${c.locked ? ' on' : ''}" data-act="lock-char" data-i="${i}"
+            title="${c.locked ? '已锁定：导入时保持原样不修改（点一下解锁）' : '点一下锁定：导入时保持原样不修改'}">${c.locked ? '🔒' : '🔓'}</button>` : ''}
+          ${meta}
+        </div>
+        ${body}
+      </div>`;
+    }).join('');
+
+    // 场景：一个人物卡片的镜像 —— 描述进「自定义场景追加词」，勾上就只按它出图
+    const sceneCards = (IMP.scenes || []).map((sc, i) => {
+      const tags = [
+        sc.exists ? '<span class="imp-tag ok">已存在</span>' : '<span class="imp-tag new">将新建</span>',
+        (sc.prompt || '').trim() ? '<span class="imp-tag mx">自定义词</span>' : '',
+      ].join('');
+      const body = sc.locked ? '' : `
+        <label class="imp-free">自定义场景追加词
+          <textarea data-sf="prompt" data-i="${i}" rows="2"
+            placeholder="只写环境：地点、光线、天气、陈设、氛围">${impEsc(sc.prompt)}</textarea>
+        </label>
+        <div class="imp-char-foot">
+          <label class="imp-ck"><input type="checkbox" data-sf="only" data-i="${i}" ${sc.random === false ? 'checked' : ''}>
+            只用追加词，不叠加随机拼装</label>
+          <span class="imp-dim">勾上后这张场景图只按你写的这段生成</span>
+        </div>`;
+      return `<div class="imp-scene${sc.locked ? ' locked' : ''}" data-scene-i="${i}">
+        <div class="imp-char-h">
+          <span class="imp-cname">${impEsc(sc.name)}</span>
+          ${tags}
+          ${isReEdit ? `<button type="button" class="imp-lock${sc.locked ? ' on' : ''}" data-act="lock-scene" data-i="${i}"
+            title="${sc.locked ? '已锁定：导入时保持原样不修改（点一下解锁）' : '点一下锁定：导入时保持原样不修改'}">${sc.locked ? '🔒' : '🔓'}</button>` : ''}
+          <span class="imp-cmeta">${sc.locked ? '已锁定 · 保持原样' : (sc.exists ? (sc.background ? '已有封面图' : '还没有封面图') : '导入时按描述新建场景')}</span>
+        </div>
+        ${body}
+      </div>`;
+    }).join('');
+
+    const nodesHtml = (p.nodes || []).map((n, ni) => {
+      const lines = n.dialogues || [];
+      const metaBits = [`${lines.length} 句`];
+      if (n.background_url) metaBits.push('背景✓');
+      else if (n.background) metaBits.push('背景待选');
+      if (n.bgm) metaBits.push('音乐✓');
+
+      const rows = lines.map((d, di) => {
+        const key = `${ni}-${di}`;
+        const open = IMP.openLine === key;
+          const poseHit = d.expression ? (IMP.poses || []).find(p => p.id === d.expression) : null;
+          const expName = d.expression ? ((poseHit && poseHit.name) || d.expression) : '';
+          const sig = impDlgSig(d);
+          const lockBtn = (isReEdit && sig) ? `<button type="button" class="imp-lock imp-dlglk${IMP.lockedSigs.has(sig) ? ' on' : ''}" data-act="lock-dlg" data-sig="${impEsc(sig)}"
+              title="${IMP.lockedSigs.has(sig) ? '已锁定：这组的动作图不重新生成（点一下解锁，同组全部同步）' : '点一下锁定：相同角色+表情+无追加动作的这一组不重新生成动作图'}">${IMP.lockedSigs.has(sig) ? '🔒' : '🔓'}</button>` : '';
+          // 动作追加词：点名字才展开，平时不占地方
+          const extra = open ? `<div class="imp-line-x">
+            <label>动作追加词
+              <input type="text" data-lf="pose_extra" data-n="${ni}" data-d="${di}"
+                value="${impEsc(d.pose_extra || '')}"
+                placeholder="只作用于这一句，例：双手背在身后，微微侧身（可留空）">
+            </label>
+            <span class="imp-dim">和表情搭配用，出图时接在提示词末尾</span>
+          </div>` : '';
+        return `<div class="imp-line-wrap${open ? ' on' : ''}">
+          <div class="imp-line">
+            <button type="button" class="imp-spbtn${d.speaker ? '' : ' narr'}" data-act="toggle-line"
+              data-n="${ni}" data-d="${di}" title="点一下展开 / 收起动作追加词">${open ? '▾' : '▸'} ${impEsc(d.speaker || '旁白')}</button>
+              <button type="button" class="imp-expbtn${expName ? ' on' : ''}" data-act="pick-pose"
+                data-n="${ni}" data-d="${di}" title="点一下换动作 / 表情">${expName ? impEsc(expName) : '表情不指定'}</button>
+              ${lockBtn}
+              <span class="imp-tx" title="${impEsc(d.content)}">${impEsc(d.content)}</span>
+          </div>
+          ${extra}
+        </div>`;
+      }).join('');
+
+      return `<details class="imp-node" ${IMP.openNodes === 'all' || (IMP.openNodes !== 'none' && ni === 0) ? 'open' : ''}>
+        <summary>
+          <b>#${ni + 1} ${impEsc(n.title || '未命名')}</b>
+          <span class="imp-nmeta">${metaBits.join(' · ')}</span>
+          <button class="imp-bgbtn" data-act="pick-bg" data-n="${ni}" title="换这一段的背景图">${n.background_url ? '换背景' : '选背景'}</button>
+        </summary>
+        <div class="imp-lines">${rows || '<div class="imp-dim" style="padding:6px 0">这段没有对话</div>'}</div>
+      </details>`;
+    }).join('');
+
+    const warns = (p.warnings || []).length
+      ? `<div class="imp-warnbox">${p.warnings.map(w => `<div>· ${impEsc(w)}</div>`).join('')}</div>` : '';
+
+    out.innerHTML = `
+      <div class="imp-sum">
+        <span>节点 <b>${st.nodes || 0}</b></span>
+        <span>对话 <b>${st.dialogues || 0}</b></span>
+        <span>人物 <b>${st.characters || 0}</b></span>
+        <span>场景 <b>${(IMP.scenes || []).length}</b></span>
+        ${missN ? `<span class="imp-bad">待新建 <b>${missN}</b></span>` : ''}
+        <span class="sp"></span>
+        <button class="imp-mini" data-act="expand-all">全展开</button>
+        <button class="imp-mini" data-act="collapse-all">全收起</button>
+      </div>
+      ${warns}
+      <div class="imp-sec">
+        <div class="imp-sec-h">人物 <span class="imp-cnt">${IMP.chars.length}</span>
+          <span class="imp-sec-tip">点名字可展开外观与提示词；已有人物不会重复创建</span>
+        </div>
+        <div class="imp-chars">${(IMP.narration && IMP.narration.hasNarration) ? `
+          <div class="imp-char imp-narr">
+            <div class="imp-char-h">
+              <span class="imp-cname">📢 旁白</span>
+              <button type="button" class="imp-voice-btn${IMP.narration.voice ? ' set' : ''}" data-act="pick-voice" data-kind="narr"
+                title="选择旁白朗读音色（默认用系统旁白，可换；不同故事可不同）">🔊 ${IMP.narration.voice ? impVoiceLabel(IMP.narration.voice) : '系统旁白'}</button>
+              <span class="imp-cmeta">旁白朗读用的音色</span>
+            </div>
+          </div>` : ''}${charCards || '<div class="imp-dim">没有识别到人物</div>'}</div>
+      </div>
+      <div class="imp-sec">
+        <div class="imp-sec-h">场景 <span class="imp-cnt">${(IMP.scenes || []).length}</span>
+          <span class="imp-sec-tip">描述会存进场景档案；勾「只用追加词」就只按这段出图</span>
+        </div>
+        <div class="imp-chars">${sceneCards || '<div class="imp-dim">这段剧情没有声明场景</div>'}</div>
+      </div>
+      <div class="imp-sec">
+        <div class="imp-sec-h">节点与对话 <span class="imp-cnt">${(p.nodes || []).length}</span>
+          <span class="imp-sec-tip">点人名展开动作追加词，点右侧表情换动作；台词不改原意</span>
+        </div>
+        <div class="imp-nodes">${nodesHtml}</div>
+      </div>`;
+    out.hidden = false;
+  }
+
+  function impThemeName(v) {
+    const hit = IMPORT_THEMES.find(t => t[0] === v);
+    return hit ? hit[1] : (v || '—');
+  }
+  function impFramingName(v) {
+    const hit = IMP_FRAMING.find(t => t[0] === v);
+    return hit ? hit[1] : '全身';
+  }
+
+  /**
+   * 生成一组 <option>。
+   * 当前值不在选项里时补一条「（原值）」—— 否则维度选项改过之后，
+   * 下拉会静默跳到第一项，用户以为自己选的东西丢了。
+   */
+  function impOpts(list, cur, emptyLabel) {
+    const opts = list || [];
+    const has = opts.some(o => String(o.id) === String(cur));
+    let html = '';
+    if (emptyLabel != null) {
+      html += `<option value=""${!cur ? ' selected' : ''}>${impEsc(emptyLabel)}</option>`;
+    }
+    if (cur && !has) {
+      html += `<option value="${impEsc(cur)}" selected>${impEsc(cur)}（原值）</option>`;
+    }
+    html += opts.map(o => `<option value="${impEsc(o.id)}"${String(o.id) === String(cur) ? ' selected' : ''}>${impEsc(o.name)}</option>`).join('');
+    return html;
+  }
+
+  /** 解析 → 填充输出（不落库） */
+  async function impParse(silent) {
+    const text = IMP.el.querySelector('#imp-text').value.trim();
+    const json = IMP.el.querySelector('#imp-json').value.trim();
+    const payload = IMP.mode === 'script' ? { text } : { json };
+    if (!text && !json) {
+      if (!silent) Admin.toast('先把内容粘到左边', 'info');
+      return null;
+    }
+    const btn = IMP.el.querySelector('[data-act="parse"]');
+    if (btn) { btn.disabled = true; btn.textContent = '解析中…'; }
+    try {
+      const r = await Admin.post('/story/import/parse', payload);
+      if (r.error) throw new Error(r.error);
+      // 双向同步：重新解析前先把上一次的「编辑快照」取出来，
+      // 稍后按名字 / 位置回填，免得每敲一个字触发重解析就把右侧手动改的内容冲掉。
+      const prevChars = {};
+      (IMP.chars || []).forEach(c => { if (c.name) prevChars[c.name] = c; });
+      const prevScenes = {};
+      (IMP.scenes || []).forEach(s => { if (s.name) prevScenes[s.name] = s; });
+      const prevNodes = IMP.parsed ? IMP.parsed.nodes : null;
+
+      IMP.parsed = r;
+      IMP.parseError = null;
+      impClearParseError();
+
+      // 人物约束：`@人物 名字 | 描述` 里的描述直接落到「自定义追加词」，
+      // 其余外观参数全部回到默认（等于外观设置里点一次「重置」）——
+      // 提示词里只剩名字 + 这段描述，不再掺题材/性别/年龄/国族。
+      const theme = IMP.el.querySelector('#imp-theme').value || 'wuxia';
+      IMP.chars = (r.characters || []).map(c => {
+        const prev = prevChars[c.name];
+        if (prev) {
+          // 保留用户改过的 spec / locked / 选好的音色，仅刷新「事实字段」(exists/id)
+          return {
+            name: c.name,
+            exists: !!c.exists,
+            id: c.id || prev.id || null,
+            locked: !!prev.locked,
+            voice: prev.voice || '',
+            spec: prev.spec,
+          };
+        }
+        const g = (c.gender === 'male' || c.gender === 'female') ? c.gender : '';
+        const prompt = (c.prompt || '').trim();
+        // reset：写了描述就是「只按我写的来」，各维度留空 = 默认
+        const reset = !!c.reset || (!!prompt && c.reset !== false);
+        return {
+          name: c.name,
+          exists: !!c.exists,
+          id: c.id || null,
+          locked: false,
+          voice: '',
+          spec: {
+            theme: reset ? '' : theme, gender: g, age: '', nationality: '',
+            framing: 'full', nudity: 'none',
+            free_text: prompt,
+            random: reset ? false : (c.random !== false),
+            reset,
+          },
+        };
+      });
+      // 场景：同样的规则，`@场景 名字 | 描述` 的描述就是场景追加词
+      IMP.scenes = (r.scenes || []).map(sc => {
+        const prev = prevScenes[sc.name];
+        if (prev) {
+          return {
+            name: sc.name,
+            exists: !!sc.exists,
+            id: sc.id || prev.id || null,
+            locked: !!prev.locked,
+            prompt: prev.prompt,
+            random: prev.random,
+            background: sc.background || prev.background || '',
+          };
+        }
+        return {
+          name: sc.name,
+          exists: !!sc.exists,
+          id: sc.id || null,
+          locked: false,
+          prompt: sc.prompt || '',
+          random: !!sc.random,
+          background: sc.background || '',
+        };
+      });
+      // 旁白（无说话人的句子）是否出现在本批内容里：出现了就在人物上方给一个旁白音色选择。
+      // 选好的旁白音色跨重解析保留；没出现则清空。voice 为空 = 用系统旁白默认。
+      const _prevNarr = IMP.narration || {};
+      const _hasNarr = (r.nodes || []).some(n => (n.dialogues || []).some(d => !d.speaker));
+      IMP.narration = {
+        hasNarration: _hasNarr,
+        voice: _hasNarr ? (_prevNarr.voice || '') : '',
+      };
+      // 对话级编辑（表情 / 动作追加词）按 节点-句 位置回填
+      if (prevNodes) {
+        (r.nodes || []).forEach((n, ni) => {
+          const pn = prevNodes[ni];
+          if (!pn || !pn.dialogues) return;
+          (n.dialogues || []).forEach((d, di) => {
+            const pd = pn.dialogues[di];
+            if (!pd) return;
+            if (pd.expression != null) d.expression = pd.expression;
+            if (pd.pose_extra != null) d.pose_extra = pd.pose_extra;
+          });
+        });
+      }
+      IMP.openNodes = IMP.openNodes || 'first';
+      IMP.openLine = null;
+      const emptyEl = IMP.el.querySelector('#imp-empty');
+      if (emptyEl) emptyEl.hidden = true;
+      impRenderOut();
+      impUpdateApplyState();
+      if (!silent) {
+        const st = r.stats || {};
+        Admin.toast(`解析完成：${st.nodes || 0} 段 / ${st.dialogues || 0} 句`, 'success');
+      }
+      return r;
+    } catch (e) {
+      IMP.parseError = e.message;
+      impShowParseError(e.message);
+      impUpdateApplyState();
+      if (!silent) Admin.toast('解析失败：' + e.message, 'error');
+      return null;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '解析 →'; }
+    }
+  }
+
+  /** 解析错误横幅：实时把格式错误显示在右侧，而不是只弹个 toast */
+  function impShowParseError(msg) {
+    if (!IMP || !IMP.el) return;
+    const el = IMP.el.querySelector('#imp-err');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = '⚠ 解析失败：' + msg;
+  }
+  function impClearParseError() {
+    if (!IMP || !IMP.el) return;
+    const el = IMP.el.querySelector('#imp-err');
+    if (el) { el.hidden = true; el.textContent = ''; }
+  }
+  /**
+   * 应用按钮状态机（区分三种状态）：
+   *  - 还没解析（IMP.parsed 为空）→ 禁用，提示「先解析左侧内容」
+   *  - 有格式错误（IMP.parseError 非空）→ 禁用，提示「有格式错误…」
+   *  - 解析成功 → 启用，提示「可导入 N 段 / M 句」
+   */
+  function impUpdateApplyState() {
+    if (!IMP || !IMP.el) return;
+    const btn = IMP.el.querySelector('[data-act="apply"]');
+    const hint = IMP.el.querySelector('#imp-apply-hint');
+    if (!btn) return;
+    let disabled = false, text = '';
+    if (IMP.parseError) {
+      disabled = true;
+      text = '有格式错误，先修正左侧';
+    } else if (!IMP.parsed) {
+      disabled = true;
+      text = '先解析左侧内容';
+    } else {
+      const st = IMP.parsed.stats || {};
+      text = `可导入 ${st.nodes || 0} 段 / ${st.dialogues || 0} 句`;
+    }
+    btn.disabled = disabled;
+    if (hint) hint.textContent = text;
+  }
+  /** 应用按钮文案：新建导入叫「批量导入」，重新编辑叫「重新生成」 */
+  function impApplyLabel() {
+    return (IMP && IMP.batchId) ? '重新生成' : '批量导入';
+  }
+
+  /** 执行导入：把输出区改过的内容整包提交 */
+  async function impApply() {
+    if (!IMP.parsed) {
+      const r = await impParse(false);
+      if (!r) return;
+    }
+    // 把左侧选项 + 输出区里的编辑合成一份 nodes
+    const theme = IMP.el.querySelector('#imp-theme').value || 'wuxia';
+    const chapVal = IMP.el.querySelector('#imp-chapter').value;
+    const newTitle = (IMP.el.querySelector('#imp-chapter-title').value || '').trim();
+    // 重新编辑时，按「签名（说话人+表情+追加动作）」把锁标记回每句对话：
+    // 同一组（同角色+同表情+无追加动作）共享一把锁，命中的句子全部打 locked=true，
+    // 后端生成动作图时跳过这些句、保留原图。新建导入没有锁所以这里无副作用。
+    (IMP.parsed.nodes || []).forEach(n => {
+      (n.dialogues || []).forEach(d => {
+        const sig = impDlgSig(d);
+        d.locked = sig ? IMP.lockedSigs.has(sig) : false;
+      });
+    });
+    const payload = {
+      nodes: IMP.parsed.nodes,
+      characters: IMP.chars.map(c => ({ name: c.name, appearance_spec: c.spec, locked: !!c.locked, voice: c.voice || '' })),
+      // 旁白音色：为空 = 用系统旁白默认；填了就用本批指定的（仅本次导入生效）。
+      narration_voice: (IMP.narration && IMP.narration.hasNarration) ? (IMP.narration.voice || '') : '',
+      scenes: (IMP.scenes || []).map(sc => ({
+        name: sc.name,
+        prompt: (sc.prompt || '').trim(),
+        random: sc.random !== false,
+        locked: !!sc.locked,
+      })),
+      arc_id: IMP.arcId,
+      chapter_id: chapVal === 'cur' ? IMP.chapterId
+        : (chapVal === 'new' ? null : parseInt(chapVal, 10)),
+      chapter_title: newTitle,
+      create_missing_characters: IMP.el.querySelector('#imp-create-chars').checked,
+      generate_art: IMP.el.querySelector('#imp-gen-art').checked,
+      generate_scene: !!IMP.el.querySelector('#imp-gen-scene')?.checked,
+      generate_voice: IMP.el.querySelector('#imp-gen-voice').checked,
+      theme,
+      // 留档：原文 + 解析结构，回来能原样再改一遍
+      source: {
+        text: IMP.el.querySelector('#imp-text').value || '',
+        json: IMP.el.querySelector('#imp-json').value || '',
+      },
+      spec: IMP.parsed.spec || {},
+      batch_id: IMP.batchId || undefined,
+      mode: IMP.batchId && IMP.el.querySelector('#imp-replace')?.checked ? 'replace' : 'append',
+    };
+    const btn = IMP.el.querySelector('[data-act="apply"]');
+    if (btn) { btn.disabled = true; btn.textContent = '生成中…'; }
+    // 全屏 loading 遮罩：提交到后端可能要做一堆准备（建人物/场景/排任务），
+    // 用户看不到进度会以为卡死。这里整屏变灰 + 转圈 + 进度条。
+    const mask = document.createElement('div');
+    mask.id = 'imp-submit-mask';
+    mask.innerHTML = `
+      <div class="imp-mask-inner">
+        <div class="imp-mask-spin"></div>
+        <div class="imp-mask-title">正在准备并提交给 ComfyUI…</div>
+        <div class="imp-mask-sub">正在解析剧情、匹配人物与场景、排队出图任务，请稍候</div>
+        <div class="imp-mask-bar"><div class="imp-mask-bar-fill"></div></div>
+      </div>`;
+    document.body.appendChild(mask);
+    try {
+      const r = await Admin.post('/story/import/apply', payload);
+      if (!r.ok) throw new Error(r.error || '导入失败');
+      // impClose() 会把 IMP 置空，后面要用的东西先取出来，否则读 IMP.xxx 直接抛错
+      // （以前导进「新建章节」时会在这一步炸掉：数据已经写进去了，界面却报「导入失败」）
+      const arcIdForJump = IMP.arcId || currentArcId;
+      impClose();
+      mask.remove();
+      try {
+        allChaptersCache = await Admin.get(`/story/chapters?story_arc_id=${arcIdForJump}`);
+        chapters = allChaptersCache;
+      } catch (_) {}
+      // 不管导进的是哪一章，直接跳到那一章的节点列表 —— 让人马上看到刚进去的内容
+      // （导入到「新建章节」时以前会退回章节列表，新章节混在一堆卡里找不到）
+      currentArcId = arcIdForJump;
+      if (r.chapter_id) await loadNodes(r.chapter_id);
+      else renderChapters();
+      let msg = `${r.replaced ? '已替换' : '已导入'} ${r.node_ids.length} 段 / ${r.dialogues} 句对话`;
+      if ((r.created_characters || []).length) msg += `，新建人物 ${r.created_characters.length} 个`;
+      if ((r.created_scenes || []).length) msg += `，新建场景 ${r.created_scenes.length} 个`;
+      Admin.toast(msg, 'success');
+      const jn = (r.art_job_ids || []).length + (r.scene_job_ids || []).length
+        + (r.voice_job_id ? 1 : 0);
+      if (jn) {
+        Admin.toast(`已在任务中心排队 ${jn} 个任务（立绘走 🖼 图像，配音走 🎙 音频）`, 'info');
+        if (window.JobMonitor) JobMonitor.refresh();
+      }
+    } catch (e) {
+      mask.remove();
+      Admin.toast('导入失败：' + e.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = impApplyLabel(); }
+    }
+  }
+
+  function impClose() {
+    if (IMP && IMP.el) IMP.el.remove();
+    IMP = null;
+    document.removeEventListener('keydown', impOnKey);
+  }
+  function impOnKey(e) {
+    if (e.key === 'Escape') { e.stopPropagation(); impClose(); }
+  }
+
+  // ===== 导入记录：这一章导入过哪几批，可以回去改 =====
+  async function openBatchesPanel() {
+    if (!currentChapterId) { Admin.toast('先进一个章节再查看导入记录', 'info'); return; }
+    let items = [];
+    try {
+      const r = await Admin.get(`/story/import/batches?chapter_id=${currentChapterId}`);
+      items = r.items || [];
+    } catch (e) {
+      Admin.toast('读取导入记录失败：' + e.message, 'error');
+      return;
+    }
+    const rows = items.length ? items.map(b => `
+      <div style="display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;color:var(--text-primary)">${esc(b.title || ('导入记录 #' + b.id))}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:3px">
+            ${b.node_count}/${b.nodes_total} 节点 · ${b.dialogues} 句 · ${(b.characters || []).length} 新人物 · ${(b.scenes || []).length} 新场景
+            · ${(b.updated_at || '').replace('T', ' ').slice(0, 16)}
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" data-b-edit="${b.id}">重新编辑</button>
+        <button class="btn btn-outline btn-sm" data-b-del="${b.id}"
+          style="color:var(--red);border-color:var(--red)">删除</button>
+      </div>`).join('')
+      : '<div style="padding:16px;color:var(--text-muted);font-size:12.5px">这个章节还没有导入记录。用「批量导入剧情」导入一次，就会自动留档。</div>';
+
+    const m = Admin.showLayerModal('🗂 导入记录', rows
+      + '<div style="font-size:11.5px;color:var(--text-muted);line-height:1.7">「重新编辑」会把当时的原文放回导入弹窗，改完直接替换这批节点 —— 不会和旧内容叠在一起。</div>',
+      null, { okOnly: true, size: 'large' });
+    m.body.addEventListener('click', async (ev) => {
+      const ed = ev.target.closest('[data-b-edit]');
+      const dl = ev.target.closest('[data-b-del]');
+      if (ed) {
+        m.close();
+        openImportDialog({ batchId: parseInt(ed.dataset.bEdit, 10), chapterId: currentChapterId });
+        return;
+      }
+      if (dl) {
+        const ok = await Admin.confirm('删除这条导入记录，并连同它生成的节点一起删掉？');
+        if (!ok) return;
+        try {
+          const r = await Admin.del(`/story/import/batches/${dl.dataset.bDel}`);
+          Admin.toast(`已删除记录与 ${r.nodes_removed || 0} 个节点`, 'success');
+          m.close();
+          await loadNodes(currentChapterId);
+          openBatchesPanel();
+        } catch (e) {
+          Admin.toast('删除失败：' + e.message, 'error');
+        }
+      }
+    });
+  }
+
+  async function openImportDialog(opts = {}) {
+    const arcId = opts.arcId || currentArcId || null;
+    // 带 batchId = 回来改上次那批；带 chapterTitle = 从章节行进「按章节生成」
+    let batchData = null;
+    if (opts.batchId) {
+      try { batchData = await Admin.get(`/story/import/batches/${opts.batchId}`); } catch (_) { batchData = null; }
+    }
+    const hasChap = Object.prototype.hasOwnProperty.call(opts, 'chapterId');
+    let chapterId = hasChap ? opts.chapterId : (currentChapterId || null);
+    if (batchData && batchData.batch) chapterId = batchData.batch.chapter_id || chapterId;
+    let chapList = chapters;
+    if (opts.arcId && opts.arcId !== currentArcId) {
+      try { chapList = await Admin.get(`/story/chapters?story_arc_id=${opts.arcId}`); } catch (_) { chapList = []; }
+    }
+    const curTitle = (chapList.find(c => c.id === chapterId) || {}).title || '当前章节';
+    const otherChapters = chapList.filter(c => c.id !== chapterId).map(c =>
+      `<option value="${c.id}">第${c.chapter_order}章 ${esc(c.title)}</option>`).join('');
+    const themeOpts = IMPORT_THEMES.map(([v, l]) =>
+      `<option value="${v}" ${v === 'wuxia' ? 'selected' : ''}>${l}</option>`).join('');
+
+    // 预先取表情动作 + 外观维度（失败也不挡流程，下拉退化成只有「不指定」）
+    let poses = [], dims = { age: [], nationality: [], nudity: [] };
+    try {
+      const lib = await Admin.get('/poses/library');
+      poses = (lib && lib.poses) || [];
+    } catch (_) {}
+    try {
+      const d = await Admin.get('/appearance/defs');
+      const want = { age: 1, nationality: 1, nudity: 1 };
+      (d.groups || []).forEach(g => (g.dims || []).forEach(dim => {
+        if (want[dim.id]) dims[dim.id] = dim.options || [];
+      }));
+    } catch (_) {}
+
+    IMP = {
+      el: null, mode: 'script', parsed: null, chars: [], scenes: [], poses, dims,
+      arcId, chapterId, openChar: null, openNodes: 'first', openLine: null,
+      batchId: opts.batchId || null, batch: (batchData && batchData.batch) || null,
+      narration: null, lockedSigs: new Set(),
+    };
+    // 新建导入（相当于新建剧情）不显示锁定按钮、按钮叫「批量导入」；
+    // 导入记录>重新编辑 才显示锁定、按钮叫「重新生成」。
+    const isReEdit = !!opts.batchId;
+
+    const el = document.createElement('div');
+    el.id = 'imp-layer';
+    el.innerHTML = `
+      <div class="imp-box">
+        <div class="imp-head">
+          <b class="imp-title">↥ 批量导入剧情</b>
+          <span class="imp-hint">左边贴剧本 → 解析 → 右边核对改成你要的样子 → 导入</span>
+          <span class="sp"></span>
+          <button class="btn btn-outline btn-sm" data-act="ai" title="复制一段固定格式指令，连同你的故事发给 AI，它就会按格式改写">复制给 AI 的提示词</button>
+          <button class="btn btn-outline btn-sm" data-act="sample">填入示例</button>
+          <button class="btn btn-gold btn-sm" data-act="parse">解析 →</button>
+          <button class="imp-x" data-act="close" title="关闭 (Esc)">✕</button>
+        </div>
+
+        <div class="imp-main">
+          <div class="imp-left">
+            <div class="imp-tabs">
+              <button class="imp-tab on" data-mode="script">剧本格式</button>
+              <button class="imp-tab" data-mode="json">JSON</button>
+              <button class="imp-tab" data-mode="chapter">按章节生成</button>
+              <span class="imp-tabs-note">剧本格式人看得懂、AI 也好写</span>
+            </div>
+            <textarea id="imp-text" class="imp-ta" spellcheck="false" placeholder="# 节点标题
+@场景 场景名 | 画面描述（进「自定义场景追加词」）
+@背景 场景名
+@音乐 声音名
+@人物 名字 | 男/女 | 外貌描述（进「自定义追加词」）
+旁白：环境或心理描写
+角色名（表情）：台词">${esc(IMPORT_SAMPLE)}</textarea>
+            <textarea id="imp-json" class="imp-ta" hidden spellcheck="false"
+              placeholder='{"title":"...","characters":[{"name":"...","gender":"male"}],"nodes":[{"title":"...","dialogues":[{"speaker":"...","expression":"...","content":"..."}]}]}'></textarea>
+            <!-- 按章节生成：章节 = 文件夹，先把这一章想讲什么写清楚，再让 AI 拆段 -->
+            <div id="imp-cg" class="imp-cg" hidden>
+              <div class="imp-cg-row">
+                <label class="imp-cg-f">章节标题
+                  <input id="imp-cg-title" placeholder="例如：第三更 · 破庙雨夜">
+                </label>
+                <label class="imp-cg-f" style="max-width:96px">拆成几段
+                  <input id="imp-cg-nodes" type="number" min="1" max="20" value="3">
+                </label>
+                <label class="imp-cg-f" style="max-width:104px">每段台词
+                  <input id="imp-cg-lines" type="number" min="2" max="20" value="6">
+                </label>
+              </div>
+              <label class="imp-cg-f">这一章要发生什么（梗概 / 要点，越具体越好）
+                <textarea id="imp-cg-brief" rows="5" placeholder="例：李慕白追查三年前的叛徒，在破庙堵住苏小小；苏小小身上有魔教印记，两人动手前被小小拦住；结尾李慕白放她走，但拿走了那枚银簪。"></textarea>
+              </label>
+              <label class="imp-cg-f">人物声明（可选，一行一个，沿用「名字 | 男/女 | 外貌描述」）
+                <textarea id="imp-cg-cast" rows="3" placeholder="李慕白 | 男 | 青衫剑客，长发束起，眉目冷峻，腰悬长剑&#10;苏小小 | 女 | 素白衣裙，鬓边一支银簪，眼神倔强"></textarea>
+              </label>
+              <div class="imp-cg-foot">
+                <button class="btn btn-outline btn-sm" id="imp-cg-build">生成指令并复制</button>
+                <button class="btn btn-gold btn-sm" id="imp-cg-back">把 AI 的结果贴回来 →</button>
+                <span class="imp-dim" id="imp-cg-state">指令会连同格式规则一起复制，粘给任意 AI 即可</span>
+              </div>
+              <!-- 复制失败（或想先改两句）时，指令就在框里，可以自己全选 -->
+              <label class="imp-cg-f" id="imp-cg-out-wrap" hidden>生成好的指令（可自行修改后再复制）
+                <textarea id="imp-cg-out" rows="7" spellcheck="false"></textarea>
+              </label>
+            </div>
+            <details class="imp-help">
+              <summary>格式怎么写？（点开看规则）</summary>
+              <ul>
+                <li><code># 标题</code> 开一段（一个节点），下面都属于这一段</li>
+                <li><code>@场景 名字 | 画面描述</code> 声明场景：描述会存成这个场景的「自定义追加词」</li>
+                <li><code>@背景 名字</code> 指定这一段用哪个场景（写成 <code>@背景 名字 | 描述</code> 也行）</li>
+                <li><code>@人物 名字 | 外貌描述</code> 描述直接进「自定义追加词」并勾上「只用追加词」，其余外观参数回到默认</li>
+                <li><code>名字（表情）：台词</code> 表情写「愤怒 / 悲伤 / 微笑 / 平静 / 震惊 / 冷漠」等；括号可以省略</li>
+                <li><code>名字：台词 | 动作描述</code> 竖线后面整段都算动作追加词，不用写「动作」二字</li>
+                <li><code>旁白：…</code> 或直接一行不带冒号的文字，都当旁白</li>
+                <li><code>@音乐 声音名</code> 按名字匹配声音库里已有的</li>
+              </ul>
+            </details>
+          </div>
+
+          <div class="imp-right">
+            <div class="imp-err" id="imp-err" hidden></div>
+            <div class="imp-empty" id="imp-empty">
+              <div class="imp-empty-ic">↥</div>
+              <div>把内容贴到左边，点右上角「解析 →」</div>
+              <div class="imp-dim" style="margin-top:6px">解析只读不写库，右边改完点「重新生成」才真正落进去</div>
+            </div>
+            <div class="imp-out" id="imp-out" hidden></div>
+          </div>
+        </div>
+
+        <div class="imp-foot">
+          <div class="imp-foot-line">
+            <label class="imp-f">导入到
+              <select id="imp-chapter">
+                <option value="cur">当前章节：${esc(curTitle)}</option>
+                <option value="new">新建章节…</option>
+                ${otherChapters}
+              </select>
+            </label>
+            <label class="imp-f">新章节标题
+              <input id="imp-chapter-title" placeholder="留空 = 导入剧情 · 月-日 时:分" style="min-width:190px">
+            </label>
+            <label class="imp-f" title="只对「没写描述、要随机拼装」的人物生效；写了描述的按描述来，外观参数全默认">新人物题材
+              <select id="imp-theme">${themeOpts}</select>
+            </label>
+            <span class="sp"></span>
+            <label class="imp-ck"><input type="checkbox" id="imp-create-chars" checked> 缺的人物自动新建</label>
+            <label class="imp-ck"><input type="checkbox" id="imp-gen-art"> 生成立绘/表情</label>
+            <label class="imp-ck" title="用「@场景 名字 | 描述」建出来的场景，直接按描述出封面图"><input type="checkbox" id="imp-gen-scene"> 生成场景图</label>
+            <label class="imp-ck"><input type="checkbox" id="imp-gen-voice"> 整章配音</label>
+            <label class="imp-ck imp-ck-replace" id="imp-replace-wrap" hidden
+              title="先删掉这批节点再按现在的内容重建，位置不变"><input type="checkbox" id="imp-replace" checked> 替换上次导入</label>
+            <span class="imp-apply-hint" id="imp-apply-hint"></span>
+            <button class="btn btn-gold btn-sm" data-act="apply">${isReEdit ? '重新生成' : '批量导入'}</button>
+          </div>
+          <div class="imp-gp" id="imp-gp-host" hidden>
+            <div class="imp-gp-tip">这里的参数只作用于「导入时生成人物立绘」，不影响人物管理和其他出图入口。</div>
+            <div id="imp-gp-mount"></div>
+          </div>
+          <div class="imp-gp" id="imp-scene-host" hidden>
+            <div class="imp-gp-tip">这里的参数只作用于「导入时生成场景图」，与「场景管理」里的场景出图配置（scenes）一致。</div>
+            <div id="imp-scene-mount"></div>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    IMP.el = el;
+    document.addEventListener('keydown', impOnKey);
+    // 打开时应用按钮先禁用（还没解析），等解析成功或报错再切换状态
+    impUpdateApplyState();
+
+    // 章节下拉：新建章节才允许填标题
+    const chapSel = el.querySelector('#imp-chapter');
+    const titleInput = el.querySelector('#imp-chapter-title');
+    const syncTitle = () => {
+      const isNew = chapSel.value === 'new';
+      titleInput.disabled = !isNew;
+      if (isNew) titleInput.focus();
+    };
+    chapSel.addEventListener('change', syncTitle);
+    // 没有明确的当前章节（从章节列表进来 / 在故事层进来）→ 默认「新建章节」
+    if (!chapterId) chapSel.value = 'new';
+    syncTitle();
+
+    // 勾「生成立绘」才展开 ComfyUI 参数，不勾就不占地方
+    el.querySelector('#imp-gen-art').addEventListener('change', async (e) => {
+      const box = el.querySelector('#imp-gp-host');
+      box.hidden = !e.target.checked;
+      if (e.target.checked && !box.dataset.mounted && window.GenParams) {
+        box.dataset.mounted = '1';
+        try {
+          await GenParams.mount(el.querySelector('#imp-gp-mount'), { scope: 'characters' });
+        } catch (err) {
+          console.warn('出图参数加载失败', err);
+        }
+      }
+    });
+
+    // 勾「生成场景图」展开场景出图参数（scenes），与场景管理共用一套配置
+    el.querySelector('#imp-gen-scene').addEventListener('change', async (e) => {
+      const box = el.querySelector('#imp-scene-host');
+      box.hidden = !e.target.checked;
+      if (e.target.checked && !box.dataset.mounted && window.GenParams) {
+        box.dataset.mounted = '1';
+        try {
+          await GenParams.mount(el.querySelector('#imp-scene-mount'), { scope: 'scenes' });
+        } catch (err) {
+          console.warn('场景出图参数加载失败', err);
+        }
+      }
+    });
+
+    // ---- 顶部按钮 ----
+    el.querySelector('[data-act="close"]').addEventListener('click', impClose);
+    // 剪贴板：非安全上下文 / 权限被拒时 navigator.clipboard 会抛错，
+    // 兜底用临时 textarea + execCommand，免得用户以为「按钮坏了」。
+    async function impCopy(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (__) { ok = false; }
+        ta.remove();
+        return ok;
+      }
+    }
+    el.querySelector('[data-act="sample"]').addEventListener('click', () => {
+      // 示例是剧本格式：在别的标签页点它，先切回来，别写进看不见的框里
+      if (IMP.mode !== 'script') setImpTab('script');
+      el.querySelector('#imp-text').value = IMPORT_SAMPLE;
+    });
+    el.querySelector('[data-act="parse"]').addEventListener('click', () => impParse(false));
+    el.querySelector('[data-act="apply"]').addEventListener('click', impApply);
+
+    // 实时解析：左侧剧本 / JSON 边打字边解析，格式错误即时显示在右侧横幅。
+    // 仅 script / json 模式触发；chapter 模式走单独的「生成指令」流程。
+    let impParseTimer = null;
+    const impScheduleParse = () => {
+      if (impParseTimer) clearTimeout(impParseTimer);
+      impParseTimer = setTimeout(() => {
+        if (!IMP || IMP.mode === 'chapter') return;
+        const ta = el.querySelector('#imp-text');
+        const ja = el.querySelector('#imp-json');
+        if (IMP.mode === 'script' && !ta.value.trim()) {
+          impClearParseError(); IMP.parseError = null; impUpdateApplyState(); return;
+        }
+        if (IMP.mode === 'json' && !ja.value.trim()) {
+          impClearParseError(); IMP.parseError = null; impUpdateApplyState(); return;
+        }
+        impParse(true);
+      }, 500);
+    };
+    el.querySelector('#imp-text').addEventListener('input', () => {
+      if (IMP.mode === 'script') impScheduleParse();
+    });
+    el.querySelector('#imp-json').addEventListener('input', () => {
+      if (IMP.mode === 'json') impScheduleParse();
+    });
+    el.querySelector('[data-act="ai"]').addEventListener('click', async () => {
+      try {
+        const t = await Admin.get('/story/import/template');
+        await impCopy(t.ai_prompt || '');
+        Admin.toast('已复制：把它连同你的故事发给 AI，让它按格式改写', 'success');
+      } catch (e) {
+        Admin.toast('复制失败：' + e.message, 'error');
+      }
+    });
+
+    // 标签页
+    const impTabBtns = [...el.querySelectorAll('.imp-tab')];
+    // 每个标签页该露哪些东西：按章节生成页没有「左边贴的内容」，
+    // 解析 / 示例按钮摆在那儿只会让人误点，还会去解析隐藏框里的旧内容。
+    function syncImpChrome() {
+      const chapter = IMP.mode === 'chapter';
+      const parseBtn = el.querySelector('[data-act="parse"]');
+      const sampleBtn = el.querySelector('[data-act="sample"]');
+      const hint = el.querySelector('.imp-hint');
+      if (parseBtn) parseBtn.style.display = chapter ? 'none' : '';
+      if (sampleBtn) sampleBtn.style.display = chapter ? 'none' : '';
+      if (hint) {
+        hint.textContent = chapter
+          ? '填标题与梗概 → 生成指令贴给 AI → 把 AI 的结果贴回来 → 解析 → 导入'
+          : '左边贴剧本 → 解析 → 右边核对改成你要的样子 → 导入';
+      }
+    }
+    function setImpTab(mode) {
+      IMP.mode = mode;
+      impTabBtns.forEach(x => x.classList.toggle('on', x.dataset.mode === mode));
+      el.querySelector('#imp-text').hidden = mode !== 'script';
+      el.querySelector('#imp-json').hidden = mode !== 'json';
+      el.querySelector('#imp-cg').hidden = mode !== 'chapter';
+      syncImpChrome();
+    }
+    impTabBtns.forEach(t => {
+      t.addEventListener('click', () => setImpTab(t.dataset.mode));
+    });
+    syncImpChrome();
+
+    // ---- 输出区：全部用委托，重渲染也不会丢绑定 ----
+    el.querySelector('.imp-right').addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('[data-act]');
+      if (!btn) return;
+      const act = btn.dataset.act;
+      if (act === 'expand-all') {
+        IMP.openNodes = 'all'; IMP.openChar = '__all__';
+        impRenderOut();
+        return;
+      }
+      if (act === 'collapse-all') {
+        IMP.openNodes = 'none'; IMP.openChar = null;
+        impRenderOut();
+        return;
+      }
+      if (act === 'toggle-line') {
+        const key = `${btn.dataset.n}-${btn.dataset.d}`;
+        IMP.openLine = (IMP.openLine === key) ? null : key;
+        impRenderOut();
+        return;
+      }
+      if (act === 'pick-pose') {
+        const ni = parseInt(btn.dataset.n, 10);
+        const di = parseInt(btn.dataset.d, 10);
+        const d = IMP.parsed.nodes[ni] && IMP.parsed.nodes[ni].dialogues[di];
+        if (!d) return;
+        // 全局面板：按分类浏览动作库里的所有动作，不只是「情绪特写」
+        const nud = IMP.chars.find(c => c.name === d.speaker);
+        const picked = await Admin.Pickers.pose({
+          current: d.expression || '',
+          speakerId: d.speaker_id || (nud && nud.id) || undefined,
+          title: `选择动作表情${d.speaker ? ' · ' + d.speaker : ''}`,
+        });
+        if (picked === null) return;
+        d.expression = picked;
+        impRenderOut();
+        return;
+      }
+      if (act === 'toggle-char') {
+        const i = parseInt(btn.dataset.i, 10);
+        const c = IMP.chars[i];
+        if (!c || c.locked) return;
+        IMP.openChar = (IMP.openChar === c.name) ? null : c.name;
+        impRenderOut();
+        return;
+      }
+      if (act === 'lock-char') {
+        const i = parseInt(btn.dataset.i, 10);
+        const c = IMP.chars[i];
+        if (!c) return;
+        c.locked = !c.locked;
+        if (c.locked) IMP.openChar = (IMP.openChar === c.name) ? null : IMP.openChar;
+        impRenderOut();
+        return;
+      }
+      if (act === 'lock-scene') {
+        const i = parseInt(btn.dataset.i, 10);
+        const sc = IMP.scenes[i];
+        if (!sc) return;
+        sc.locked = !sc.locked;
+        impRenderOut();
+        return;
+      }
+      if (act === 'pick-voice') {
+        const kind = btn.dataset.kind;
+        const index = btn.dataset.i != null ? parseInt(btn.dataset.i, 10) : null;
+        await openVoicePicker(btn, kind, index);
+        return;
+      }
+      if (act === 'lock-dlg') {
+        // 锁按「角色+表情+追加动作」签名分组；同组（相同角色+表情+无追加动作）多句共享一把锁，
+        // 锁/解锁整组同步。有追加动作的句子各自独立。
+        const sig = btn.dataset.sig;
+        if (!sig) return;
+        if (IMP.lockedSigs.has(sig)) IMP.lockedSigs.delete(sig);
+        else IMP.lockedSigs.add(sig);
+        impRenderOut();
+        return;
+      }
+      if (act === 'pick-bg') {
+        const ni = parseInt(btn.dataset.n, 10);
+        const n = IMP.parsed.nodes[ni];
+        const url = await Admin.Pickers.image({ multi: false, currentUrl: n.background_url || '', allowUpload: true });
+        if (url) {
+          n.background_url = url;
+          impRenderOut();
+        }
+        return;
+      }
+    });
+
+    // 人物卡里的下拉 / 输入框
+    el.querySelector('.imp-right').addEventListener('change', (ev) => {
+      const f = ev.target.dataset.cf;
+      if (!f) return;
+      const i = parseInt(ev.target.dataset.i, 10);
+      const c = IMP.chars[i];
+      if (!c) return;
+      if (f === 'random') c.spec.random = !ev.target.checked;   // 勾上 = 不随机
+      else c.spec[f] = ev.target.value;
+      // 改了任意一项，头部标签就得重画（「自定义词」之类）
+      impRenderOut();
+    });
+    el.querySelector('.imp-right').addEventListener('input', (ev) => {
+      if (ev.target.dataset.cf === 'free_text') {
+        const c = IMP.chars[parseInt(ev.target.dataset.i, 10)];
+        if (c) c.spec.free_text = ev.target.value;
+        return;
+      }
+      if (ev.target.dataset.sf === 'prompt') {
+        const sc = IMP.scenes[parseInt(ev.target.dataset.i, 10)];
+        if (sc) sc.prompt = ev.target.value;
+      }
+    });
+    // 场景卡勾选「只用追加词」
+    el.querySelector('.imp-right').addEventListener('change', (ev) => {
+      if (ev.target.dataset.sf !== 'only') return;
+      const sc = IMP.scenes[parseInt(ev.target.dataset.i, 10)];
+      if (!sc) return;
+      sc.random = !ev.target.checked;
+      // 头部标签要跟着变（自定义词 / 随机拼装）
+      impRenderOut();
+    });
+
+    // 动作追加词：输入即写回这一句（不重绘，免得输入框丢焦点）
+    el.querySelector('.imp-right').addEventListener('input', (ev) => {
+      if (ev.target.dataset.lf !== 'pose_extra') return;
+      const ni = parseInt(ev.target.dataset.n, 10);
+      const di = parseInt(ev.target.dataset.d, 10);
+      const d = IMP.parsed.nodes[ni] && IMP.parsed.nodes[ni].dialogues[di];
+      if (d) d.pose_extra = ev.target.value;
+    });
+
+    // ---- 按章节生成：把「这一章想讲什么」拼成一条完整指令 ----
+    el.querySelector('#imp-cg-build')?.addEventListener('click', async () => {
+      const title = (el.querySelector('#imp-cg-title').value || '').trim();
+      const brief = (el.querySelector('#imp-cg-brief').value || '').trim();
+      const nNodes = Math.max(1, Math.min(20, parseInt(el.querySelector('#imp-cg-nodes').value, 10) || 3));
+      const nLines = Math.max(2, Math.min(20, parseInt(el.querySelector('#imp-cg-lines').value, 10) || 6));
+      const cast = (el.querySelector('#imp-cg-cast').value || '').trim();
+      if (!brief) { Admin.toast('先写一句「这一章要发生什么」', 'info'); return; }
+      const st = el.querySelector('#imp-cg-state');
+      st.textContent = '正在生成…';
+      try {
+        const t = await Admin.get('/story/import/template');
+        const castLines = cast
+          ? cast.split('\n').map(x => x.trim()).filter(Boolean)
+              .map(x => '@人物 ' + x).join('\n')
+          : '';
+        const text = [
+          t.ai_prompt || '',
+          '【本次任务】',
+          `章节标题：${title || '（未命名章节）'}`,
+          `请拆成 ${nNodes} 个节点，每个节点大约 ${nLines} 句台词。`,
+          castLines ? `以下人物已定好，直接沿用（不要改名、不要另造）：\n${castLines}` : '',
+          '情节要点：',
+          brief,
+        ].filter(Boolean).join('\n');
+        const box = el.querySelector('#imp-cg-out');
+        if (box) { box.value = text; el.querySelector('#imp-cg-out-wrap').hidden = false; }
+        const ok = await impCopy(text);
+        st.textContent = ok
+          ? '已复制，粘给 AI 即可（连同你的故事细节一起发）'
+          : '浏览器不让自动复制：下面框里已生成，手动全选复制';
+        Admin.toast('指令已复制到剪贴板', 'success');
+      } catch (e) {
+        st.textContent = '生成失败：' + e.message;
+      }
+    });
+    el.querySelector('#imp-cg-back')?.addEventListener('click', () => {
+      setImpTab('script');
+      const ta = el.querySelector('#imp-text');
+      ta.focus();
+      Admin.toast('把 AI 输出的剧本原样粘进来，再点「解析 →」', 'info');
+    });
+
+    // ---- 回来改上次导入：把原文放回去，直接显示「替换」选项 ----
+    if (batchData && batchData.batch) {
+      const bt = batchData.batch;
+      const ta = el.querySelector('#imp-text');
+      const ja = el.querySelector('#imp-json');
+      if (batchData.source_text) ta.value = batchData.source_text;
+      if (batchData.source_json) ja.value = batchData.source_json;
+      if (!batchData.source_text && batchData.source_json) setImpTab('json');
+      el.querySelector('#imp-replace-wrap').hidden = false;
+      el.querySelector('#imp-replace').checked = true;
+      // 重新编辑：场景图不允许重新生成（只重新生成立绘），禁用该勾选并说明
+      const scCb = el.querySelector('#imp-gen-scene');
+      if (scCb) {
+        scCb.disabled = true;
+        scCb.checked = false;
+        scCb.closest('.imp-ck')?.setAttribute('title', '重新编辑时场景图不可重新生成，只重新生成立绘');
+      }
+      el.querySelector('.imp-title').textContent = `↥ 重新导入 · ${bt.title || '导入记录 #' + bt.id}`;
+      el.querySelector('.imp-hint').textContent =
+        `改完点「重新生成」会替换这批 ${bt.node_count} 个节点（位置不变）；取消勾选「替换上次导入」则往后追加`;
+      // 批次可能属于别的章节：补一个选项，别让它悄悄退回「当前章节」或变成新建
+      const bCh = bt.chapter_id;
+      if (bCh && String(bCh) === String(chapterId)) {
+        chapSel.value = 'cur';
+      } else if (bCh) {
+        const opt = document.createElement('option');
+        opt.value = String(bCh);
+        opt.textContent = '原章节：' + (bt.chapter_title || ('#' + bCh));
+        chapSel.appendChild(opt);
+        chapSel.value = String(bCh);
+      }
+      syncTitle();
+      if (batchData.source_text || batchData.source_json) setTimeout(() => impParse(true), 100);
+    }
+
+    // ---- 从章节行进「按章节生成」：标题先填好，直接停在生成页 ----
+    if (opts.chapterTitle) {
+      setImpTab('chapter');
+      el.querySelector('#imp-cg-title').value = opts.chapterTitle;
+      if (opts.chapterBrief) el.querySelector('#imp-cg-brief').value = opts.chapterBrief;
+      setTimeout(() => el.querySelector('#imp-cg-brief')?.focus(), 80);
+      return;
+    }
+
+    // 首次打开就把光标放在输入框
+    setTimeout(() => el.querySelector('#imp-text')?.focus(), 60);
+  }
+
   function bindNodeEvents() {
     document.getElementById('btn-back-chapters')?.addEventListener('click', () => loadChapters(currentArcId));
+
+    document.getElementById('btn-node-import')?.addEventListener('click', () => openImportDialog());
+    document.getElementById('btn-node-batches')?.addEventListener('click', () => openBatchesPanel());
 
     const chapterSelect = document.getElementById('chapter-select');
     if (chapterSelect) {
@@ -866,6 +2221,7 @@ Admin.registerPage('story', async (container) => {
         e.stopPropagation();
         const id = parseInt(btn.dataset.id);
         const action = btn.dataset.action;
+        if (action === 'demo') demoNode(id);
         if (action === 'edit') editNode(id);
         if (action === 'choices') manageChoices(id);
         if (action === 'delete') deleteNode(id);
@@ -1436,7 +2792,25 @@ Admin.registerPage('story', async (container) => {
       try {
         dlgRows = await Admin.get(`/story/nodes/${data.id}/dialogues`);
       } catch (e) { dlgRows = []; }
+      // 老数据静默升级：节点只有单句 content、还没有对话行时，自动补成一行。
+      // 以前这里靠一个「导入旧内容」按钮，但新建节点本来就写对话行，
+      // 那个按钮 99% 情况下点是没反应的（只弹一句「已导入当前内容」），纯误导。
+      if (!dlgRows.length && (data.content || '').trim()) {
+        try {
+          dlgRows = await Admin.post(`/story/nodes/${data.id}/dialogues/from-node`, {});
+        } catch (_) { /* 升级失败就当没有，不要挡住编辑 */ }
+      }
     }
+    // 配音任务结束时把最新结果拉回来（后端已写进 voice 字段）
+    _dlgVoiceHook = data ? {
+      nodeId: data.id,
+      onDone: async () => {
+        try {
+          dlgRows = await Admin.get(`/story/nodes/${data.id}/dialogues`);
+          renderDialogueRows();
+        } catch (_) {}
+      },
+    } : null;
     let removedDlgIds = [];
     let dlgSaveTimer = null;
     let dlgSelectedIdx = null;      // 当前选中的对话行索引
@@ -1477,24 +2851,25 @@ Admin.registerPage('story', async (container) => {
     }
 
     function buildDialogueRow(d, i) {
-      const speakerOpts = chars.map(c =>
-        `<option value="${c.id}" ${d.speaker_id == c.id ? 'selected' : ''}>${esc(c.name)}</option>`
-      ).join('');
       const preset = cropPresetOf(d);
       const isCustom = preset === 'custom';
+      const spk = chars.find(c => c.id == d.speaker_id) || null;
+      const spkName = spk ? spk.name : '— 旁白 —';
       const thumb = exprThumbUrl(d.speaker_id, d.expression);
       const expLabel = expressionLabel(d.expression);
+      const isNone = d.expression === '__none__';
 
       return `
         <div class="dlg-row" data-idx="${i}" data-id="${d.id || ''}" draggable="true" title="左键=选中 · 右键=菜单 · 拖住 ⋮⋮ 排序">
           <span class="dlg-grip" title="按住拖动可调整顺序">⋮⋮</span>
           <span class="dlg-idx">#${i + 1}</span>
-          <select class="dlg-speaker">
-            <option value="">-- 旁白 --</option>
-            ${speakerOpts}
-          </select>
-          <button type="button" class="dlg-exp-btn" title="点击选择表情">
-            ${thumb ? `<img src="${thumb}" alt="">` : `<span class="dlg-exp-empty">?</span>`}
+          <input type="checkbox" class="dlg-voice-chk" title="勾选后，这一句才会被「批量生成语音」处理">
+          <button type="button" class="dlg-speaker-btn" title="点击选择 / 更换角色">
+            <span class="dlg-spk-ic">👤</span><span class="dlg-speaker-name">${esc(spkName)}</span><span class="dlg-spk-caret">▾</span>
+          </button>
+          <input type="hidden" class="dlg-speaker" value="${d.speaker_id || ''}">
+          <button type="button" class="dlg-exp-btn${isNone ? ' none' : ''}" title="点击选择表情动作">
+            ${isNone ? '<span class="dlg-exp-empty">∅</span>' : (thumb ? `<img src="${esc(thumb)}" alt="">` : `<span class="dlg-exp-empty">?</span>`)}
             <span class="dlg-exp-label">${expLabel}</span>
           </button>
           <input type="hidden" class="dlg-expression" value="${esc(d.expression || '')}">
@@ -1539,6 +2914,7 @@ Admin.registerPage('story', async (container) => {
       bindDialogueRowEvents();
       applyDialogueSelection();
       renderStagePreview();
+      updateVoiceBatchState();
     }
 
     // 选中态：左键/右键点击某一句时高亮
@@ -1636,9 +3012,11 @@ Admin.registerPage('story', async (container) => {
       if (!btn) return;
       const speakerId = parseInt(row.querySelector('.dlg-speaker')?.value);
       const exp = row.querySelector('.dlg-expression')?.value || '';
-      const url = exprThumbUrl(speakerId, exp);
+      const isNone = exp === '__none__';
+      const url = isNone ? '' : exprThumbUrl(speakerId, exp);
       const label = expressionLabel(exp);
-      btn.innerHTML = `${url ? `<img src="${url}" alt="">` : `<span class="dlg-exp-empty">?</span>`}<span class="dlg-exp-label">${label}</span>`;
+      btn.className = `dlg-exp-btn${isNone ? ' none' : ''}`;
+      btn.innerHTML = `${url ? `<img src="${url}" alt="">` : `<span class="dlg-exp-empty">${isNone ? '∅' : '?'}</span>`}<span class="dlg-exp-label">${label}</span>`;
     }
 
     // ===== 表情选择弹窗（小图点击选择） =====
@@ -1738,6 +3116,12 @@ Admin.registerPage('story', async (container) => {
 
       function renderGrid() {
         const cells = [];
+        // 置顶：「无表情动作」——演出里只显示台词、不显示该角色立绘
+        cells.push(`<div class="dlg-expr-cell none-cell${cur === '__none__' ? ' selected' : ''}" data-exp="__none__" title="无表情动作：演出里只显示台词，不显示该角色立绘">
+          <div class="dlg-expr-none">∅</div>
+          <span class="ex-cat">无表情动作</span>
+          <span class="ex-sub">只显台词</span>
+        </div>`);
         if (activeCat === '__legacy') {
           Object.entries(oldFaces).forEach(([k, url]) => {
             if (onlyGen && !url) return;
@@ -1810,6 +3194,136 @@ Admin.registerPage('story', async (container) => {
       setTimeout(() => document.addEventListener('mousedown', exprPopOutsideHandler, true), 0);
     }
 
+    // ===== 角色选择弹窗（分类 + 搜索，替代原生下拉） =====
+    function closeCharPicker() {
+      const old = document.getElementById('dlg-char-pop');
+      if (old) old.remove();
+      document.removeEventListener('mousedown', charPopOutsideHandler, true);
+    }
+    function charPopOutsideHandler(e) {
+      const pop = document.getElementById('dlg-char-pop');
+      if (pop && !pop.contains(e.target) && !e.target.closest?.('.dlg-speaker-btn')) closeCharPicker();
+    }
+    function openCharPicker(btn, row) {
+      closeCharPicker();
+      if (!row) return;
+      const groups = {};
+      (chars || []).forEach(c => {
+        const cat = c.category_path || '未分类';
+        (groups[cat] = groups[cat] || []).push(c);
+      });
+      const catNames = Object.keys(groups).sort((a, b) => {
+        if (a === '未分类') return -1;
+        if (b === '未分类') return 1;
+        return a.localeCompare(b, 'zh');
+      });
+      let cur = parseInt(row.querySelector('.dlg-speaker')?.value) || null;
+      let kw = '';
+      const pop = document.createElement('div');
+      pop.className = 'dlg-char-pop';
+      pop.id = 'dlg-char-pop';
+      pop.innerHTML = `
+        <div class="dlg-char-pop-head">
+          <span>选择角色 <span style="color:var(--text-muted);font-size:10px">（按分类分组，可搜索）</span></span>
+          <button type="button" class="dlg-char-pop-close">&times;</button>
+        </div>
+        <div class="dlg-char-search"><input type="text" id="dlg-char-kw" placeholder="搜索角色名…"></div>
+        <div class="dlg-char-body" id="dlg-char-body"></div>
+        <div class="dlg-char-foot">
+          <button type="button" class="dlg-char-none" id="dlg-char-none">设为旁白（无角色）</button>
+        </div>`;
+      document.body.appendChild(pop);
+
+      const bodyEl = pop.querySelector('#dlg-char-body');
+      const kwEl = pop.querySelector('#dlg-char-kw');
+      function renderList() {
+        const k = (kw || '').trim().toLowerCase();
+        let html = '';
+        catNames.forEach(cat => {
+          const list = groups[cat].filter(c => !k || (c.name || '').toLowerCase().includes(k));
+          if (!list.length) return;
+          html += `<div class="dlg-char-cat">${esc(cat)}</div>`;
+          list.forEach(c => {
+            const sel = c.id === cur ? ' sel' : '';
+            const thumb = c.portrait_image ? `<img src="${esc(c.portrait_image)}" alt="">` : '';
+            html += `<div class="dlg-char-item${sel}" data-id="${c.id}" data-name="${esc(c.name)}">
+              <span class="dlg-char-thumb">${thumb || '<span class="dlg-char-noimg">?</span>'}</span>
+              <span class="dlg-char-name">${esc(c.name)}</span>
+            </div>`;
+          });
+        });
+        bodyEl.innerHTML = html || '<div class="cpp-empty">没有匹配的角色</div>';
+        bodyEl.querySelectorAll('.dlg-char-item').forEach(el => {
+          el.addEventListener('click', () => pick(parseInt(el.dataset.id, 10), el.dataset.name));
+        });
+      }
+      function pick(id, name) {
+        const spkInput = row.querySelector('.dlg-speaker');
+        if (spkInput) spkInput.value = id ? String(id) : '';
+        const nameEl = row.querySelector('.dlg-speaker-name');
+        if (nameEl) nameEl.textContent = name || '— 旁白 —';
+        updateExprButton(row);
+        closeCharPicker();
+        scheduleDialogueSave();
+      }
+      pop.querySelector('#dlg-char-none').addEventListener('click', () => pick(null, '— 旁白 —'));
+      kwEl.addEventListener('input', () => { kw = kwEl.value; renderList(); });
+      renderList();
+
+      const r = btn.getBoundingClientRect();
+      const pw = 320, ph = 430;
+      let left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
+      let top = Math.max(8, Math.min(r.bottom + 6, window.innerHeight - ph - 8));
+      const preview = document.getElementById('dlg-stage-preview');
+      if (preview) {
+        const pr = preview.getBoundingClientRect();
+        if (left + pw > pr.left - 8 && left < pr.right && top < pr.bottom && top + ph > pr.top) {
+          left = Math.max(8, pr.left - pw - 12);
+        }
+      }
+      pop.style.left = left + 'px';
+      pop.style.top = top + 'px';
+      pop.querySelector('.dlg-char-pop-close').addEventListener('click', closeCharPicker);
+      setTimeout(() => document.addEventListener('mousedown', charPopOutsideHandler, true), 0);
+      setTimeout(() => kwEl.focus(), 0);
+    }
+
+    // 批量生成语音按钮可用状态：无任何勾选 → 灰色禁用
+    function updateVoiceBatchState() {
+      const btn = document.getElementById('btn-dlg-voice-batch');
+      if (!btn) return;
+      const checks = Array.from(document.querySelectorAll('.dlg-voice-chk'));
+      const total = checks.length;
+      const checked = checks.filter(c => c.checked).length;
+      btn.disabled = checked === 0;
+      const cnt = document.getElementById('dlg-voice-cnt');
+      if (cnt) cnt.textContent = total ? `已勾选 ${checked}/${total} 句` : '';
+      const selall = document.getElementById('dlg-selall');
+      if (selall) selall.checked = total > 0 && checked === total;
+    }
+
+    // 删除勾选的对话行（含服务端删除有 id 的行）
+    async function delCheckedDialogueRows() {
+      const rows = Array.from(document.querySelectorAll('.dlg-row'));
+      const idxs = [];
+      rows.forEach((el, i) => {
+        const chk = el.querySelector('.dlg-voice-chk');
+        if (chk && chk.checked) idxs.push(i);
+      });
+      if (!idxs.length) { Admin.toast('没有勾选的句子', 'info'); return; }
+      if (!await Admin.confirm(`确定删除勾选的 ${idxs.length} 句对话？此操作不可撤销。`)) return;
+      if (isEdit) {
+        for (const i of idxs) {
+          const id = rows[i].dataset.id;
+          if (id) { try { await Admin.del(`/story/nodes/${data.id}/dialogues/${id}`); } catch (_) {} }
+        }
+      }
+      idxs.sort((a, b) => b - a).forEach(i => { dlgRows.splice(i, 1); });
+      renderDialogueRows();
+      if (isEdit) saveDialogues();
+      Admin.toast(`已删除 ${idxs.length} 句`, 'success');
+    }
+
     // ===== 参数配置弹窗（坐标 / 大小 / 裁剪 / 动效 / 翻转 / 消失） =====
     function closeCfgPop() {
       const old = document.getElementById('dlg-cfg-pop');
@@ -1833,6 +3347,21 @@ Admin.registerPage('story', async (container) => {
         <div class="dlg-cfg-head">
           <span>#${parseInt(row.dataset.idx, 10) + 1} 参数配置</span>
           <button type="button" class="dlg-cfg-close">&times;</button>
+        </div>
+
+        <!-- 立绘预览：可滚轮缩放 / 拖拽平移，上限 5×，方便核对表情与裁切 -->
+        <div class="cfg-portrait">
+          <div class="cfg-portrait-cap">立绘预览（滚轮缩放 · 拖拽平移 · 上限 5×）</div>
+          <div class="cfg-portrait-canvas" id="cfg-portrait-canvas">
+            <img class="cfg-portrait-img" id="cfg-portrait-img" alt="立绘预览" draggable="false">
+            <div class="cfg-portrait-empty" id="cfg-portrait-empty">该角色暂无立绘</div>
+          </div>
+          <div class="cfg-portrait-bar">
+            <button type="button" class="cfg-zoom-out" title="缩小">－</button>
+            <span class="cfg-portrait-zoom" id="cfg-portrait-zoom">100%</span>
+            <button type="button" class="cfg-zoom-in" title="放大（上限 5×）">＋</button>
+            <button type="button" class="cfg-zoom-fit" title="适应窗口">适应</button>
+          </div>
         </div>
 
         <!-- 配置存储：把当前这套参数存成固定配置，别处直接套用 -->
@@ -2013,6 +3542,85 @@ Admin.registerPage('story', async (container) => {
           top = Math.max(8, Math.min(r.top, window.innerHeight - ph - 8));
         }
       }
+      // ===== 立绘预览 + 缩放（1× ~ 5×） =====
+      const pvCanvas = p('#cfg-portrait-canvas');
+      const pvImg = p('#cfg-portrait-img');
+      const pvEmpty = p('#cfg-portrait-empty');
+      const pvZoomLbl = p('#cfg-portrait-zoom');
+      let pvScale = 1, pvX = 0, pvY = 0;
+      const PV_MAX = 5, PV_MIN = 1;
+      function pvCurrentUrl() {
+        const sid = parseInt(row.querySelector('.dlg-speaker')?.value) || null;
+        const exp = row.querySelector('.dlg-expression')?.value || '';
+        const ch = sid ? (chars || []).find(c => c.id === sid) : null;
+        if (!ch) return null;
+        let url = ch.portrait_image || '';
+        if (exp && exp !== '__none__') {
+          try { const ex = ch.expressions ? JSON.parse(ch.expressions) : {}; if (ex[exp]) url = ex[exp]; } catch (e) {}
+        }
+        return url || null;
+      }
+      function pvApply() {
+        const rect = pvCanvas.getBoundingClientRect();
+        const maxX = Math.max(0, (rect.width * (pvScale - 1)) / 2);
+        const maxY = Math.max(0, (rect.height * (pvScale - 1)) / 2);
+        pvX = Math.max(-maxX, Math.min(maxX, pvX));
+        pvY = Math.max(-maxY, Math.min(maxY, pvY));
+        pvImg.style.transform = `translate(${pvX}px, ${pvY}px) scale(${pvScale})`;
+        pvZoomLbl.textContent = Math.round(pvScale * 100) + '%';
+      }
+      function pvReset(s) { pvScale = Math.max(PV_MIN, Math.min(PV_MAX, s)); if (pvScale === 1) { pvX = 0; pvY = 0; } pvApply(); }
+      function pvZoomBy(factor, cx, cy) {
+        const next = Math.max(PV_MIN, Math.min(PV_MAX, pvScale * factor));
+        if (next === pvScale) return;
+        const rect = pvCanvas.getBoundingClientRect();
+        const ox = (cx != null ? cx : rect.width / 2) - rect.width / 2;
+        const oy = (cy != null ? cy : rect.height / 2) - rect.height / 2;
+        const k = next / pvScale;
+        pvX = ox - (ox - pvX) * k;
+        pvY = oy - (oy - pvY) * k;
+        pvScale = next;
+        pvApply();
+      }
+      function pvLoad() {
+        const url = pvCurrentUrl();
+        if (!url) { pvImg.style.display = 'none'; pvEmpty.style.display = 'flex'; return; }
+        pvEmpty.style.display = 'none';
+        pvImg.style.display = 'block';
+        pvScale = 1; pvX = 0; pvY = 0;
+        pvImg.onload = () => pvApply();
+        pvImg.src = url;
+        if (pvImg.complete && pvImg.naturalHeight) pvApply();
+      }
+      p('.cfg-zoom-in')?.addEventListener('click', () => pvZoomBy(1.25));
+      p('.cfg-zoom-out')?.addEventListener('click', () => pvZoomBy(1 / 1.25));
+      p('.cfg-zoom-fit')?.addEventListener('click', () => pvReset(1));
+      let pvDragging = false, pvLX = 0, pvLY = 0;
+      pvCanvas.addEventListener('mousedown', (e) => {
+        if (pvScale <= 1) return;
+        pvDragging = true; pvLX = e.clientX; pvLY = e.clientY;
+        pvCanvas.classList.add('grabbing');
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!pvDragging) return;
+        pvX += e.clientX - pvLX; pvY += e.clientY - pvLY;
+        pvLX = e.clientX; pvLY = e.clientY;
+        pvApply();
+      });
+      window.addEventListener('mouseup', () => { pvDragging = false; pvCanvas.classList.remove('grabbing'); });
+      pvCanvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = pvCanvas.getBoundingClientRect();
+        pvZoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top);
+      }, { passive: false });
+      // 说话者 / 表情变化时刷新预览
+      const pvObs = new MutationObserver(() => pvLoad());
+      const spkEl = row.querySelector('.dlg-speaker');
+      const expEl = row.querySelector('.dlg-expression');
+      if (spkEl) pvObs.observe(spkEl, { attributes: true, attributeFilter: ['value'] });
+      if (expEl) pvObs.observe(expEl, { attributes: true, attributeFilter: ['value'] });
+      pvLoad();
+
       pop.style.left = left + 'px';
       pop.style.top = top + 'px';
       setTimeout(() => document.addEventListener('mousedown', cfgPopOutsideHandler, true), 0);
@@ -2227,7 +3835,8 @@ Admin.registerPage('story', async (container) => {
       rows.forEach((x, k) => { if (k !== i && x.speaker_id) other++; });
 
       let drawn = false;
-      if (r && r.speaker_id) {
+      const isNoneExp = r && r.expression === '__none__';
+      if (r && r.speaker_id && !isNoneExp) {
         const ch = chars.find(c => c.id === r.speaker_id);
         if (ch) {
           let url = ch.portrait_image || '';
@@ -2236,35 +3845,51 @@ Admin.registerPage('story', async (container) => {
             if (r.expression && ex[r.expression]) url = ex[r.expression];
           } catch (e) {}
           if (url) {
-            let imgH = H * 0.85 * (r.scale || 1);
-            let imgW = imgH * 0.62;
-            const maxW = W * 0.9;
-            if (imgW > maxW) { const k = maxW / imgW; imgW *= k; imgH *= k; }
+            // 立绘按「真实宽高比」绘制：读取图片 naturalWidth/Height，不再写死 0.62，
+            // 不同比例的出图（竖版/横版）都不会被左右压扁。
             const top = Math.min(100, Math.max(0, r.crop_top || 0));
             const bottom = Math.min(100, Math.max(top + 2, r.crop_bottom ?? 100));
-            const winH = imgH * (bottom - top) / 100;
-
+            const baseH = H * 0.85 * (r.scale || 1);
+            const maxW = W * 0.9;
             const win = document.createElement('div');
-            win.style.cssText = `position:absolute;overflow:hidden;width:${imgW}px;height:${winH}px;left:${r.pos_x}%;bottom:${r.pos_y}%;transform:translateX(-50%);border:1px dashed rgba(212,175,55,.55);z-index:${r.z_index || 1}`;
+            win.style.cssText = `position:absolute;overflow:hidden;left:${r.pos_x}%;bottom:${r.pos_y}%;transform:translateX(-50%);border:1px dashed rgba(212,175,55,.55);z-index:${r.z_index || 1}`;
             const img = document.createElement('img');
-            img.src = url;
-            img.style.cssText = `position:absolute;width:${imgW}px;height:${imgH}px;left:0;top:${-imgH * top / 100}px;${r.flip ? 'transform:scaleX(-1);' : ''}`;
+            img.style.cssText = `position:absolute;left:0;top:0;${r.flip ? 'transform:scaleX(-1);' : ''}`;
             win.appendChild(img);
             box.appendChild(win);
+            const sizeWin = () => {
+              const nw = img.naturalWidth || 0, nh = img.naturalHeight || 0;
+              const ratio = (nw && nh) ? (nw / nh) : 0.62;
+              let imgH = baseH, imgW = imgH * ratio;
+              if (imgW > maxW) { const k = maxW / imgW; imgW *= k; imgH *= k; }
+              const winH = imgH * (bottom - top) / 100;
+              win.style.width = imgW + 'px';
+              win.style.height = winH + 'px';
+              img.style.width = imgW + 'px';
+              img.style.height = imgH + 'px';
+              img.style.top = (-imgH * top / 100) + 'px';
+            };
+            img.onload = sizeWin;
+            img.onerror = sizeWin;
+            img.src = url;
+            if (img.complete && img.naturalHeight) sizeWin();
             drawn = true;
           }
-          const tag = document.createElement('div');
-          tag.className = 'stage-preview-tag';
-          tag.textContent = `正在预览 #${i + 1} · ${ch.name}${r.disappear_after ? ' · 说完消失' : ''}`;
-          box.appendChild(tag);
         }
       }
-      if (!drawn) {
-        const tag = document.createElement('div');
-        tag.className = 'stage-preview-tag';
+      // 标签（统一放在最后，区分「无表情动作 / 已绘制 / 旁白无立绘」三种情况）
+      const tag = document.createElement('div');
+      tag.className = 'stage-preview-tag';
+      if (isNoneExp && r && r.speaker_id) {
+        const ch = chars.find(c => c.id === r.speaker_id);
+        tag.textContent = `正在预览 #${i + 1} · ${ch ? ch.name : ''} · 只显台词（无人物）`;
+      } else if (drawn) {
+        const ch = chars.find(c => c.id === r.speaker_id);
+        tag.textContent = `正在预览 #${i + 1} · ${ch ? ch.name : ''}${r.disappear_after ? ' · 说完消失' : ''}`;
+      } else {
         tag.textContent = `正在预览 #${i + 1} · ${r && r.speaker_id ? '该角色暂无立绘' : '旁白（无立绘）'}`;
-        box.appendChild(tag);
       }
+      box.appendChild(tag);
 
       if (other > 0) {
         const hint = document.createElement('div');
@@ -2274,19 +3899,22 @@ Admin.registerPage('story', async (container) => {
       }
 
       // ===== 对话框（按前台真实比例画一个） =====
-      // 前台 #dialogue-box：底边距 ≈ 画面高 6%、高度 ≈ 12%、宽度 88%、圆角 12、金线描边、
-      // 发言人名牌压在框顶。这里同比例缩到预览里，才能看出人物下半身会被框挡掉多少。
+      // 前台 #dialogue-box：宽 min(880px,92vw)、内边距 38/46/30、文本 min-height 62px，
+      // 真实高度 ≈ 宽 × 0.15，是个「扁但不过分」的框。预览之前写死 height=H*0.13，
+      // 在 290px 高的预览里只有 ~38px，被拉成 9.7:1 的长条，看着像被压扁。
+      // 这里改成按「框宽 × 真实比例」算高度，让它看起来像真对话框而非一条扁带。
       // 注意：必须排在人物之后 append，前台对话框层级本来就高于立绘。
       const dlgBox = document.createElement('div');
       dlgBox.className = 'stage-dlgbox';
-      const boxH = Math.max(30, Math.round(H * 0.13));
+      const boxW = W * 0.88;
+      const boxH = Math.max(48, Math.round(boxW * 0.17));
       dlgBox.style.cssText = `position:absolute;left:50%;bottom:${Math.round(H * 0.055)}px;
-        transform:translateX(-50%);width:88%;height:${boxH}px;box-sizing:border-box;
-        border-radius:${Math.max(6, Math.round(boxH * 0.18))}px;
+        transform:translateX(-50%);width:${boxW}px;height:${boxH}px;box-sizing:border-box;
+        border-radius:${Math.max(8, Math.round(boxH * 0.16))}px;
         background:linear-gradient(180deg,rgba(20,22,32,.94),rgba(9,10,15,.97));
         border:1px solid rgba(201,168,76,.52);
         box-shadow:0 8px 24px rgba(0,0,0,.6),inset 0 0 26px rgba(201,168,76,.05);
-        padding:${Math.round(boxH * 0.2)}px ${Math.round(boxH * 0.28)}px;
+        padding:${Math.round(boxH * 0.22)}px ${Math.round(boxH * 0.42)}px;
         overflow:hidden;z-index:20;pointer-events:none`;
 
       // 发言人名牌（旁白不画名字）
@@ -2402,11 +4030,15 @@ Admin.registerPage('story', async (container) => {
           openVoicePop(row.querySelector('.dlg-voice-btn'));
         });
 
-        // 切换说话者 → 刷新表情缩略图
-        const speakerSel = row.querySelector('.dlg-speaker');
-        speakerSel?.addEventListener('change', () => {
-          updateExprButton(row);
-          scheduleDialogueSave();
+        // 说话者按钮 → 弹出角色选择（分类 + 搜索）
+        row.querySelector('.dlg-speaker-btn')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openCharPicker(row.querySelector('.dlg-speaker-btn'), row);
+        });
+
+        // 语音勾选 → 刷新批量生成按钮可用状态
+        row.querySelector('.dlg-voice-chk')?.addEventListener('change', () => {
+          updateVoiceBatchState();
         });
 
         // 显示部位预设 → 自动填 crop 数值
@@ -2681,49 +4313,59 @@ Admin.registerPage('story', async (container) => {
     }
 
     // ===== 批量生成：对话列表上方的按钮，有说话者且有台词的句子一起合成 =====
+    // 提交成后台任务（不是同步等）：三十句要一分多钟，同步请求一旦关掉窗口就白等。
+    // 现在提交完立刻返回，进度在右上角「任务中心 → 🎙 音频」里，结果由后端写回每行的 voice。
     async function batchGenVoice() {
-      const rows = collectDialogueRows();
-      const targets = rows.map((r, i) => ({ r, i }))
-        .filter(x => x.r.speaker_id && (x.r.content || '').trim());
-      if (!targets.length) {
-        Admin.toast('没有可生成的句子：需要同时有说话者和台词', 'info');
+      if (!isEdit) {
+        Admin.toast('请先保存这个节点，再批量生成语音', 'info');
         return;
       }
-      const skip = rows.length - targets.length;
+      const rows0 = collectDialogueRows();
+      const chkEls = Array.from(document.querySelectorAll('.dlg-voice-chk'));
+      // 只处理被勾选的句子
+      const checked = rows0.filter((r, i) => (chkEls[i] && chkEls[i].checked));
+      const want = checked.filter(r => (r.content || '').trim()).length;
+      const narrCount = checked.filter(r => !r.speaker_id && (r.content || '').trim()).length;
+      if (!want) {
+        Admin.toast('没有勾选的台词：先勾选要生成语音的句子', 'info');
+        return;
+      }
+      const emptySkip = checked.length - want;
       if (!await Admin.confirm(
-        `批量生成 ${targets.length} 句语音？（${skip} 句旁白/空台词会跳过）\n\n每句都用它说话者的角色语音配置合成，产物进声音管理 → 剧情语音。`)) return;
+        `提交 ${want} 句语音合成任务（仅勾选的句子）？\n\n` +
+        `· ${want - narrCount} 句用各自说话者的角色语音配置\n` +
+        `· ${narrCount} 句旁白用「声音管理 → 角色语音配置 → 旁白」的音色\n` +
+        (emptySkip ? `· ${emptySkip} 句已勾选但空台词会跳过\n` : '') +
+        `\n产物进「声音管理 → 剧情语音」。提交后可以在右上角「任务中心 → 🎙 音频」` +
+        `看总进度和剩余时间；关掉这个窗口也不会中断，结果会直接写回这些台词。`)) return;
+
       try {
-        const res = await Admin.post('/voice-gen/dialogue', {
-          rows: targets.map(x => ({
-            speaker_id: x.r.speaker_id,
-            content: (x.r.content || '').trim(),
-          })),
+        await saveDialogues();          // 先落库，拿到每行的 id 才能把结果写回去
+        const rows = collectDialogueRows();
+        const chkEls2 = Array.from(document.querySelectorAll('.dlg-voice-chk'));
+        const payloadRows = [];
+        rows.forEach((r, i) => {
+          if (!(chkEls2[i] && chkEls2[i].checked)) return;
+          if (!r.id || !(r.content || '').trim()) return;
+          payloadRows.push({
+            dialogue_id: r.id,
+            speaker_id: r.speaker_id || null,
+            content: r.content.trim(),
+          });
+        });
+        if (!payloadRows.length) { Admin.toast('没有可提交的句子', 'info'); return; }
+
+        const res = await Admin.post('/voice-gen/dialogue/job', {
+          rows: payloadRows,
           pack_path: nodeVoicePackPath(),
+          node_id: data.id,
+          title: (data.title || '') + '',
         });
-        const items = res.items || [];
-        const rowsEl = document.querySelectorAll('.dlg-row');
-        let ok = 0; const fails = [];
-        items.forEach(it => {
-          const t = targets.find(x => x.i === it.index);
-          if (!t) return;
-          if (it.ok) { setRowVoice(rowsEl[t.i], it.sound.url); ok++; }
-          else {
-            const msg = it.error || '未知错误';
-            setRowVoice(rowsEl[t.i], 'ERR:' + msg);
-            fails.push({ i: t.i, r: t.r, error: msg });
-          }
-        });
-        scheduleDialogueSave();
-        if (fails.length) {
-          const nameOf = sid => (window._charMap && window._charMap[sid]) ? window._charMap[sid].name : ('角色' + sid);
-          const list = fails.slice(0, 3)
-            .map(f => `第${f.i + 1}句【${nameOf(f.r.speaker_id)}】「${(f.r.content || '').slice(0, 12)}」：${f.error}`)
-            .join('\n');
-          Admin.toast(`批量生成：${ok} 句成功，${fails.length} 句失败：\n${list}${fails.length > 3 ? `\n…还有 ${fails.length - 3} 句` : ''}\n\n失败行 🎙 已标红，鼠标放上去看原因，点开可单独重试`, 'error');
-        } else {
-          Admin.toast(`批量生成完成：${ok} 句成功，产物进声音管理 → 剧情语音`, 'success');
-        }
-      } catch (e) { Admin.toast('批量生成失败：' + e.message, 'error'); }
+        Admin.toast(`已提交 ${res.total} 句到任务中心（🎙 音频），可以先去干别的`, 'success');
+        // 让面板立刻出现这条任务，不用等下一次轮询
+        if (window.JobMonitor) JobMonitor.refresh();
+        if (window.JobHub) JobHub.refresh();
+      } catch (e) { Admin.toast('提交失败：' + e.message, 'error'); }
     }
 
     function moveDialogueRow(idx, dir) {
@@ -2881,12 +4523,23 @@ Admin.registerPage('story', async (container) => {
           <span>对话列表（一个节点可写多句，按顺序播放）</span>
           <span class="node-sec-tip">左键=选中 · 右键=菜单（复制/粘贴配置） · 拖住行首 <b>⋮⋮</b> 排序 · 点 <b>⚙</b> 配参数</span>
           <span style="flex:1"></span>
-          <button class="btn btn-outline btn-sm" id="btn-dlg-from-node" title="把该节点旧的单句对白转成对话列表">↧ 导入旧内容</button>
-          <button class="btn btn-outline btn-sm" id="btn-dlg-voice-batch" title="把当前所有带说话者、有台词的句子，按各角色的语音配置批量合成声音（产物进声音管理）">🎙 批量生成语音</button>
+          <button class="btn btn-outline btn-sm btn-demo" id="btn-node-demo"
+            title="用游戏里的真实演出播这一段（背景/立绘/表情/语音全走一遍，不写存档）">▶ 演示这一段</button>
           <button class="btn btn-gold btn-sm" id="btn-add-dialogue">+ 添加一句</button>
         </div>
         <div style="display:flex;gap:14px;align-items:flex-start">
-          <div id="dialogue-list" style="flex:1;min-width:0"></div>
+          <div style="flex:1;min-width:0">
+            <div class="dlg-voice-toolbar" id="dlg-voice-toolbar">
+              <label class="dvt-selall" title="全选 / 取消全选当前所有句子"><input type="checkbox" id="dlg-selall"> 全选</label>
+              <button type="button" class="btn btn-outline btn-sm" id="dlg-selnone">全不选</button>
+              <button type="button" class="btn btn-outline btn-sm" id="dlg-delchecked">删除勾选</button>
+              <span class="dvt-cnt" id="dlg-voice-cnt"></span>
+              <span style="flex:1"></span>
+              <button type="button" class="btn btn-gold btn-sm" id="btn-dlg-voice-batch" disabled
+                title="勾选要生成语音的句子后才可点击">🎙 批量生成语音</button>
+            </div>
+            <div id="dialogue-list" style="min-width:0"></div>
+          </div>
           <div style="flex:0 0 420px;position:sticky;top:0">
             <div class="node-sec-tip" style="margin-bottom:4px">舞台预览（随坐标 / 缩放 / 裁剪实时更新）</div>
             <div id="dlg-stage-preview" style="position:relative;width:420px;height:290px;background:linear-gradient(135deg,#1a1a22,#101018);border:1px solid var(--border);border-radius:6px;overflow:hidden"></div>
@@ -3270,26 +4923,33 @@ Admin.registerPage('story', async (container) => {
         if (isEdit) saveDialogues();
       });
 
-      document.getElementById('btn-dlg-from-node')?.addEventListener('click', async () => {
-        if (!isEdit) {
-          Admin.toast('请先保存节点，再导入', 'info');
-          return;
-        }
-        try {
-          dlgRows = await Admin.post(`/story/nodes/${data.id}/dialogues/from-node`, {});
-          Admin.toast('已导入当前内容', 'success');
-          renderDialogueRows();
-        } catch (e) {
-          Admin.toast('导入失败: ' + e.message, 'error');
-        }
-      });
 
       // 🎙 批量生成语音：所有有说话者且有台词的句子，按角色语音配置一起合成
+      document.getElementById('btn-node-demo')?.addEventListener('click', async () => {
+        if (!isEdit) { Admin.toast('先保存节点，再演示这一段', 'info'); return; }
+        // 演示读的是库里的内容，先把对话列表存一下，免得刚改的台词没演出来
+        try { await saveDialogues(); } catch (_) {}
+        demoNode(data.id, data.title);
+      });
+
       document.getElementById('btn-dlg-voice-batch')?.addEventListener('click', () => {
         // 不要求先保存：直接按当前列表里的内容合成，成功后自动保存语音字段
         batchGenVoice();
       });
 
+      // 全选 / 全不选 / 删除勾选
+      document.getElementById('dlg-selall')?.addEventListener('change', (e) => {
+        const on = !!e.target.checked;
+        document.querySelectorAll('.dlg-voice-chk').forEach(c => { c.checked = on; });
+        updateVoiceBatchState();
+      });
+      document.getElementById('dlg-selnone')?.addEventListener('click', () => {
+        document.querySelectorAll('.dlg-voice-chk').forEach(c => { c.checked = false; });
+        updateVoiceBatchState();
+      });
+      document.getElementById('dlg-delchecked')?.addEventListener('click', () => {
+        delCheckedDialogueRows();
+      });
       // 音乐试听
       document.getElementById('btn-preview-music')?.addEventListener('click', () => {
         const bgmVal = document.getElementById('node-bgm-select').value;

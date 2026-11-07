@@ -41,7 +41,8 @@ async function renderAssetLibrary(container) {
 
   async function load() {
     // 始终加载全部图片（不带分类筛选），用于分类计数和客户端筛选
-    const data = await Admin.get('/upload/images');
+    // noCache：批量 / 单张删除后要立刻拿到新列表，不能走浏览器缓存（否则删完还在）
+    const data = await Admin.get('/upload/images', { noCache: true });
     allImagesFull = data.images || [];
     await loadImageTags();
     // 客户端筛选显示
@@ -996,6 +997,11 @@ async function renderAssetLibrary(container) {
       const filenames = Array.from(selectedFiles).join(',');
       const catQuery = currentCategory ? `&category=${encodeURIComponent(currentCategory)}` : '';
       const result = await Admin.del(`/upload/batch?filenames=${encodeURIComponent(filenames)}${catQuery}`);
+      // 乐观更新：立刻把已删图片从本地列表移除并重渲染，点完马上消失，不依赖缓存 GET
+      const delSet = new Set(selectedFiles);
+      allImagesFull = (allImagesFull || []).filter(img => !delSet.has(img.filename));
+      selectedFiles.clear();
+      applyClientFilter();
       Admin.toast(`已移入回收站 ${result.count} 张图片`, 'success');
       await load();
     } catch (e) {

@@ -33,6 +33,19 @@
       .cpp-btn:hover{border-color:var(--gold);color:var(--gold)}
       .cpp-btn.primary{background:var(--gold);border-color:var(--gold);color:#000;font-weight:600}
       .cpp-btn:disabled{opacity:.45;cursor:not-allowed}
+      /* 动作追加词：贴在「人物出图参数」卡片下方，整行通栏 */
+      .cpp-extra{background:var(--bg-input);border:1px solid var(--border);border-top:none;
+        border-radius:0 0 6px 6px;padding:9px 11px 11px;margin:-8px 0 10px}
+      .cpp-extra-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+      .cpp-extra-title{font-size:12px;color:var(--text-muted);letter-spacing:.2px}
+      .cpp-extra-row{display:flex;gap:8px;align-items:stretch}
+      .cpp-extra-row textarea{flex:1 1 auto;min-width:0;min-height:54px;box-sizing:border-box;
+        background:var(--bg-card,#1a1a1a);border:1px solid var(--border);border-radius:4px;
+        color:var(--text-primary);font-size:12.5px;font-family:inherit;line-height:1.55;
+        padding:7px 9px;resize:vertical}
+      .cpp-extra-row textarea:focus{outline:none;border-color:var(--gold)}
+      .cpp-extra-row textarea::placeholder{color:var(--text-muted);opacity:.72}
+      .cpp-extra-row .cpp-btn{height:auto;padding:0 16px;flex:0 0 auto}
       .cpp-cats{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 8px}
       .cpp-cat{font-size:14px;padding:6px 15px;border-radius:15px;border:1px solid #3a3e50;
         color:#cfd3e6;cursor:pointer;user-select:none;background:rgba(255,255,255,.055);
@@ -116,6 +129,17 @@
         <span class="cpp-progress" id="cpp-progress"></span>
         <span style="margin-left:auto;font-size:12px;color:var(--text-muted)" id="cpp-stat"></span>
       </div>
+      <div class="cpp-extra" id="cpp-extra-bar">
+        <div class="cpp-extra-head">
+          <span class="cpp-extra-title">动作追加词</span>
+          <span class="cpp-note" id="cpp-extra-state"></span>
+        </div>
+        <div class="cpp-extra-row">
+          <textarea id="cpp-extra" rows="2" spellcheck="false"
+            placeholder="只作用于这个人的动作 / 表情出图，接在外观提示词末尾。例：双手握剑，衣摆被风吹起"></textarea>
+          <button class="cpp-btn" id="cpp-extra-save" title="保存到人物档案，下次进来还在">保存</button>
+        </div>
+      </div>
       <div class="cpp-cats" id="cpp-cats"></div>
       <div class="cpp-poses" id="cpp-poses"></div>
       <div class="cpp-bar">
@@ -141,6 +165,31 @@
           `<span style="font-size:12px;color:var(--red)">出图参数加载失败：${esc(e.message)}</span>`;
       }
     }
+
+    // ---- 自定义动作追加词：存人物档案，出图时拼在提示词末尾 ----
+    let extraPrompt = '';
+    async function loadExtra() {
+      const ta = $('#cpp-extra');
+      if (!ta || !charId) return;
+      try {
+        const c = await Admin.get(`/characters/${charId}`);
+        extraPrompt = (c && c.pose_extra_prompt) || '';
+      } catch (_) { extraPrompt = ''; }
+      ta.value = extraPrompt;
+      $('#cpp-extra-state').textContent = extraPrompt ? '已保存' : '';
+    }
+    $('#cpp-extra-save')?.addEventListener('click', async () => {
+      const ta = $('#cpp-extra');
+      const val = (ta.value || '').trim();
+      try {
+        await Admin.put(`/characters/${charId}`, { pose_extra_prompt: val });
+        extraPrompt = val;
+        $('#cpp-extra-state').textContent = val ? '已保存' : '已清空';
+        Admin.toast(val ? '动作追加词已保存' : '动作追加词已清空', 'success');
+      } catch (e) {
+        Admin.toast('保存失败：' + e.message, 'error');
+      }
+    });
 
     async function loadLib() {
       lib = await Admin.get('/poses/library');
@@ -403,6 +452,7 @@
             width: gp.width || undefined,
             height: gp.height || undefined,
             pose_ids: Array.from(g.pose_ids),
+            extra_prompt: (($('#cpp-extra') || {}).value || '').trim(),
             page: 'characters',
             title: `${opts.charName || '人物'} · 重新生成 ${g.pose_ids.size} 个动作`,
           });
@@ -521,6 +571,7 @@
           appearance_id: activeAppearance ? parseInt(activeAppearance, 10) : undefined,
           width: gp.width || undefined,
           height: gp.height || undefined,
+          extra_prompt: (($('#cpp-extra') || {}).value || '').trim(),
           page: 'characters',
           title: `${opts.charName || '人物'} · 动作表情`,
         }, body));
@@ -572,6 +623,7 @@
 
     // ---- 初始化 ----
     await loadAppearances();
+    await loadExtra();
     await loadLib();
     await loadImages();
 
