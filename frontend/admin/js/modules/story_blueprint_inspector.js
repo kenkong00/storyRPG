@@ -162,22 +162,22 @@ window.BPInspector = (function () {
       </label>
     `;
 
-    // ---- 舞台预览 ----
-    h += `<div class="bp-ins-sec">舞台位置（拖动小人改坐标）</div>`;
-    h += `<div id="bp-stage" style="position:relative;width:100%;aspect-ratio:16/9;background:#0b0d13 center/cover no-repeat;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:6px"></div>`;
+    // ---- 舞台预览（StageEditor 共用组件：拖动移动 / 滚轮缩放 / 拖角缩放，不再用滑块） ----
+    h += `<div class="bp-ins-sec">舞台位置</div>`;
+    h += `<div id="bp-stage" style="margin-bottom:6px"></div>`;
+    h += `<div style="display:flex;gap:7px;align-items:center;margin-bottom:10px">
+      <button class="bp-btn-xs" id="bp-stage-big" title="放大窗口调整位置与缩放">⛶ 放大窗口调整</button>
+      <span style="flex:1;font-size:10.5px;color:var(--text-muted);line-height:1.4">拖动人物移动 · 滚轮或拖右上角圆点缩放 · 方向键微调（不再用滑块）</span>
+    </div>`;
     if (curD) {
       h += `<div class="bp-grid4">
-        <div class="bp-field"><label>X%</label><input type="number" step="0.5" data-model="dlg[${activeDlg}].pos_x" value="${curD.pos_x ?? 50}"></div>
-        <div class="bp-field"><label>Y%（负=下沉）</label><input type="number" step="0.5" data-model="dlg[${activeDlg}].pos_y" value="${curD.pos_y ?? 0}"></div>
-        <div class="bp-field"><label>缩放</label><input type="number" step="0.05" data-model="dlg[${activeDlg}].scale" value="${curD.scale ?? 1}"></div>
         <div class="bp-field"><label>层级</label><input type="number" step="1" data-model="dlg[${activeDlg}].z_index" value="${curD.z_index ?? 1}"></div>
-      </div>
-      <div class="bp-grid4">
         <div class="bp-field"><label>裁剪上%</label><input type="number" step="1" data-model="dlg[${activeDlg}].crop_top" value="${curD.crop_top ?? 0}"></div>
         <div class="bp-field"><label>裁剪下%</label><input type="number" step="1" data-model="dlg[${activeDlg}].crop_bottom" value="${curD.crop_bottom ?? 100}"></div>
-        <div class="bp-field"><label>镜像</label><select data-model="dlg[${activeDlg}].flip">${opt([['0','否'],['1','是']], curD.flip ?? 0)}</select></div>
-        <div class="bp-field"><label>说完消失</label><select data-model="dlg[${activeDlg}].disappear_after">${opt([['0','否'],['1','是']], curD.disappear_after ?? 0)}</select></div>
-      </div>`;
+        <div class="bp-field"><label>翻转</label><select data-model="dlg[${activeDlg}].flip">${opt([['0','否'],['1','是']], curD.flip ?? 0)}</select></div>
+      </div>
+      <div class="bp-field" style="margin-bottom:10px"><label>说完消失</label>
+        <select data-model="dlg[${activeDlg}].disappear_after" style="width:120px">${opt([['0','否'],['1','是']], curD.disappear_after ?? 0)}</select></div>`;
     }
 
     // ---- 对白列表 ----
@@ -278,51 +278,39 @@ window.BPInspector = (function () {
   function paintStage(d) {
     const stage = document.getElementById('bp-stage');
     if (!stage || !d) return;
-    const bg = (d.bg_change || (base && base.background_change) || '').trim();
-    if (bg) stage.style.backgroundImage = `url("${bg.replace(/"/g, '%22')}")`;
-    else stage.style.backgroundImage = 'linear-gradient(180deg,#12151d,#0b0d13)';
-
-    // 立绘：优先该句说话者的图 / 节点内容图
-    const fig = document.createElement('div');
-    fig.id = 'bp-stage-fig';
-    const img = (base.content_image || '').trim();
-    const px = Number(d.pos_x ?? 50);
-    const py = Number(d.pos_y ?? 0);
-    const sc = Number(d.scale ?? 1);
-    fig.style.cssText = `position:absolute;left:${px}%;bottom:${py}%;transform:translate(-50%,0) scale(${sc});transform-origin:bottom center;cursor:grab;transition:filter .12s;`;
-    const name = (ctx.chars.find(c => c.id === d.speaker_id) || {}).name || '旁白';
-    if (img) {
-      fig.innerHTML = `<img src="${esc(img)}" alt="" style="display:block;max-height:120px;max-width:120px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))">`;
-    } else {
-      fig.innerHTML = `<div style="width:34px;height:60px;border-radius:16px 16px 6px 6px;background:linear-gradient(180deg,#4f8ff7,#2b4f8f);border:1px solid #7fb0ff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">${esc(name.slice(0, 4))}</div>`;
-    }
-    stage.appendChild(fig);
-
-    let dragging = false;
-    fig.addEventListener('pointerdown', (e) => {
-      dragging = true;
-      fig.setPointerCapture(e.pointerId);
-      fig.style.cursor = 'grabbing';
-      e.preventDefault();
+    if (stage._stg) { stage._stg.destroy(); stage._stg = null; }
+    const curState = () => {
+      const cur = dlg[activeDlg] || {};
+      return {
+        bg: (cur.bg_change || (base && base.background_change) || '').trim(),
+        img: (base && base.content_image || '').trim(),
+        name: (ctx.chars.find(c => c.id === cur.speaker_id) || {}).name || '旁白',
+        x: cur.pos_x ?? 50, y: cur.pos_y ?? 0, scale: cur.scale ?? 1,
+        flip: cur.flip ?? 0, cropT: cur.crop_top ?? 0, cropB: cur.crop_bottom ?? 100,
+      };
+    };
+    stage._stg = StageEditor.build(stage, {
+      getState: curState,
+      onChange: (nd) => {
+        const cur = dlg[activeDlg];
+        if (cur) { cur.pos_x = nd.x; cur.pos_y = nd.y; cur.scale = nd.scale; }
+      },
     });
-    fig.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const r = stage.getBoundingClientRect();
-      const x = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
-      const y = Math.max(-40, Math.min(80, ((r.bottom - e.clientY) / r.height) * 100));
-      fig.style.left = x + '%';
-      fig.style.bottom = y + '%';
-      const cur = dlg[activeDlg];
-      if (cur) { cur.pos_x = Math.round(x * 10) / 10; cur.pos_y = Math.round(y * 10) / 10; }
-      // 同步输入框（不重绘）
-      const ix = box().querySelector(`input[data-model="dlg[${activeDlg}].pos_x"]`);
-      const iy = box().querySelector(`input[data-model="dlg[${activeDlg}].pos_y"]`);
-      if (ix) ix.value = cur.pos_x;
-      if (iy) iy.value = cur.pos_y;
-    });
-    const end = () => { dragging = false; fig.style.cursor = 'grab'; };
-    fig.addEventListener('pointerup', end);
-    fig.addEventListener('pointercancel', end);
+
+    const bigBtn = document.getElementById('bp-stage-big');
+    if (bigBtn) bigBtn.onclick = () => {
+      const cur = dlg[activeDlg] || {};
+      StageEditor.openBig({
+        title: `舞台调整 · #${base.id} ${base.title || ''}`,
+        getState: () => curState(),
+        onApply: (st) => {
+          cur.pos_x = st.x; cur.pos_y = st.y; cur.scale = st.scale;
+          cur.flip = st.flip; cur.crop_top = st.cropT; cur.crop_bottom = st.cropB;
+          if (st.bg) cur.bg_change = st.bg;
+          if (stage._stg) stage._stg.refresh();
+        },
+      });
+    };
   }
 
   function bindNode() {

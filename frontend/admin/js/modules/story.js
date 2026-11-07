@@ -3852,6 +3852,7 @@ Admin.registerPage('story', async (container) => {
             const baseH = H * 0.85 * (r.scale || 1);
             const maxW = W * 0.9;
             const win = document.createElement('div');
+            win.className = 'dlg-stage-fig';
             win.style.cssText = `position:absolute;overflow:hidden;left:${r.pos_x}%;bottom:${r.pos_y}%;transform:translateX(-50%);border:1px dashed rgba(212,175,55,.55);z-index:${r.z_index || 1}`;
             const img = document.createElement('img');
             img.style.cssText = `position:absolute;left:0;top:0;${r.flip ? 'transform:scaleX(-1);' : ''}`;
@@ -3948,6 +3949,62 @@ Admin.registerPage('story', async (container) => {
         -webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all`;
       dlgBox.appendChild(txt);
       box.appendChild(dlgBox);
+    }
+    enhanceStageInline(box);
+
+    // 内联舞台增强：直接拖动人物改坐标、滚轮缩放（不再依赖滑块）
+    function enhanceStageInline(box) {
+      const fig = box.querySelector('.dlg-stage-fig');
+      if (!fig || fig._enh) return;
+      fig._enh = true;
+      fig.style.cursor = 'grab';
+      let mode = null, sx = 0, sy = 0, ox = 50, oy = 0;
+      fig.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        mode = 'move';
+        fig.setPointerCapture(e.pointerId);
+        fig.style.cursor = 'grabbing';
+        sx = e.clientX; sy = e.clientY;
+        ox = parseFloat(fig.style.left) || 50;
+        oy = parseFloat(fig.style.bottom) || 0;
+        e.preventDefault(); e.stopPropagation();
+      });
+      fig.addEventListener('pointermove', (e) => {
+        if (mode !== 'move') return;
+        const W = box.clientWidth || 420, H = box.clientHeight || 290;
+        let nx = ox + (e.clientX - sx) / W * 100;
+        let ny = oy - (e.clientY - sy) / H * 100;
+        nx = Math.max(0, Math.min(100, nx));
+        ny = Math.max(-40, Math.min(80, ny));
+        fig.style.left = nx + '%';
+        fig.style.bottom = ny + '%';
+      });
+      const endMove = () => { if (mode === 'move') { mode = null; fig.style.cursor = 'grab'; writeBackStage(box); } };
+      fig.addEventListener('pointerup', endMove);
+      fig.addEventListener('pointercancel', endMove);
+      fig.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const m = (fig.style.transform || '').match(/scale\(([^)]+)\)/);
+        const cur = m ? parseFloat(m[1]) : 1;
+        let s = Math.max(0.2, Math.min(3, cur * Math.exp(-e.deltaY * 0.0015)));
+        s = Math.round(s * 100) / 100;
+        fig.style.transform = `translateX(-50%) scale(${s})`;
+        fig._pendingScale = s;
+        clearTimeout(fig._wt);
+        fig._wt = setTimeout(() => writeBackStage(box), 220);
+      }, { passive: false });
+    }
+
+    function writeBackStage(box) {
+      const fig = box.querySelector('.dlg-stage-fig');
+      const row = document.querySelector(`.dlg-row[data-idx="${dlgSelectedIdx}"]`);
+      if (fig && row) {
+        if (fig.style.left) row.querySelector('.dlg-x').value = Math.round(parseFloat(fig.style.left) * 10) / 10;
+        if (fig.style.bottom != null) row.querySelector('.dlg-y').value = Math.round(parseFloat(fig.style.bottom) * 10) / 10;
+        if (fig._pendingScale != null) { row.querySelector('.dlg-scale').value = fig._pendingScale; fig._pendingScale = null; }
+      }
+      renderStagePreview();
+      if (typeof scheduleDialogueSave === 'function') scheduleDialogueSave();
     }
 
     function scheduleDialogueSave() {
@@ -4541,7 +4598,10 @@ Admin.registerPage('story', async (container) => {
             <div id="dialogue-list" style="min-width:0"></div>
           </div>
           <div style="flex:0 0 420px;position:sticky;top:0">
-            <div class="node-sec-tip" style="margin-bottom:4px">舞台预览（随坐标 / 缩放 / 裁剪实时更新）</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span class="node-sec-tip">舞台预览（可直接拖动人物 / 滚轮缩放）</span>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-stage-big" title="放大窗口里拖动 / 缩放人物" style="margin-left:auto">⛶ 放大调整</button>
+            </div>
             <div id="dlg-stage-preview" style="position:relative;width:420px;height:290px;background:linear-gradient(135deg,#1a1a22,#101018);border:1px solid var(--border);border-radius:6px;overflow:hidden"></div>
           </div>
         </div>
@@ -4962,6 +5022,48 @@ Admin.registerPage('story', async (container) => {
         player.innerHTML = `<audio controls autoplay style="width:240px;height:36px"><source src="${bgmVal}"></audio>`;
         document.body.appendChild(player);
         setTimeout(() => { if (player.parentNode) player.remove(); }, 60000);
+      });
+
+      // 舞台「放大调整」：打开共用 StageEditor 大窗口（拖动 / 缩放，不再用滑块）
+      document.getElementById('btn-stage-big')?.addEventListener('click', () => {
+        const row = document.querySelector(`.dlg-row[data-idx="${dlgSelectedIdx}"]`);
+        if (!row) { Admin.toast('请先选中一句对白', 'info'); return; }
+        const sidEl = row.querySelector('.dlg-speaker');
+        const sid = sidEl ? parseInt(sidEl.value) : null;
+        const ch = chars.find(c => c.id === sid);
+        const exprEl = row.querySelector('.dlg-expression');
+        const expr = exprEl ? exprEl.value : '';
+        let img = ch?.portrait_image || '';
+        if (ch && ch.expressions) {
+          try { const ex = JSON.parse(ch.expressions); if (expr && ex[expr]) img = ex[expr]; } catch (e) {}
+        }
+        const gv = (s) => { const el = row.querySelector(s); return el ? el.value : ''; };
+        const gc = (s) => { const el = row.querySelector(s); return el && el.checked ? 1 : 0; };
+        StageEditor.openBig({
+          title: `舞台调整 · #${dlgSelectedIdx + 1} ${ch ? ch.name : ''}`,
+          getState: () => ({
+            bg: (document.getElementById('bg-change-input')?.value || '').trim(),
+            img: img,
+            name: ch ? ch.name : '旁白',
+            x: parseFloat(gv('.dlg-x')) || 50,
+            y: parseFloat(gv('.dlg-y')) || 0,
+            scale: parseFloat(gv('.dlg-scale')) || 1,
+            flip: gc('.dlg-flip'),
+            cropT: parseFloat(gv('.dlg-crop-top')) || 0,
+            cropB: parseFloat(gv('.dlg-crop-bottom')) || 100,
+          }),
+          onApply: (st) => {
+            row.querySelector('.dlg-x').value = Math.round(st.x * 10) / 10;
+            row.querySelector('.dlg-y').value = Math.round(st.y * 10) / 10;
+            row.querySelector('.dlg-scale').value = Math.round(st.scale * 100) / 100;
+            row.querySelector('.dlg-crop-top').value = st.cropT;
+            row.querySelector('.dlg-crop-bottom').value = st.cropB;
+            row.querySelector('.dlg-flip').checked = !!st.flip;
+            const b = document.getElementById('bg-change-input');
+            if (st.bg && b) b.value = st.bg;
+            renderStagePreview();
+          },
+        });
       });
 
       // 场景背景图片选择器（大图预览 + 转场动效 + 同步舞台预览）
