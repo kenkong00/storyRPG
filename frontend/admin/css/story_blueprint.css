@@ -73,14 +73,19 @@
   overflow: visible;
   pointer-events: none;
 }
-.bp-link { fill: none; stroke-width: 2; }
-.bp-link.link-owner { stroke: rgba(201, 168, 76, 0.55); }
-.bp-link.link-membership { stroke: rgba(79, 143, 247, 0.3); }
-.bp-link.link-bus { stroke: rgba(79, 143, 247, 0.28); stroke-width: 1.5; }
-.bp-link.link-seq { stroke: rgba(139, 143, 163, 0.38); stroke-dasharray: 4 5; }
-.bp-link.link-choice { stroke: rgba(76, 175, 136, 0.75); }
-.bp-link.link-battle { stroke: rgba(224, 85, 85, 0.7); stroke-dasharray: 7 4; }
-.bp-link.link-hover { stroke-width: 3.5; filter: drop-shadow(0 0 4px rgba(79, 143, 247, .6)); }
+/* ---- 连线 ---- */
+.bp-link { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width 0.1s, stroke-opacity 0.1s; }
+.bp-link.link-owner { stroke: #c9a84c; stroke-opacity: 0.62; stroke-width: 1.4; }
+.bp-link.link-entry { stroke: #4f8ff7; stroke-opacity: 0.9; }
+.bp-link.link-seq { stroke: #8b8fa3; stroke-opacity: 0.75; }
+.bp-link.link-choice { stroke: #4caf88; stroke-opacity: 0.9; }
+.bp-link.link-battle { stroke: #e05555; stroke-opacity: 0.9; stroke-dasharray: 7 4; }
+/* 方向标：线中段的小箭头 */
+.bp-chev { fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: 0.95; }
+/* 连线只在描边附近响应悬停，不影响拖拽卡片 */
+.bp-links .bp-link { pointer-events: stroke; }
+.bp-links .bp-link:hover { stroke-width: 3; stroke-opacity: 1; filter: drop-shadow(0 0 4px rgba(120, 170, 255, 0.5)); }
+.bp-link-ghost .bp-link { stroke: #4f8ff7; stroke-opacity: 0.9; stroke-dasharray: 5 4; stroke-width: 2; pointer-events: none; }
 
 .bp-link-label {
   font-size: 10px;
@@ -91,6 +96,8 @@
   stroke-linejoin: round;
   pointer-events: none;
 }
+.bp-link-label.lab-choice { fill: #7fd9ac; }
+.bp-link-label.lab-battle { fill: #ff9a9a; }
 
 .bp-nodes { position: absolute; left: 0; top: 0; width: 0; height: 0; }
 
@@ -119,7 +126,7 @@
 .bp-node.bp-selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(79, 143, 247, 0.35), 0 8px 24px rgba(0, 0, 0, 0.5); }
 .bp-node.bp-running { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(224, 139, 85, 0.45), 0 0 18px rgba(224, 139, 85, 0.35); animation: bp-pulse 1.4s ease-in-out infinite; }
 .bp-node.bp-done { opacity: 0.72; }
-.bp-node.bp-done::after { content: '✓'; position: absolute; right: 8px; top: 6px; color: var(--green); font-size: 12px; font-weight: 700; }
+.bp-node.bp-done::after { content: '✓'; position: absolute; right: 16px; top: 3px; color: var(--green); font-size: 12px; font-weight: 700; }
 .bp-node.bp-error { border-color: var(--red); }
 .bp-node.bp-warn { border-color: var(--orange); }
 
@@ -132,7 +139,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 9px 5px;
+  padding: 7px 12px 5px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
@@ -190,23 +197,41 @@
 .bp-badge.warn { background: rgba(224, 139, 85, 0.18); color: #ffb27a; }
 .bp-badge.key { background: rgba(201, 168, 76, 0.18); color: #e2c877; }
 
-/* 连接点 */
+/* ---- 连接点：左=接收(in) 右=输出(out)，圆心贴在卡片边缘，始终可见 ---- */
 .bp-port {
   position: absolute;
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
   border-radius: 50%;
-  background: var(--bg-primary);
-  border: 2px solid var(--text-muted);
-  opacity: 0;
-  transition: opacity 0.12s, transform 0.12s;
-  z-index: 4;
+  background: #11131b;
+  border: 2px solid #8b93a8;
+  box-shadow: 0 0 0 2px rgba(9, 11, 17, 0.9);
+  z-index: 6;
+  transition: transform 0.1s, border-color 0.1s, background 0.1s, box-shadow 0.1s;
 }
-.bp-node:hover .bp-port, .bp-node.bp-selected .bp-port { opacity: 1; }
-.bp-port.in { left: -6px; top: 50%; transform: translateY(-50%); }
-.bp-port.out { right: -6px; top: 50%; transform: translateY(-50%); }
-.bp-port.bp-port-out:hover { background: var(--accent); border-color: var(--accent-hover); transform: translateY(-50%) scale(1.25); }
-.bp-port.bp-port-in { cursor: default; }
+/* 加大的点击热区（视觉不变） */
+.bp-port::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+}
+.bp-port.in { left: 0; top: 15px; transform: translate(-50%, -50%); cursor: default; }
+.bp-port.out { right: 0; top: 15px; transform: translate(50%, -50%); cursor: crosshair; background: var(--accent); border-color: #8ab6ff; }
+.bp-port.out:hover {
+  transform: translate(50%, -50%) scale(1.35);
+  box-shadow: 0 0 0 3px rgba(79, 143, 247, 0.22), 0 0 12px rgba(79, 143, 247, 0.85);
+}
+.bp-port.in:hover { border-color: #6fe0a8; background: rgba(76, 175, 136, 0.35); }
+/* 拖线时，可落点的目标卡接收点亮起 */
+.bp-node.bp-drop { border-color: var(--green); }
+.bp-node.bp-drop .bp-port.in {
+  background: var(--green);
+  border-color: #b6ffd6;
+  transform: translate(-50%, -50%) scale(1.4);
+  box-shadow: 0 0 0 3px rgba(76, 175, 136, 0.25), 0 0 12px rgba(76, 175, 136, 0.8);
+}
 
 /* 悬停操作 */
 .bp-node-actions {

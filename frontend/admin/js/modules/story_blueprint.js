@@ -17,8 +17,28 @@ Admin.registerPage('story_blueprint', async (container) => {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-  const W = { arc: 248, chapter: 268, node: 300 };
+  const W = { arc: 224, chapter: 244, node: 288 };
   const TYPE_LABEL = { dialogue: '对话', choice: '选择', battle: '战斗', cutscene: '过场', event: '事件' };
+
+  /* ---- 连线几何常量（CSS 里的 .bp-port 必须与 PORT_Y 一致） ---- */
+  const PORT_Y = 15;        // 端口在卡片内的 Y 偏移（标题行中心）
+  const PORT_R = 6.5;       // 端口半径
+  const LINE_GAP = 7;       // 线端与端口圆心的间隙（避免压住圆点）
+  const GAP_X = 66;         // 同一行相邻节点间距
+  const PITCH_X = W.node + GAP_X;
+  const COL_ARC = 24;
+  const COL_CH = 356;
+  const COL_NODE = 698;
+  const ROW_MAX = 5;        // 每行最多排 5 个节点，超出换行
+  const ROW_H = 152;        // 行高估算（上方对齐，实际高度不影响连线）
+  const ROW_GAP = 76;
+  const BAND_GAP = 86;
+  const LAYOUT_VER = 3;     // 布局版本：变化时强制重排一次
+
+  const ARROW_COLOR = {
+    owner: '#c9a84c', entry: '#4f8ff7', seq: '#8b8fa3',
+    choice: '#4caf88', battle: '#e05555',
+  };
 
   const state = {
     data: null,
@@ -59,15 +79,16 @@ Admin.registerPage('story_blueprint', async (container) => {
         <button class="btn btn-outline btn-sm" id="bp-list-view" title="切回原来的表格/卡片列表">☰ 列表视图</button>
         <div style="flex:1"></div>
         <div class="bp-legend">
-          <span><i style="border-top-color:rgba(79,143,247,.7)"></i>归属</span>
-          <span><i style="border-top-color:rgba(76,175,136,.9)"></i>分支</span>
-          <span><i style="border-top-color:rgba(224,85,85,.9)"></i>战斗</span>
-          <span><i style="border-top-color:rgba(139,143,163,.6);border-top-style:dashed"></i>顺序</span>
+          <span><i style="border-top-color:#c9a84c"></i>故事归属</span>
+          <span><i style="border-top-color:#4f8ff7"></i>进入章节</span>
+          <span><i style="border-top-color:#8b8fa3"></i>顺序</span>
+          <span><i style="border-top-color:#4caf88"></i>分支</span>
+          <span><i style="border-top-color:#e05555;border-top-style:dashed"></i>战斗</span>
         </div>
       </div>
       <div class="bp-body">
         <div class="bp-canvas" id="bp-canvas">
-          <div class="bp-canvas-hint">拖空白平移 · 滚轮缩放 · 单击节点编辑 · 从右侧圆点拖出连线建分支</div>
+          <div class="bp-canvas-hint">拖空白平移 · 滚轮缩放 · 单击节点编辑 · 从卡片右侧输出点拖到目标卡左侧接收点即可连线</div>
           <div class="bp-world" id="bp-world">
             <svg class="bp-links" id="bp-links"></svg>
             <div class="bp-nodes" id="bp-nodes"></div>
@@ -113,56 +134,76 @@ Admin.registerPage('story_blueprint', async (container) => {
     (bp.layout || []).forEach((it) => state.layout.set(`${it.kind}:${it.ref_id}`, { x: it.x, y: it.y, collapsed: it.collapsed || 0 }));
   }
 
-  /* ---------------- 自动布局 ---------------- */
+  /* ---------------- 自动布局 ----------------
+   * 横向流水线：故事(第1列) → 章节(第2列) → 节点(第3列起，一行最多 ROW_MAX 个，超出换行)
+   * 这样顺序连线永远是「左输出 → 右输入」，不会出现竖直堆叠时那种 U 型回头线。
+   */
+  function chunk(arr, n) {
+    const out = [];
+    for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+    return out;
+  }
+
+  function orderedNodes(chId) {
+    return state.data.nodes
+      .filter(n => n.chapter_id === chId)
+      .sort((a, b) => (a.order_index - b.order_index) || (a.id - b.id));
+  }
+
   function autoLayout() {
     const { arcs, chapters, nodes } = state.data;
-    const estNode = 106;
-    let ay = 70;
-    const seenArc = new Set();
-
-    const layArcChapters = (arc) => {
-      let cy = ay;
-      chapters.filter(c => c.story_arc_id === arc.id)
-        .sort((a, b) => (a.chapter_order - b.chapter_order) || (a.id - b.id))
-        .forEach((ch) => {
-          const key = `chapter:${ch.id}`;
-          if (!state.layout.has(key) || state.manualLayout) state.layout.set(key, { x: 370, y: cy });
-          let ny = cy;
-          nodes.filter(n => n.chapter_id === ch.id)
-            .sort((a, b) => (a.order_index - b.order_index) || (a.id - b.id))
-            .forEach((n) => {
-              const nk = `node:${n.id}`;
-              if (!state.layout.has(nk) || state.manualLayout) state.layout.set(nk, { x: 700, y: ny });
-              ny += Math.max(96, estNode);
-            });
-          cy = Math.max(cy + 82, ny) + 30;
-        });
-      return cy;
+    const set = (key, x, y) => {
+      if (!state.layout.has(key) || state.manualLayout) state.layout.set(key, { x, y });
     };
+    const arcChapters = (arcId) => chapters
+      .filter(c => c.story_arc_id === arcId)
+      .sort((a, b) => (a.chapter_order - b.chapter_order) || (a.id - b.id));
+
+    let y = 58;
+    const placedCh = new Set();
+
+    // 排一个章节：首行对齐章节卡，其余行依次往下；ys 收集章节卡 y 供故事卡居中
+    const layoutChapter = (ch, ys) => {
+      placedCh.add(ch.id);
+      const rows = chunk(orderedNodes(ch.id), ROW_MAX);
+      if (!rows.length) {
+        set(`chapter:${ch.id}`, COL_CH, y + 6);
+        pushY(ys, y + 6);
+        y += 92;
+        return;
+      }
+      rows.forEach((row, ri) => {
+        const ry = y + ri * (ROW_H + ROW_GAP);
+        row.forEach((n, i) => set(`node:${n.id}`, COL_NODE + i * PITCH_X, ry));
+        if (ri === 0) {
+          set(`chapter:${ch.id}`, COL_CH, ry + 30);
+          pushY(ys, ry + 30);
+        }
+      });
+      y += rows.length * ROW_H + (rows.length - 1) * ROW_GAP + BAND_GAP;
+    };
+    const pushY = (arr, v) => { if (arr) arr.push(v); };
 
     arcs.forEach((arc) => {
-      seenArc.add(arc.id);
-      if (!state.layout.has(`arc:${arc.id}`) || state.manualLayout) state.layout.set(`arc:${arc.id}`, { x: 60, y: ay });
-      const end = layArcChapters(arc);
-      ay = Math.max(ay + 82, end) + 56;
+      if (state.arcFilter && arc.id !== state.arcFilter) return;
+      const ys = [];
+      const startY = y;
+      arcChapters(arc.id).forEach((ch) => layoutChapter(ch, ys));
+      // 故事卡垂直居中于它的章节：金色连线向上下扇形展开，而不是全往下扫成一把扫把
+      set(`arc:${arc.id}`, COL_ARC, ys.length ? (Math.min(...ys) + Math.max(...ys)) / 2 : startY + 14);
+      y += 24;
     });
 
-    // 没有归属故事的章节
-    chapters.filter(c => !c.story_arc_id || !seenArc.has(c.story_arc_id)).forEach((ch) => {
-      state.layout.set(`chapter:${ch.id}`, { x: 370, y: ay });
-      let ny = ay;
-      nodes.filter(n => n.chapter_id === ch.id).forEach((n) => {
-        state.layout.set(`node:${n.id}`, { x: 700, y: ny });
-        ny += estNode;
-      });
-      ay = Math.max(ay + 82, ny) + 30;
-    });
+    // 没有归属故事（或故事不在当前视图）的章节
+    chapters.forEach((ch) => { if (!placedCh.has(ch.id)) layoutChapter(ch); });
 
     // 章节缺失的节点兜底
     const chIds = new Set(chapters.map(c => c.id));
     nodes.filter(n => !chIds.has(n.chapter_id)).forEach((n, i) => {
-      state.layout.set(`node:${n.id}`, { x: 700, y: ay + i * estNode });
+      set(`node:${n.id}`, COL_NODE + (i % ROW_MAX) * PITCH_X,
+        y + Math.floor(i / ROW_MAX) * (ROW_H + ROW_GAP));
     });
+
     state.manualLayout = false;
     markAllDirty();
   }
@@ -237,7 +278,7 @@ Admin.registerPage('story_blueprint', async (container) => {
           <div class="bp-meta">${n} 章 · 排序 ${a.order_index}${a.is_active ? '' : ' · 已停用'}</div>
           ${a.description ? `<div class="bp-line" style="margin-top:3px">${esc(a.description)}</div>` : ''}
         </div>
-        <div class="bp-port out" data-port="out"></div>`, W.arc);
+        <div class="bp-port out" data-port="out" title="输出点：拖到章节可改归属"></div>`, W.arc);
       el.classList.add('bp-kind-arc');
     });
 
@@ -253,8 +294,8 @@ Admin.registerPage('story_blueprint', async (container) => {
           <div class="bp-meta">${cnt} 节点${c.is_main_story ? '' : ' · 支线'}</div>
           ${c.description ? `<div class="bp-line" style="margin-top:3px">${esc(c.description)}</div>` : ''}
         </div>
-        <div class="bp-port in" data-port="in"></div>
-        <div class="bp-port out" data-port="out"></div>`, W.chapter);
+        <div class="bp-port in" data-port="in" title="接收点"></div>
+        <div class="bp-port out" data-port="out" title="输出点：拖到节点可把该节点移入本章"></div>`, W.chapter);
       el.classList.add('bp-kind-chapter');
     });
 
@@ -275,6 +316,9 @@ Admin.registerPage('story_blueprint', async (container) => {
       if (state.issues.errs.has(n.id)) badges.push(`<span class="bp-badge err">${esc(state.issues.errs.get(n.id)[0])}</span>`);
       else if (state.issues.warns.has(n.id)) badges.push(`<span class="bp-badge warn">${esc(state.issues.warns.get(n.id)[0])}</span>`);
 
+      const chp = state.data.chapters.find(c => c.id === n.chapter_id);
+      const chLabel = chp ? `第${chp.chapter_order}章` : '未归章';
+
       const isRun = state.run.active && state.run.list[state.run.i] && state.run.list[state.run.i].id === n.id;
       const isDone = state.run.active && state.run.list.slice(0, state.run.i).some(x => x.id === n.id);
       const isSel = state.sel && state.sel.kind === 'node' && state.sel.ref_id === n.id;
@@ -289,11 +333,11 @@ Admin.registerPage('story_blueprint', async (container) => {
           ${n.background_change ? `<div class="bp-node-thumb" style="background-image:url('${esc(n.background_change).replace(/'/g, '%27')}')"></div>` : ''}
           ${speakers.length ? `<div class="bp-line bp-speakers">${esc(speakers.join(' / '))}</div>` : ''}
           ${firstLine ? `<div class="bp-line">${esc(firstLine)}</div>` : '<div class="bp-line" style="color:var(--text-muted)">（空）</div>'}
-          <div class="bp-meta">${n.dialogue_count} 句 · 序号 ${n.order_index}${n.choices_count ? ` · ${n.choices_count} 选项` : ''}</div>
+          <div class="bp-meta">${esc(chLabel)} · ${n.dialogue_count} 句 · 序号 ${n.order_index}${n.choices_count ? ` · ${n.choices_count} 选项` : ''}</div>
           ${badges.length ? `<div class="bp-badge-row">${badges.join('')}</div>` : ''}
         </div>
-        <div class="bp-port in" data-port="in"></div>
-        <div class="bp-port out" data-port="out" title="拖到另一个节点可建分支"></div>
+        <div class="bp-port in" data-port="in" title="接收点"></div>
+        <div class="bp-port out" data-port="out" title="输出点：拖到另一个节点可建分支"></div>
         <div class="bp-node-actions">
           <button class="bp-mini-btn" data-act="demo" title="载入真实画面">▶</button>
           <button class="bp-mini-btn" data-act="open" title="打开检查器">✎</button>
@@ -322,13 +366,63 @@ Admin.registerPage('story_blueprint', async (container) => {
     return { x: p.x, y: p.y, w: s.w, h: s.h, cx: p.x + s.w / 2, cy: p.y + s.h / 2 };
   }
 
-  function bez(x1, y1, x2, y2, vertical) {
-    if (vertical) {
-      const dy = Math.max(24, Math.abs(y2 - y1) * 0.42);
-      return `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
+  /* ---------------- 连线几何 ----------------
+   * 端口约定：每张卡左边 1 个接收点（in），右边 1 个输出点（out），
+   * 圆心都在标题行中线上（y = 卡片顶 + PORT_Y）。所有连线一律 out → in，
+   * 不再出现接到卡片中点/总线折线的情况。
+   */
+  function port(key, side) {
+    const r = rectOf(key);
+    if (!r) return null;
+    return { x: side === 'out' ? r.x + r.w : r.x, y: r.y + PORT_Y };
+  }
+
+  // 同向平滑曲线；返回路径、中点、切角，供连线与方向标、标签定位
+  function curve(a, b, trim = LINE_GAP) {
+    const bx = b.x - trim;
+    const k = Math.max(38, Math.min(190, Math.abs(bx - a.x) * 0.55));
+    const P0 = { x: a.x, y: a.y }, P1 = { x: a.x + k, y: a.y };
+    const P2 = { x: bx - k, y: b.y }, P3 = { x: bx, y: b.y };
+    const pt = (t) => {
+      const u = 1 - t;
+      return {
+        x: u * u * u * P0.x + 3 * u * u * t * P1.x + 3 * u * t * t * P2.x + t * t * t * P3.x,
+        y: u * u * u * P0.y + 3 * u * u * t * P1.y + 3 * u * t * t * P2.y + t * t * t * P3.y,
+      };
+    };
+    return {
+      d: `M ${P0.x} ${P0.y} C ${P1.x} ${P1.y}, ${P2.x} ${P2.y}, ${P3.x} ${P3.y}`,
+      pt,
+      ang: Math.atan2(2 * (b.y - a.y), (P2.x + P3.x) - (P1.x + P0.x)) * 180 / Math.PI,
+    };
+  }
+
+  // 圆角正交折线（换行回环用）
+  function orthPath(pts, r = 12) {
+    let d = `M ${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [px, py] = pts[i - 1], [cx, cy] = pts[i], [nx, ny] = pts[i + 1];
+      const v1x = Math.sign(cx - px), v1y = Math.sign(cy - py);
+      const v2x = Math.sign(nx - cx), v2y = Math.sign(ny - cy);
+      const rr = Math.max(2, Math.min(r,
+        Math.abs(cx - px) / 2, Math.abs(cy - py) / 2,
+        Math.abs(nx - cx) / 2, Math.abs(ny - cy) / 2));
+      d += ` L ${cx - v1x * rr} ${cy - v1y * rr} Q ${cx} ${cy} ${cx + v2x * rr} ${cy + v2y * rr}`;
     }
-    const dx = Math.max(36, Math.abs(x2 - x1) * 0.46);
-    return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+    const last = pts[pts.length - 1];
+    d += ` L ${last[0]} ${last[1]}`;
+    return d;
+  }
+
+  // 目标在左侧（换行/回环）：从输出点向右出 → 走卡片下方车道 → 从左侧接回接收点
+  function wrapPath(a, b, aRect) {
+    const bx = b.x - LINE_GAP;
+    const outX = a.x + 30;
+    const inX = bx - 30;
+    const laneY = aRect.y + aRect.h + 26;
+    return orthPath([
+      [a.x, a.y], [outX, a.y], [outX, laneY], [inX, laneY], [inX, b.y], [bx, b.y],
+    ]);
   }
 
   function drawLinks() {
@@ -336,85 +430,87 @@ Admin.registerPage('story_blueprint', async (container) => {
     const parts = [];
     const labelParts = [];
 
-    const line = (d, cls, title, label) => {
-      parts.push(`<path class="bp-link ${cls}" d="${d}"><title>${esc(title)}</title></path>`);
-      if (label) {
-        const m = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        // 不实际测量路径，标签统一放在终点左侧上方，足够清楚
-        labelParts.push(`<text class="bp-link-label" x="${label.x}" y="${label.y}">${esc(label.text)}</text>`);
-      }
+    const put = (d, cls, title) => parts.push(`<path class="bp-link ${cls}" d="${d}"><title>${esc(title)}</title></path>`);
+    const text = (x, y, s, cls) => labelParts.push(
+      `<text class="bp-link-label ${cls || ''}" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${esc(s)}</text>`);
+    // 方向标：放在线中段（每条线中点唯一，多条线汇到同一接收点也不会叠在一起）
+    const chev = (cv, color, t = 0.5) => {
+      const p = cv.pt(t);
+      parts.push(`<path class="bp-chev" stroke="${color}" transform="translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${cv.ang.toFixed(1)})" d="M -4.4 -3.3 L 3.4 0 L -4.4 3.3"></path>`);
     };
+    const CL = ARROW_COLOR;
 
+    // 1) 故事 → 章节（金色，故事卡输出点 → 章节卡接收点）
     chapters.forEach((c) => {
       if (!c.story_arc_id) return;
-      const a = rectOf(`arc:${c.story_arc_id}`);
-      const r = rectOf(`chapter:${c.id}`);
-      if (!a || !r) return;
-      const sy = Math.max(a.y + 10, Math.min(a.y + a.h - 10, r.cy));
-      line(bez(a.x + a.w, sy, r.x, r.cy), 'link-owner', `章节归属：${c.title}`);
+      const a = port(`arc:${c.story_arc_id}`, 'out');
+      const b = port(`chapter:${c.id}`, 'in');
+      if (!a || !b) return;
+      const arc = state.data.arcs.find(x => x.id === c.story_arc_id);
+      const cv = curve(a, b);
+      put(cv.d, 'link-owner', `故事「${arc ? arc.title : c.story_arc_id}」→ 章节「${c.title}」`);
+      chev(cv, CL.owner);
     });
 
-    // 章节 → 节点：先汇到一条垂直总线，再从总线水平接入每个节点。
-    // 18 个节点如果都从章节卡同一点发散会糊成一团，总线画法像专业节点工作流。
-    const byChapter = {};
-    nodes.forEach((n) => { (byChapter[n.chapter_id] = byChapter[n.chapter_id] || []).push(n); });
-    Object.keys(byChapter).forEach((chId) => {
-      const c = rectOf(`chapter:${chId}`);
-      if (!c) return;
-      const list = byChapter[chId]
-        .map(n => ({ n, r: rectOf(`node:${n.id}`) }))
-        .filter(x => x.r);
+    // 2) 章节 → 首节点（蓝）+ 章节内顺序推进（灰）
+    chapters.forEach((c) => {
+      const list = orderedNodes(c.id);
       if (!list.length) return;
-      const busX = c.x + c.w + 30;
-      const ys = list.map(x => x.r.cy);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
-      const sy = Math.max(c.y + 10, Math.min(c.y + c.h - 10, (minY + maxY) / 2));
-      if (maxY - minY > 2) {
-        parts.push(`<path class="bp-link link-bus" d="M ${busX} ${minY} L ${busX} ${maxY}"></path>`);
+      const a = port(`chapter:${c.id}`, 'out');
+      const b = port(`node:${list[0].id}`, 'in');
+      if (a && b) {
+        const cv = curve(a, b);
+        put(cv.d, 'link-entry', `章节「${c.title}」→ 首节点「${list[0].title || list[0].id}」`);
+        chev(cv, CL.entry);
       }
-      parts.push(`<path class="bp-link link-membership" d="${bez(c.x + c.w, sy, busX, minY)}"><title>章节节点总线</title></path>`);
-      list.forEach(({ n, r }) => {
-        parts.push(`<path class="bp-link link-membership" d="M ${busX} ${r.cy} L ${r.x} ${r.cy}"><title>章节包含：${esc(n.title || n.id)}</title></path>`);
-      });
-    });
 
-    // 同章节顺序（纵向）
-    const byCh = {};
-    nodes.forEach(n => { (byCh[n.chapter_id] = byCh[n.chapter_id] || []).push(n); });
-    Object.values(byCh).forEach((list) => {
-      list.sort((a, b) => (a.order_index - b.order_index) || (a.id - b.id));
       for (let i = 1; i < list.length; i++) {
-        const a = rectOf(`node:${list[i - 1].id}`);
-        const b = rectOf(`node:${list[i].id}`);
-        if (!a || !b) continue;
-        line(bez(a.cx, a.y + a.h, b.cx, b.y, true), 'link-seq', '顺序推进');
+        const prev = list[i - 1], cur = list[i];
+        const pa = port(`node:${prev.id}`, 'out');
+        const pb = port(`node:${cur.id}`, 'in');
+        if (!pa || !pb) continue;
+        // 目标在左边（换行）→ 走下方车道的直角折线；否则走平滑曲线
+        if (pb.x < pa.x - 4) {
+          put(wrapPath(pa, pb, rectOf(`node:${prev.id}`)), 'link-seq',
+            `顺序：${prev.title || prev.id} → ${cur.title || cur.id}`);
+        } else {
+          const cv = curve(pa, pb);
+          put(cv.d, 'link-seq', `顺序：${prev.title || prev.id} → ${cur.title || cur.id}`);
+          chev(cv, CL.seq);
+        }
       }
     });
 
-    // 选项分支
+    // 3) 选项分支（绿色，输出点 → 目标接收点，标签在线中前段）
     choices.forEach((ch) => {
       if (!ch.next_node_id) return;
-      const a = rectOf(`node:${ch.node_id}`);
-      const b = rectOf(`node:${ch.next_node_id}`);
+      const a = port(`node:${ch.node_id}`, 'out');
+      const b = port(`node:${ch.next_node_id}`, 'in');
       if (!a || !b) return;
-      const d = bez(a.x + a.w, a.cy + 8, b.x, b.cy);
-      line(d, 'link-choice', `选项「${ch.choice_text}」→ #${ch.next_node_id}`, null);
-      const t = (ch.choice_text || '').slice(0, 10) + (ch.choice_text && ch.choice_text.length > 10 ? '…' : '');
-      if (t) labelParts.push(`<text class="bp-link-label" x="${(a.x + a.w + b.x) / 2 - 16}" y="${(a.cy + b.cy) / 2 - 5}">${esc(t)}</text>`);
+      const cv = curve(a, b);
+      put(cv.d, 'link-choice', `选项「${ch.choice_text}」→ #${ch.next_node_id}`);
+      chev(cv, CL.choice);
+      const t = (ch.choice_text || '').trim();
+      if (t) {
+        const lp = cv.pt(0.3);
+        text(lp.x, lp.y - 7, t.length > 12 ? t.slice(0, 12) + '…' : t, 'lab-choice');
+      }
     });
 
-    // 战斗分支
+    // 4) 战斗分支（红色虚线）
+    const BAT = { victory_node_id: '胜利', defeat_node_id: '失败', flee_node_id: '逃跑' };
     nodes.forEach((n) => {
-      const links = n.battle_links || {};
-      const a = rectOf(`node:${n.id}`);
+      const a = port(`node:${n.id}`, 'out');
       if (!a) return;
-      Object.keys(links).forEach((k) => {
-        const b = rectOf(`node:${links[k]}`);
+      Object.keys(n.battle_links || {}).forEach((k, i) => {
+        const b = port(`node:${n.battle_links[k]}`, 'in');
         if (!b) return;
-        const name = { victory_node_id: '胜利', defeat_node_id: '失败', flee_node_id: '逃跑' }[k] || k;
-        line(bez(a.x + a.w, a.cy + 18, b.x, b.cy), 'link-battle', `${name} → #${links[k]}`, null);
-        labelParts.push(`<text class="bp-link-label" x="${(a.x + a.w + b.x) / 2 - 10}" y="${(a.cy + b.cy) / 2 + 12}">${esc(name)}</text>`);
+        const cv = curve(a, b);
+        const name = BAT[k] || k;
+        put(cv.d, 'link-battle', `${name} → #${n.battle_links[k]}`);
+        chev(cv, CL.battle);
+        const lp = cv.pt(0.3);
+        text(lp.x, lp.y + 13 + i * 11, name, 'lab-battle');
       });
     });
 
@@ -523,9 +619,10 @@ Admin.registerPage('story_blueprint', async (container) => {
   function focusNode(nid) {
     const p = state.layout.get(`node:${nid}`);
     if (!p) return;
+    const s = state.sizes.get(`node:${nid}`) || { w: W.node, h: 120 };
     const r = canvas.getBoundingClientRect();
-    state.view.x = r.width / 2 - (p.x + 150) * state.view.scale;
-    state.view.y = r.height / 2 - (p.y + 55) * state.view.scale;
+    state.view.x = r.width / 2 - (p.x + s.w / 2) * state.view.scale;
+    state.view.y = r.height / 2 - (p.y + s.h / 2) * state.view.scale;
     applyView();
     drawMinimap();
   }
@@ -534,10 +631,9 @@ Admin.registerPage('story_blueprint', async (container) => {
   function startLink(e, fromKey) {
     e.stopPropagation();
     e.preventDefault();
-    const p = state.layout.get(fromKey);
-    const s = state.sizes.get(fromKey) || { w: 300, h: 90 };
-    const right = fromKey.startsWith('node:') ? { x: p.x + s.w, y: p.y + s.h / 2 + 8 } : { x: p.x + s.w, y: p.y + s.h / 2 };
-    linkDrag = { fromKey, anchor: right };
+    const a = port(fromKey, 'out');
+    if (!a) return;
+    linkDrag = { fromKey, anchor: a };
     canvas.classList.add('bp-linking');
     ghost = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     ghost.setAttribute('class', 'bp-link-ghost');
@@ -545,17 +641,23 @@ Admin.registerPage('story_blueprint', async (container) => {
     world.appendChild(ghost);
   }
 
+  function hitCard(e) {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    return el && el.closest ? el.closest('.bp-node') : null;
+  }
+
   function moveLink(e) {
     if (!linkDrag || !ghost) return;
-    const w = toWorld(e.clientX, e.clientY);
-    const a = linkDrag.anchor;
-    const path = ghost.querySelector('path');
-    path.setAttribute('d', bez(a.x, a.y, w.x, w.y));
-    // 高亮悬停目标
     nodeEls.forEach((el) => el.classList.remove('bp-drop'));
-    const target = document.elementFromPoint(e.clientX, e.clientY);
-    const card = target && target.closest ? target.closest('.bp-node') : null;
-    if (card && card.dataset.key !== linkDrag.fromKey) card.classList.add('bp-drop');
+    let target = toWorld(e.clientX, e.clientY);
+    const card = hitCard(e);
+    if (card && card.dataset.key !== linkDrag.fromKey) {
+      card.classList.add('bp-drop');
+      // 吸附到目标卡的接收点
+      const p = port(card.dataset.key, 'in');
+      if (p) target = p;
+    }
+    ghost.querySelector('path').setAttribute('d', curve(linkDrag.anchor, target, 0).d);
   }
 
   async function endLink(e) {
@@ -566,8 +668,7 @@ Admin.registerPage('story_blueprint', async (container) => {
     if (ghost) { ghost.remove(); ghost = null; }
     nodeEls.forEach((el) => el.classList.remove('bp-drop'));
 
-    const target = document.elementFromPoint(e.clientX, e.clientY);
-    const card = target && target.closest ? target.closest('.bp-node') : null;
+    const card = hitCard(e);
     if (!card) return;
     const to = card.dataset.key;
     if (!to || to === from) return;
@@ -653,10 +754,11 @@ Admin.registerPage('story_blueprint', async (container) => {
     }, { passive: false });
 
     canvas.addEventListener('pointerdown', (e) => {
-      const port = e.target.closest('.bp-port');
-      if (port) {
-        const card = port.closest('.bp-node');
-        if (card) startLink(e, card.dataset.key);
+      const portEl = e.target.closest('.bp-port');
+      if (portEl) {
+        const card = portEl.closest('.bp-node');
+        // 只允许从输出点拖出连线；接收点只作为落点
+        if (card && portEl.dataset.port === 'out') startLink(e, card.dataset.key);
         return;
       }
       const actionBtn = e.target.closest('[data-act]');
@@ -924,7 +1026,7 @@ Admin.registerPage('story_blueprint', async (container) => {
   async function refresh(focusId) {
     try {
       await loadData();
-      autoLayoutIfMissing();
+      if (!checkLayoutVersion()) autoLayoutIfMissing();
       validate();
       renderAll();
       updateFilterOptions();
@@ -952,6 +1054,18 @@ Admin.registerPage('story_blueprint', async (container) => {
     if (missing > 0) autoLayout();
   }
 
+  // 布局规则变了（例如从竖排改成横排），强制重排一次，避免旧坐标把卡片叠在一起
+  function checkLayoutVersion() {
+    const k = 'bp_layout_ver';
+    let v = 0;
+    try { v = Number(localStorage.getItem(k) || 0); } catch (_) { /* 隐私模式忽略 */ }
+    if (v === LAYOUT_VER) return false;
+    try { localStorage.setItem(k, String(LAYOUT_VER)); } catch (_) { /* ignore */ }
+    state.layout.clear();
+    autoLayout();
+    return true;
+  }
+
   /* ---------------- 工具栏 ---------------- */
   function updateFilterOptions() {
     const selEl = $('bp-arc-filter');
@@ -971,8 +1085,7 @@ Admin.registerPage('story_blueprint', async (container) => {
     });
     $('bp-auto').addEventListener('click', () => {
       state.manualLayout = true;
-      // 保留已手动摆放的故事卡，重排章节与节点
-      state.layout.forEach((v, k) => { if (!k.startsWith('arc:')) state.layout.delete(k); });
+      state.layout.clear();
       autoLayout();
       renderAll();
       requestAnimationFrame(fitView);
@@ -1045,24 +1158,18 @@ Admin.registerPage('story_blueprint', async (container) => {
   bindCanvas();
   bindToolbar();
   await refresh();
-  // 内容纵向通常很长，直接 fit 会缩到看不清；先把视图定在第一个故事卡上，保证可读
-  const firstKey = state.data.arcs.length
-    ? `arc:${state.data.arcs[0].id}`
-    : (state.data.chapters.length ? `chapter:${state.data.chapters[0].id}` : null);
-  const fp = firstKey ? state.layout.get(firstKey) : null;
-  if (fp) {
-    state.view.scale = 0.8;
-    state.view.x = 40 - fp.x * 0.8;
-    state.view.y = 30 - fp.y * 0.8;
-    applyView();
-  }
-  setTimeout(() => {
+  // 横排版通常能整体放下；放不下时保留可读缩放，用迷你地图/适应画布看全貌
+  requestAnimationFrame(() => {
     const b = contentBounds();
     const r = canvas.getBoundingClientRect();
-    // 整体放得下就适配；放不下就保留 0.8 的局部视图（用户可点「适应画布」看全貌）
-    if (b.h * 0.8 < r.height - 70 && b.w * 0.8 < r.width - 70) fitView();
-    else drawMinimap();
-  }, 120);
+    const fit = Math.min((r.width - 120) / b.w, (r.height - 120) / b.h);
+    if (fit >= 0.42) { fitView(); return; }
+    state.view.scale = 0.62;
+    state.view.x = 34 - b.x * 0.62;
+    state.view.y = 40 - b.y * 0.62;
+    applyView();
+    drawMinimap();
+  });
 
   // 深链：?bp_node=123 直接打开该节点的检查器（便于从列表跳过来定位）
   const deepNode = Number(new URLSearchParams(location.search).get('bp_node') || 0);
