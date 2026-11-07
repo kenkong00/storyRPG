@@ -40,8 +40,8 @@ window.StageEditor = (function () {
       <div class="stg-fig" tabindex="0" title="拖动移动 · 滚轮缩放 · 方向键微调">
         <span class="stg-ph"></span>
         <img class="stg-img" alt="" draggable="false">
-        <div class="stg-resize" title="拖动缩放"></div>
       </div>
+      <div class="stg-resize" title="拖动缩放人物"></div>
       <div class="stg-hud">
         <span class="stg-hud-x">X 50%</span>
         <span class="stg-hud-y">Y 0%</span>
@@ -83,7 +83,6 @@ window.StageEditor = (function () {
       img.style.transform = S.flip ? 'scaleX(-1)' : 'none';
       img.style.clipPath = S.img ? `inset(${S.cropT}% 0 ${Math.max(0, 100 - S.cropB)}% 0)` : 'none';
       applyPos();
-      positionResize();
     }
 
     function applyPos() {
@@ -93,14 +92,17 @@ window.StageEditor = (function () {
       hx.textContent = 'X ' + S.x.toFixed(1) + '%';
       hy.textContent = 'Y ' + S.y.toFixed(1) + '%';
       hs.textContent = Math.round(S.scale * 100) + '%';
+      positionResize();
     }
 
+    // 缩放句柄是 stage 的子元素（不随 figure 一起 scale），需按 figure 实时位置摆放
     function positionResize() {
       const sr = stageEl.getBoundingClientRect();
       const fr = fig.getBoundingClientRect();
       if (!fr.width) return;
-      resize.style.left = (fr.right - sr.left + 3) + 'px';
-      resize.style.top = (fr.top - sr.top - 3) + 'px';
+      const hs = resize.offsetWidth || 16;
+      resize.style.left = (fr.right - sr.left - hs / 2) + 'px';
+      resize.style.top = (fr.top - sr.top - hs / 2) + 'px';
     }
 
     function emit() { if (opts.onChange) opts.onChange({ x: S.x, y: S.y, scale: S.scale }); }
@@ -141,7 +143,7 @@ window.StageEditor = (function () {
         const d0 = Math.hypot(pivotX - sx, pivotY - sy) || 1;
         const d1 = Math.hypot(e.clientX - pivotX, e.clientY - pivotY);
         S.scale = Math.round(clamp(sState.scale * (d1 / d0), 0.2, 3) * 100) / 100;
-        applyPos(); positionResize(); emit();
+        applyPos(); emit();
       }
     };
     const onUp = () => {
@@ -158,7 +160,7 @@ window.StageEditor = (function () {
       if (opts.readOnly) return;
       e.preventDefault();
       S.scale = Math.round(clamp(S.scale * Math.exp(-e.deltaY * 0.0015), 0.2, 3) * 100) / 100;
-      applyPos(); positionResize(); emit();
+      applyPos(); emit();
     }, { passive: false });
 
     // ---- 键盘微调 ----
@@ -174,7 +176,7 @@ window.StageEditor = (function () {
       else if (k === '-' || k === '_') S.scale = Math.round(clamp(S.scale / 1.1, 0.2, 3) * 100) / 100;
       else return;
       e.preventDefault();
-      applyPos(); positionResize(); emit();
+      applyPos(); emit();
     });
 
     // ---- HUD 快捷 ----
@@ -184,7 +186,7 @@ window.StageEditor = (function () {
       else if (act === 'left') S.x = 20;
       else if (act === 'right') S.x = 80;
       else if (act === 'reset') { S.x = 50; S.y = 0; S.scale = 1; }
-      applyPos(); positionResize(); emit();
+      applyPos(); emit();
     });
 
     const ro = ('ResizeObserver' in window) ? new ResizeObserver(positionResize) : null;

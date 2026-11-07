@@ -211,6 +211,7 @@ Admin.registerPage('story', async (container) => {
         <div style="flex:1"></div>
         <button class="btn btn-outline btn-sm ${viewMode === 'grid' ? 'btn-gold' : ''}" id="arc-view-grid" title="网格视图">&#9638;</button>
         <button class="btn btn-outline btn-sm ${viewMode === 'list' ? 'btn-gold' : ''}" id="arc-view-list" title="列表视图">&#9776;</button>
+        <button class="btn btn-gold btn-sm" id="btn-open-blueprint0" title="用蓝图（节点 + 连线）方式查看 / 编排整个故事线">📐 蓝图模式</button>
         <button class="btn btn-primary btn-sm" id="btn-add-arc">+ 新建故事</button>
       </div>
     `;
@@ -306,6 +307,7 @@ Admin.registerPage('story', async (container) => {
   function bindArcEvents() {
     document.getElementById('arc-view-grid')?.addEventListener('click', () => { viewMode = 'grid'; renderArcs(); });
     document.getElementById('arc-view-list')?.addEventListener('click', () => { viewMode = 'list'; renderArcs(); });
+    document.getElementById('btn-open-blueprint0')?.addEventListener('click', () => Admin.navigate('story_blueprint'));
     document.getElementById('btn-add-arc')?.addEventListener('click', () => showArcForm());
 
     // 全选
@@ -433,6 +435,8 @@ Admin.registerPage('story', async (container) => {
         <div style="flex:1"></div>
         <button class="btn btn-outline btn-sm" id="btn-ch-import"
           title="粘贴一段故事 / 剧本 / AI 生成的 JSON，自动拆成节点和对话，直接生成本章">↥ 批量导入剧情</button>
+        <button class="btn btn-gold btn-sm" id="btn-open-blueprint"
+          title="用蓝图（节点 + 连线）方式查看 / 编排整个故事线">📐 蓝图模式</button>
         <button class="btn btn-primary btn-sm" id="btn-add-chapter">+ 新章节</button>
       </div>
     `;
@@ -551,6 +555,8 @@ Admin.registerPage('story', async (container) => {
 
     document.getElementById('btn-ch-import')?.addEventListener('click',
       () => openImportDialog({ arcId: currentArcId, chapterId: null }));
+
+    document.getElementById('btn-open-blueprint')?.addEventListener('click', () => Admin.navigate('story_blueprint'));
 
     container.querySelectorAll('[data-chapter-id]').forEach(el => {
       el.addEventListener('click', (e) => {
@@ -710,6 +716,7 @@ Admin.registerPage('story', async (container) => {
         <span style="color:var(--text-muted);line-height:2;margin-left:8px">共 ${sorted.length} 个节点</span>
         <div style="flex:1"></div>
         <button class="btn btn-outline btn-sm" id="btn-node-import" title="粘贴一段故事 / 剧本 / AI 生成的 JSON，自动拆成节点和对话">↥ 批量导入剧情</button>
+        <button class="btn btn-gold btn-sm" id="btn-open-blueprint2" title="用蓝图（节点 + 连线）方式查看 / 编排整个故事线">📐 蓝图模式</button>
         <button class="btn btn-outline btn-sm" id="btn-node-batches" title="这个章节导入过什么，可以重新编辑那批节点">🗂 导入记录</button>
         <button class="btn btn-gold btn-sm" id="btn-add-node" title="直接在列表底部新增一个节点">+ 新节点</button>
       </div>
@@ -1062,8 +1069,6 @@ Admin.registerPage('story', async (container) => {
   }
   async function openVoicePicker(btn, kind, index) {
     closeVoicePicker();
-    const groups = await impLoadVoices();
-    const flat = impFlatVoices(groups);
     let current = kind === 'narr'
       ? (IMP.narration ? (IMP.narration.voice || '') : '')
       : (IMP.chars[index] ? (IMP.chars[index].voice || '') : '');
@@ -1073,6 +1078,7 @@ Admin.registerPage('story', async (container) => {
     const title = kind === 'narr' ? '📢 选择旁白音色' : ('🔊 选择角色音色 · ' + who);
     const sample = impSampleLine(kind, index) || '前方似有埋伏，公子小心。';
 
+    // 先弹出窗口（loading 占位），数据回来再填充卡片 —— 避免「等好久才弹出」。
     const pop = document.createElement('div');
     pop.className = 'vg-modal';
     pop.id = 'imp-voice-pop';
@@ -1081,13 +1087,13 @@ Admin.registerPage('story', async (container) => {
         <div class="vg-modal-head">
           <div>
             <div class="vg-modal-title">${esc(title)}</div>
-            <div class="vg-modal-sub">共 ${flat.length} 个音色，平铺在此。点卡片右下角 ▶ 直接用「${esc(sample)}」试听；单击卡片选中，再点「确定」。派生角色声线（如苍老长者）会按自己的语速/音调偏移发声。</div>
+            <div class="vg-modal-sub">点卡片右下角 ▶ 直接用「${esc(sample)}」试听；单击卡片选中，再点「确定」。派生角色声线（如苍老长者）会按自己的语速/音调偏移发声。</div>
           </div>
           <button type="button" class="vg-modal-x" title="关闭">&times;</button>
         </div>
-        <div class="vg-modal-body"></div>
+        <div class="vg-modal-body"><div class="vg-empty">正在加载音色清单…</div></div>
         <div class="vg-modal-foot">
-          <span class="vg-picked">当前：<b class="vg-picked-name">—</b></span>
+          <span class="vg-picked">当前：<b class="vg-picked-name">${esc(displayCurrent || '—（用默认）')}</b></span>
           <span class="sp"></span>
           <button type="button" class="btn btn-outline btn-sm" id="imp-vp-clear">用默认（系统旁白 / 角色档案）</button>
           <button type="button" class="btn btn-gold btn-sm" id="imp-vp-ok">确定</button>
@@ -1097,20 +1103,19 @@ Admin.registerPage('story', async (container) => {
 
     let picked = displayCurrent || '';
     const nameEl = pop.querySelector('.vg-picked-name');
-    function labelOf(vid) {
+    function labelOf(vid, flat) {
       if (!vid) return '—（用默认）';
-      const v = flat.find(x => x.voice_id === vid);
+      const v = (flat || []).find(x => x.voice_id === vid);
       return v ? `${v.name}${v.style ? ' · ' + v.style : ''}` : vid;
     }
-    function syncFoot() { nameEl.textContent = labelOf(picked); }
 
-    const grid = VoiceGrid.mount(pop.querySelector('.vg-modal-body'), flat, {
-      variant: 'popup',
-      current: displayCurrent || '',
-      previewText: sample,
-      onPick(vid) { picked = vid; syncFoot(); },
-    });
-    syncFoot();
+    // 点遮罩（卡片外）关闭；点卡片内不关
+    pop.addEventListener('mousedown', e => { if (e.target === pop) closeVoicePicker(); });
+    // Esc 关闭
+    pop._escHandler = e => { if (e.key === 'Escape') { e.stopPropagation(); closeVoicePicker(); } };
+    document.addEventListener('keydown', pop._escHandler);
+    pop.querySelector('#imp-vp-clear').addEventListener('click', () => commit(''));
+    pop.querySelector('.vg-modal-x').addEventListener('click', closeVoicePicker);
 
     function commit(voiceId) {
       // 旁白选了系统默认音色 → 落库空（=用系统）；否则记具体音色
@@ -1123,14 +1128,25 @@ Admin.registerPage('story', async (container) => {
       closeVoicePicker();
     }
     pop.querySelector('#imp-vp-ok').addEventListener('click', () => commit(picked || ''));
-    pop.querySelector('#imp-vp-clear').addEventListener('click', () => commit(''));
-    pop.querySelector('.vg-modal-x').addEventListener('click', closeVoicePicker);
-    // 点遮罩（卡片外）关闭；点卡片内不关
-    pop.addEventListener('mousedown', e => { if (e.target === pop) closeVoicePicker(); });
-    // Esc 关闭
-    pop._escHandler = e => { if (e.key === 'Escape') { e.stopPropagation(); closeVoicePicker(); } };
-    document.addEventListener('keydown', pop._escHandler);
-    void grid;
+
+    // 异步取音色（后端已带 TTL 缓存，首调后基本秒回），回来再渲染卡片
+    (async () => {
+      const groups = await impLoadVoices();
+      const flat = impFlatVoices(groups);
+      if (!document.getElementById('imp-voice-pop')) return;  // 已关闭
+      nameEl.textContent = labelOf(displayCurrent, flat);
+      const body = pop.querySelector('.vg-modal-body');
+      body.innerHTML = '';   // 清掉「加载中…」占位，避免和卡片网格叠在一起
+      VoiceGrid.mount(body, flat, {
+        variant: 'popup',
+        current: displayCurrent || '',
+        previewText: sample,
+        onPick(vid) { picked = vid; nameEl.textContent = labelOf(vid, flat); },
+      });
+    })().catch(e => {
+      const body = pop.querySelector('.vg-modal-body');
+      if (body) body.innerHTML = `<div class="vg-empty">音色清单加载失败：${esc(e.message || e)}</div>`;
+    });
   }
   function closeVoicePicker() {
     const p = document.getElementById('imp-voice-pop');
@@ -2276,6 +2292,7 @@ Admin.registerPage('story', async (container) => {
     document.getElementById('btn-back-chapters')?.addEventListener('click', () => loadChapters(currentArcId));
 
     document.getElementById('btn-node-import')?.addEventListener('click', () => openImportDialog());
+    document.getElementById('btn-open-blueprint2')?.addEventListener('click', () => Admin.navigate('story_blueprint'));
     document.getElementById('btn-node-batches')?.addEventListener('click', () => openBatchesPanel());
 
     const chapterSelect = document.getElementById('chapter-select');

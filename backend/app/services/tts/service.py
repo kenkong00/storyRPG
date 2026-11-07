@@ -152,6 +152,12 @@ def url_for(path: str) -> str:
     return "/tts-cache/" + rel
 
 
+# /tts/voices 聚合结果的 TTL 缓存（引擎可用性探测首调较慢，清单几乎不变）
+_GROUPED_TTL = 120.0
+_grouped_cache: list[dict[str, Any]] | None = None
+_grouped_cache_at = 0.0
+
+
 # ---------------------------------------------------------------- 音色/引擎查询
 def list_engines() -> list[dict[str, Any]]:
     registry.ensure_loaded()
@@ -162,12 +168,20 @@ def list_voices(engine_id: str | None = None, refresh: bool = False) -> list[Voi
     return registry.list_voices(engine_id, refresh=refresh)
 
 
-def list_all_voices_grouped() -> list[dict[str, Any]]:
+def list_all_voices_grouped(refresh: bool = False) -> list[dict[str, Any]]:
     """给后台用的聚合清单：按引擎分组，每组内按性别分组。
 
     后台下拉要显示「性别 + 音色名 + 风格」，并且要能在选了男性角色时
     把女声置灰，所以必须把 gender 作为一等字段透出。
+
+    引擎可用性探测（尤其本机 OneCore 起 daemon）首调要几百毫秒 ~ 数秒，
+    而音色清单本身几乎不变。这里加一层 TTL 缓存，避免每次打开「选音色」弹窗
+    都重新探测一次引擎导致明显卡顿。refresh=True 时强制刷新。
     """
+    global _grouped_cache, _grouped_cache_at
+    now = time.time()
+    if (not refresh) and _grouped_cache is not None and (now - _grouped_cache_at) < _GROUPED_TTL:
+        return _grouped_cache
     rows: list[dict[str, Any]] = []
     for pid in registry._engine_display_order():  # noqa: SLF001
         provider = registry.get(pid)
@@ -188,6 +202,8 @@ def list_all_voices_grouped() -> list[dict[str, Any]]:
             "available": available,
             "voices": [v.to_dict() for v in voices],
         })
+    _grouped_cache = rows
+    _grouped_cache_at = now
     return rows
 
 

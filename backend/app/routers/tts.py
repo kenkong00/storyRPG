@@ -238,7 +238,7 @@ def get_voices(
     db: Session = Depends(get_db),
 ):
     if grouped:
-        return {"groups": tts.list_all_voices_grouped()}
+        return {"groups": tts.list_all_voices_grouped(refresh=refresh)}
     return {"voices": [v.to_dict() for v in tts.list_voices(engine_id, refresh=refresh)]}
 
 
